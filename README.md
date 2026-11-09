@@ -4,7 +4,7 @@ A chapter-by-chapter Lean 4 / Mathlib formalization of Robert Goldblatt's
 *Lectures on the Hyperreals: An Introduction to Nonstandard Analysis*
 (Springer GTM 188), published as a literate [Verso](https://github.com/leanprover/verso) site:
 
-**<https://alok.github.io/goldblatt-hyperreals/>**
+**<https://alok.blog/goldblatt-hyperreals/>**
 
 Each chapter of the book is one Lean module and one page of the site.
 See [SPEC.md](SPEC.md) for the design and [COVERAGE.md](COVERAGE.md) for the
