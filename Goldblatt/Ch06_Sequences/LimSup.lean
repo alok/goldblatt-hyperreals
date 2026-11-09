@@ -390,7 +390,8 @@ theorem limSup_eq_limsup (hb : ∃ b : ℝ, ∀ n, |s n| < b) : limSup s = limsu
   obtain ⟨l, hl⟩ := bddBelow_range_of_bounded hb
   have h2 : IsBoundedUnder (· ≤ ·) atTop s := isBoundedUnder_of ⟨u, fun n => hu ⟨n, rfl⟩⟩
   have h1 : IsCoboundedUnder (· ≤ ·) atTop s :=
-    (isBoundedUnder_of ⟨l, fun n => hl ⟨n, rfl⟩⟩ : IsBoundedUnder (· ≥ ·) atTop s).isCoboundedUnder_le
+    (isBoundedUnder_of ⟨l, fun n => hl ⟨n, rfl⟩⟩ :
+      IsBoundedUnder (· ≥ ·) atTop s).isCoboundedUnder_le
   apply le_antisymm
   · rw [le_limsup_iff' h1 h2]
     intro y hy
@@ -406,7 +407,8 @@ theorem limInf_eq_liminf (hb : ∃ b : ℝ, ∀ n, |s n| < b) : limInf s = limin
   obtain ⟨l, hl⟩ := bddBelow_range_of_bounded hb
   have h2 : IsBoundedUnder (· ≥ ·) atTop s := isBoundedUnder_of ⟨l, fun n => hl ⟨n, rfl⟩⟩
   have h1 : IsCoboundedUnder (· ≥ ·) atTop s :=
-    (isBoundedUnder_of ⟨u, fun n => hu ⟨n, rfl⟩⟩ : IsBoundedUnder (· ≤ ·) atTop s).isCoboundedUnder_ge
+    (isBoundedUnder_of ⟨u, fun n => hu ⟨n, rfl⟩⟩ :
+      IsBoundedUnder (· ≤ ·) atTop s).isCoboundedUnder_ge
   have hmem := limInf_mem_clusterSet hb
   have hleast := isLeast_limInf hb
   apply le_antisymm
