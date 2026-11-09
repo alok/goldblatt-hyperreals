@@ -30,7 +30,7 @@ Colourings are formalized as functions from finite sets to a type of colours, wh
 thing as a partition into colour classes; the book's formulation by a finite cover is derived as
 a corollary. Mathlib (at the version used here) has no Ramsey theorem for $`k`-element subsets,
 so nothing in this chapter is imported from it; the nearest relative there is
-{lit}`exists_increasing_or_nonincreasing_subseq`, a statement about pairs in the spirit of
+{name}`exists_increasing_or_nonincreasing_subseq`, a statement about pairs in the spirit of
 Theorem 17.1.1.
 
 ## 17.1 Colourings and Monochromatic Sets
@@ -39,9 +39,15 @@ The starting point is the pigeonhole principle for infinite sets: if an infinite
 by finitely many sets, one of them meets it in an infinite set. Ramsey's theorem is the same
 statement one level up, with the points of the set replaced by its $`k`-element subsets, and the
 conclusion "some colour is used infinitely often" replaced by the much stronger "some infinite
-set sees only one colour". This section sets up the vocabulary. The statement of Ramsey's
-theorem and its first application, Theorem 17.1.1 on infinite partially ordered sets, are
-formalized after Section 17.3, once the theorem has been proved.
+set sees only one colour". This section sets up the vocabulary.
+
+Two items of Section 17.1 are found further down the page, because they need the proof given
+in Section 17.3. The statement of Ramsey's theorem is {lit}`Goldblatt.infinite_ramsey` (with
+the variants {lit}`Goldblatt.infinite_ramsey'` and {lit}`Goldblatt.infinite_ramsey_cover`), at
+the end of Section 17.3. Its first application, Theorem 17.1.1 on infinite partially ordered
+sets, is {lit}`Goldblatt.exists_strictMono_or_strictAnti_or_antichain`, in the section
+"17.1 revisited" that follows Section 17.3; the nonstandard proof of the same theorem, from
+Section 17.2, is {lit}`Goldblatt.exists_strictMono_or_strictAnti_or_antichain_nonstandard`.
 -/
 
 noncomputable section
@@ -72,7 +78,7 @@ theorem kSubsets_mono {A B : Set α} (h : B ⊆ A) (k : ℕ) : kSubsets B k ⊆ 
   fun _ ht => ⟨ht.1.trans h, ht.2⟩
 
 /-- **Section 17.1**, relation to Mathlib. For a finite set $`s`, the set $`[s]^k` is Mathlib's
-{lit}`Finset.powersetCard`. -/
+{name}`Finset.powersetCard`. -/
 theorem kSubsets_coe (s : Finset α) (k : ℕ) :
     kSubsets (s : Set α) k = ↑(s.powersetCard k) := by
   ext t
@@ -430,6 +436,24 @@ theorem not_starBlack_iff [DecidableEq α] {c : Finset α → Bool} {π : Ultrap
   rw [h, starSet_compl]
   rfl
 
+/-- **Section 17.3**, the extension of the $`2`-colouring. The enlargements $`{}^*C_b` and
+$`{}^*C_w` of the two colour classes are disjoint and together contain all of
+$`{}^*([A]^{k})`, so they $`2`-colour it. By Exercise 17.3.1
+({lit}`Goldblatt.bijOn_internalElems_starSet_kSubsets`, proved below) the members of
+$`{}^*([A]^{k})` are the $`k`-element subsets of the enlargement of $`A`, so this is the
+book's colouring of $`[{}^*A]^{k}`. In fact the two enlarged classes partition the whole ultrapower of the type of
+finite sets, because here a colouring is a total function. -/
+theorem starSet_black_white (c : Finset α → Bool) (A : Set α) (k : ℕ) :
+    (starSet (kSubsets A k) : Set (Ultrapower (Finset α))) ⊆
+        starSet {u : Finset α | c u = true} ∪ starSet {u : Finset α | c u = false} ∧
+      Disjoint (starSet {u : Finset α | c u = true} : Set (Ultrapower (Finset α)))
+        (starSet {u : Finset α | c u = false}) := by
+  have h : {u : Finset α | c u = false} = {u : Finset α | c u = true}ᶜ := by
+    ext u
+    simp
+  rw [h, starSet_compl]
+  exact ⟨fun S _ => by rw [union_compl_self]; trivial, disjoint_compl_right⟩
+
 /-- **Section 17.3**, the existential transfer step. Let $`\pi` be a nonstandard member of the
 enlargement of $`A`, and let $`F` be a finite set of standard elements. Then there is a
 standard $`x \in A`, outside $`F`, that behaves towards $`F` just like $`\pi`: for every
@@ -527,7 +551,7 @@ theorem ramsey_two_colours_succ (k : ℕ)
 /-- **Ramsey's Theorem for two colours** (Section 17.3). For every $`k`, every infinite set
 $`A` and every colouring of the $`k`-element subsets of $`A` in black and white, there is an
 infinite subset of $`A` all of whose $`k`-element subsets have the same colour. Induction on
-$`k`, with {lit}`ramsey_two_colours_succ` as the inductive step. -/
+$`k`, with {name}`Goldblatt.ramsey_two_colours_succ` as the inductive step. -/
 theorem ramsey_two_colours (k : ℕ) {A : Set α} (hA : A.Infinite) (c : Finset α → Bool) :
     ∃ B ⊆ A, B.Infinite ∧ ∃ i, ∀ t ∈ kSubsets B k, c t = i := by
   induction k generalizing A c with
@@ -610,99 +634,6 @@ theorem ramsey_one [Finite κ] {A : Set α} (hA : A.Infinite) (c : Finset α →
 end Ramsey
 
 /-!
-### The application to partially ordered sets
-
-With Ramsey's theorem available, Theorem 17.1.1 has the short proof given in Section 17.1:
-colour a pair black if its two elements are comparable and white otherwise. An infinite white
-set is an antichain. An infinite black set is an infinite chain, and an infinite chain contains
-an increasing or a decreasing sequence, according to whether it is well-ordered or not.
--/
-
-section PosetsViaRamsey
-
-variable {P : Type u} [PartialOrder P]
-
-/-- **Theorem 17.1.1**, the last step of the proof. An infinite chain $`Q` contains a strictly
-increasing or a strictly decreasing sequence. If some nonempty subset of $`Q` has no least
-element, descend inside it. Otherwise $`Q` is well-ordered, and an increasing sequence is built
-by starting at the least element and passing each time to the least element above the current
-one; this never stops because each term has only finitely many elements of $`Q` below it. -/
-theorem exists_strictMono_or_strictAnti_of_chain {Q : Set P} (hQ : Q.Infinite)
-    (hch : ∀ x ∈ Q, ∀ y ∈ Q, x ≤ y ∨ y ≤ x) :
-    ∃ s : ℕ → P, (∀ n, s n ∈ Q) ∧ (StrictMono s ∨ StrictAnti s) := by
-  by_cases hwf : ∃ T ⊆ Q, T.Nonempty ∧ ∀ x ∈ T, ∃ y ∈ T, y < x
-  · obtain ⟨T, hTQ, hne, hT⟩ := hwf
-    obtain ⟨s, hs, hsT⟩ := exists_strictAnti_of_forall_exists_lt hne hT
-    exact ⟨s, fun n => hTQ (hsT n), Or.inr hs⟩
-  · have least : ∀ T ⊆ Q, T.Nonempty → ∃ x ∈ T, ∀ y ∈ T, x ≤ y := by
-      intro T hTQ hne
-      by_contra hcon
-      refine hwf ⟨T, hTQ, hne, fun x hx => ?_⟩
-      by_contra hx'
-      refine hcon ⟨x, hx, fun y hy => ?_⟩
-      rcases hch x (hTQ hx) y (hTQ hy) with h | h
-      · exact h
-      · exact (eq_or_lt_of_le h).elim (fun e => e.ge) fun hlt => absurd ⟨y, hy, hlt⟩ hx'
-    obtain ⟨x₀, hx₀Q, hx₀⟩ := least Q Subset.rfl hQ.nonempty
-    have h₀ : x₀ ∈ Q ∧ {q | q ∈ Q ∧ q ≤ x₀}.Finite :=
-      ⟨hx₀Q, (finite_singleton x₀).subset fun q hq => le_antisymm hq.2 (hx₀ q hq.1)⟩
-    obtain ⟨s, -, hs⟩ := exists_seq_of_step (fun x => x ∈ Q ∧ {q | q ∈ Q ∧ q ≤ x}.Finite)
-      (· < ·) h₀ (by
-        rintro x ⟨hxQ, hfin⟩
-        have hne : {q | q ∈ Q ∧ x < q}.Nonempty := by
-          by_contra hempty
-          refine hQ (hfin.subset fun q hq => ⟨hq, ?_⟩)
-          rcases hch x hxQ q hq with h | h
-          · by_contra hqx
-            exact hempty ⟨q, hq, lt_of_le_not_ge h hqx⟩
-          · exact h
-        obtain ⟨y, ⟨hyQ, hxy⟩, hy⟩ := least _ (fun q hq => hq.1) hne
-        refine ⟨y, ⟨hyQ, (hfin.union (finite_singleton y)).subset fun q hq => ?_⟩, hxy⟩
-        by_cases hqx : q ≤ x
-        · exact Or.inl ⟨hq.1, hqx⟩
-        · rcases hch x hxQ q hq.1 with h | h
-          · exact Or.inr (le_antisymm hq.2 (hy q ⟨hq.1, lt_of_le_not_ge h hqx⟩))
-          · exact absurd h hqx)
-    exact ⟨s, fun n => (hs n).1.1, Or.inl (strictMono_nat_of_lt_succ fun n => (hs n).2)⟩
-
-/-- **Theorem 17.1.1.** An infinite partially ordered set $`(P, \le)` contains a sequence
-$`(p_n)` that is strictly increasing, or strictly decreasing, or an antichain: $`p_n` and
-$`p_m` are incomparable whenever $`n \ne m`.
-
-This is the proof of Section 17.1, by Ramsey's theorem for pairs applied to the colouring
-"comparable or incomparable". The nonstandard proof of Section 17.2 is
-{lit}`exists_strictMono_or_strictAnti_or_antichain_nonstandard`. -/
-theorem exists_strictMono_or_strictAnti_or_antichain [Infinite P] :
-    ∃ s : ℕ → P, StrictMono s ∨ StrictAnti s ∨ ∀ m n, m ≠ n → ¬ s m ≤ s n := by
-  classical
-  let c : Finset P → Bool := fun t => decide (∀ x ∈ t, ∀ y ∈ t, x ≤ y ∨ y ≤ x)
-  obtain ⟨Q, -, hQ, i, hi⟩ := infinite_ramsey 2 (infinite_univ (α := P)) c
-  have pair : ∀ x ∈ Q, ∀ y ∈ Q, x ≠ y → c {x, y} = i := fun x hx y hy hxy =>
-    hi _ ⟨by simp [insert_subset_iff, hx, hy], Finset.card_pair hxy⟩
-  cases i with
-  | true =>
-    have hch : ∀ x ∈ Q, ∀ y ∈ Q, x ≤ y ∨ y ≤ x := by
-      intro x hx y hy
-      by_cases hxy : x = y
-      · exact Or.inl hxy.le
-      · exact of_decide_eq_true (pair x hx y hy hxy) x (by simp) y (by simp)
-    obtain ⟨s, -, hs⟩ := exists_strictMono_or_strictAnti_of_chain hQ hch
-    exact ⟨s, hs.elim Or.inl fun h => Or.inr (Or.inl h)⟩
-  | false =>
-    let f := hQ.natEmbedding Q
-    refine ⟨fun n => f n, Or.inr (Or.inr fun m n hmn hle => ?_)⟩
-    have hne : (f m : P) ≠ f n := fun h => hmn (f.injective (Subtype.ext h))
-    refine of_decide_eq_false (pair _ (f m).2 _ (f n).2 hne) fun x hx y hy => ?_
-    simp only [Finset.mem_insert, Finset.mem_singleton] at hx hy
-    rcases hx with rfl | rfl <;> rcases hy with rfl | rfl
-    · exact Or.inl le_rfl
-    · exact Or.inl hle
-    · exact Or.inr hle
-    · exact Or.inl le_rfl
-
-end PosetsViaRamsey
-
-/-!
 ### Exercise 17.3.1
 
 In the book the $`2`-colouring of $`[A]^{k+1}` is extended to the $`(k+1)`-element subsets of
@@ -710,8 +641,8 @@ the enlargement of $`A`, using the inclusion of $`[{}^*A]^{k+1}` in $`{}^*([A]^{
 exercise asks for equality. In the ultrapower the two sides live in different types: a member
 of $`{}^*([A]^k)` is the class of a sequence of finite sets, while a member of $`[{}^*A]^k` is
 a finite set of classes. They are compared through the set of elements of an internal finite
-set, and the exercise becomes the statement that taking elements maps $`{}^*([A]^k)` onto
-$`[{}^*A]^k`.
+set. Taking elements is injective (extensionality, transferred), and the exercise becomes the
+statement that it is a bijection from $`{}^*([A]^k)` onto $`[{}^*A]^k`.
 -/
 
 section InternalFiniteSets
@@ -747,9 +678,36 @@ theorem internalElems_ofSeq_eq_range [DecidableEq α] {k : ℕ} {σ : ℕ → Fi
   rw [h1, almostAll_exists_finite]
   exact exists_congr fun i => Ultrapower.ofSeq_eq_ofSeq.symm
 
-/-- **Exercise 17.3.1.** $`{}^*([A]^k) = [{}^*A]^k`: the sets of elements of the members of the
-enlargement of $`[A]^k` are exactly the $`k`-element subsets of the enlargement of $`A`. The
-book states it with $`k + 1` in place of $`k`. -/
+/-- **Exercise 17.3.1**, transferred extensionality. An internal finite set is determined by
+its elements: two members of the ultrapower of the type of finite sets with the same elements
+are equal. If $`[S_n] \ne [S'_n]` then $`S_n \ne S'_n` for almost all $`n`; choose $`x_n` in
+exactly one of the two. As the index sets on which $`x_n \in S_n` and on which
+$`x_n \in S'_n` are complementary almost everywhere, $`[x_n]` is an element of exactly one of
+the two internal sets. -/
+theorem internalElems_injective :
+    Function.Injective (internalElems : Ultrapower (Finset α) → Set (Ultrapower α)) := by
+  intro S S' h
+  obtain ⟨σ, rfl⟩ := ofSeq_surjective (α := Finset α) S
+  obtain ⟨σ', rfl⟩ := ofSeq_surjective (α := Finset α) S'
+  by_contra hne
+  have hex : ∀ᶠ n in hyperfilter ℕ, ∃ a, ¬ (a ∈ σ n ↔ a ∈ σ' n) :=
+    (Ultrapower.ofSeq_ne_ofSeq.1 hne).mono fun n hn => by
+      by_contra hcon
+      exact hn (Finset.ext fun a => not_not.1 (not_exists.1 hcon a))
+  obtain ⟨g, hg⟩ := exists_seq_of_almostAll_exists hex
+  have h1 : (∀ᶠ n in hyperfilter ℕ, g n ∈ σ n) ↔ ∀ᶠ n in hyperfilter ℕ, g n ∈ σ' n := by
+    rw [← ofSeq_mem_internalElems, ← ofSeq_mem_internalElems, h]
+  by_cases hs : ∀ᶠ n in hyperfilter ℕ, g n ∈ σ n
+  · obtain ⟨n, hn, hn1, hn2⟩ := (hg.and (hs.and (h1.1 hs))).exists
+    exact hn (iff_of_true hn1 hn2)
+  · obtain ⟨n, hn, hn1, hn2⟩ :=
+      (hg.and ((almostAll_not.2 hs).and (almostAll_not.2 (mt h1.2 hs)))).exists
+    exact hn (iff_of_false hn1 hn2)
+
+/-- **Exercise 17.3.1**, the two inclusions. The sets of elements of the members of the
+enlargement of $`[A]^k` are exactly the $`k`-element subsets of the enlargement of $`A`.
+Together with {name}`Goldblatt.internalElems_injective` this gives the identification stated as
+{lit}`Goldblatt.bijOn_internalElems_starSet_kSubsets`, the next declaration. -/
 theorem image_internalElems_starSet_kSubsets (A : Set α) (k : ℕ) :
     internalElems '' (starSet (kSubsets A k) : Set (Ultrapower (Finset α))) =
       (fun T : Finset (Ultrapower α) => (T : Set (Ultrapower α))) ''
@@ -825,7 +783,114 @@ theorem image_internalElems_starSet_kSubsets (A : Set α) (k : ℕ) :
       · intro hy
         exact ⟨φ.symm ⟨y, hy⟩, by simp⟩
 
+/-- **Exercise 17.3.1.** $`{}^*([A]^k) = [{}^*A]^k`. In the ultrapower the two sides have
+different types, and the equality is the statement that passing from an internal finite set to
+its set of elements is a bijection from the enlargement of $`[A]^k` onto the family of
+$`k`-element subsets of the enlargement of $`A`: it maps into that family, it is injective, and
+every $`k`-element subset of the enlargement of $`A` arises. The book states it with $`k + 1`
+in place of $`k`. -/
+theorem bijOn_internalElems_starSet_kSubsets (A : Set α) (k : ℕ) :
+    Set.BijOn internalElems (starSet (kSubsets A k) : Set (Ultrapower (Finset α)))
+      ((fun T : Finset (Ultrapower α) => (T : Set (Ultrapower α))) ''
+        kSubsets (starSet A : Set (Ultrapower α)) k) :=
+  ⟨fun _ hS => (image_internalElems_starSet_kSubsets A k).le (mem_image_of_mem _ hS),
+    internalElems_injective.injOn, (image_internalElems_starSet_kSubsets A k).ge⟩
+
 end InternalFiniteSets
+
+/-!
+## 17.1 revisited: Theorem 17.1.1 from Ramsey's theorem
+
+This section returns to Section 17.1. With Ramsey's theorem available, Theorem 17.1.1 has the
+short proof given there:
+colour a pair black if its two elements are comparable and white otherwise. An infinite white
+set is an antichain. An infinite black set is an infinite chain, and an infinite chain contains
+an increasing or a decreasing sequence, according to whether it is well-ordered or not.
+-/
+
+section PosetsViaRamsey
+
+variable {P : Type u} [PartialOrder P]
+
+/-- **Theorem 17.1.1**, the last step of the proof. An infinite chain $`Q` contains a strictly
+increasing or a strictly decreasing sequence. If some nonempty subset of $`Q` has no least
+element, descend inside it. Otherwise $`Q` is well-ordered, and an increasing sequence is built
+by starting at the least element and passing each time to the least element above the current
+one; this never stops because each term has only finitely many elements of $`Q` below it. -/
+theorem exists_strictMono_or_strictAnti_of_chain {Q : Set P} (hQ : Q.Infinite)
+    (hch : ∀ x ∈ Q, ∀ y ∈ Q, x ≤ y ∨ y ≤ x) :
+    ∃ s : ℕ → P, (∀ n, s n ∈ Q) ∧ (StrictMono s ∨ StrictAnti s) := by
+  by_cases hwf : ∃ T ⊆ Q, T.Nonempty ∧ ∀ x ∈ T, ∃ y ∈ T, y < x
+  · obtain ⟨T, hTQ, hne, hT⟩ := hwf
+    obtain ⟨s, hs, hsT⟩ := exists_strictAnti_of_forall_exists_lt hne hT
+    exact ⟨s, fun n => hTQ (hsT n), Or.inr hs⟩
+  · have least : ∀ T ⊆ Q, T.Nonempty → ∃ x ∈ T, ∀ y ∈ T, x ≤ y := by
+      intro T hTQ hne
+      by_contra hcon
+      refine hwf ⟨T, hTQ, hne, fun x hx => ?_⟩
+      by_contra hx'
+      refine hcon ⟨x, hx, fun y hy => ?_⟩
+      rcases hch x (hTQ hx) y (hTQ hy) with h | h
+      · exact h
+      · exact (eq_or_lt_of_le h).elim (fun e => e.ge) fun hlt => absurd ⟨y, hy, hlt⟩ hx'
+    obtain ⟨x₀, hx₀Q, hx₀⟩ := least Q Subset.rfl hQ.nonempty
+    have h₀ : x₀ ∈ Q ∧ {q | q ∈ Q ∧ q ≤ x₀}.Finite :=
+      ⟨hx₀Q, (finite_singleton x₀).subset fun q hq => le_antisymm hq.2 (hx₀ q hq.1)⟩
+    obtain ⟨s, -, hs⟩ := exists_seq_of_step (fun x => x ∈ Q ∧ {q | q ∈ Q ∧ q ≤ x}.Finite)
+      (· < ·) h₀ (by
+        rintro x ⟨hxQ, hfin⟩
+        have hne : {q | q ∈ Q ∧ x < q}.Nonempty := by
+          by_contra hempty
+          refine hQ (hfin.subset fun q hq => ⟨hq, ?_⟩)
+          rcases hch x hxQ q hq with h | h
+          · by_contra hqx
+            exact hempty ⟨q, hq, lt_of_le_not_ge h hqx⟩
+          · exact h
+        obtain ⟨y, ⟨hyQ, hxy⟩, hy⟩ := least _ (fun q hq => hq.1) hne
+        refine ⟨y, ⟨hyQ, (hfin.union (finite_singleton y)).subset fun q hq => ?_⟩, hxy⟩
+        by_cases hqx : q ≤ x
+        · exact Or.inl ⟨hq.1, hqx⟩
+        · rcases hch x hxQ q hq.1 with h | h
+          · exact Or.inr (le_antisymm hq.2 (hy q ⟨hq.1, lt_of_le_not_ge h hqx⟩))
+          · exact absurd h hqx)
+    exact ⟨s, fun n => (hs n).1.1, Or.inl (strictMono_nat_of_lt_succ fun n => (hs n).2)⟩
+
+/-- **Theorem 17.1.1.** An infinite partially ordered set $`(P, \le)` contains a sequence
+$`(p_n)` that is strictly increasing, or strictly decreasing, or an antichain: $`p_n` and
+$`p_m` are incomparable whenever $`n \ne m`.
+
+This is the proof of Section 17.1, by Ramsey's theorem for pairs applied to the colouring
+"comparable or incomparable". The nonstandard proof of Section 17.2 is
+{name}`Goldblatt.exists_strictMono_or_strictAnti_or_antichain_nonstandard`. -/
+theorem exists_strictMono_or_strictAnti_or_antichain [Infinite P] :
+    ∃ s : ℕ → P, StrictMono s ∨ StrictAnti s ∨ ∀ m n, m ≠ n → ¬ s m ≤ s n := by
+  classical
+  let c : Finset P → Bool := fun t => decide (∀ x ∈ t, ∀ y ∈ t, x ≤ y ∨ y ≤ x)
+  obtain ⟨Q, -, hQ, i, hi⟩ := infinite_ramsey 2 (infinite_univ (α := P)) c
+  have pair : ∀ x ∈ Q, ∀ y ∈ Q, x ≠ y → c {x, y} = i := fun x hx y hy hxy =>
+    hi _ ⟨by simp [insert_subset_iff, hx, hy], Finset.card_pair hxy⟩
+  cases i with
+  | true =>
+    have hch : ∀ x ∈ Q, ∀ y ∈ Q, x ≤ y ∨ y ≤ x := by
+      intro x hx y hy
+      by_cases hxy : x = y
+      · exact Or.inl hxy.le
+      · exact of_decide_eq_true (pair x hx y hy hxy) x (by simp) y (by simp)
+    obtain ⟨s, -, hs⟩ := exists_strictMono_or_strictAnti_of_chain hQ hch
+    exact ⟨s, hs.elim Or.inl fun h => Or.inr (Or.inl h)⟩
+  | false =>
+    let f := hQ.natEmbedding Q
+    refine ⟨fun n => f n, Or.inr (Or.inr fun m n hmn hle => ?_)⟩
+    have hne : (f m : P) ≠ f n := fun h => hmn (f.injective (Subtype.ext h))
+    refine of_decide_eq_false (pair _ (f m).2 _ (f n).2 hne) fun x hx y hy => ?_
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hx hy
+    rcases hx with rfl | rfl <;> rcases hy with rfl | rfl
+    · exact Or.inl le_rfl
+    · exact Or.inl hle
+    · exact Or.inr hle
+    · exact Or.inl le_rfl
+
+end PosetsViaRamsey
 
 /-!
 ## 17.4 The Finite Ramsey Theorem
@@ -878,7 +943,7 @@ $`Q`.
 The property $`Q` is "at least $`m` elements" for the finite Ramsey theorem and "at least
 $`m` elements and relatively large" for the Paris–Harrington version; this single statement
 serves both. The proof argues by contradiction, choosing a bad colouring $`c_n` at almost
-every index and applying {lit}`exists_infinite_homogeneous_internal` to the internal colouring
+every index and applying {name}`Goldblatt.exists_infinite_homogeneous_internal` to the internal colouring
 they form. -/
 theorem eventually_forall_exists_monochromatic [Finite κ] (k : ℕ) (Q : Finset ℕ → Prop)
     (hQ : ∀ D : Set ℕ, D ⊆ Ici 1 → D.Infinite → ∃ B : Finset ℕ, (B : Set ℕ) ⊆ D ∧ Q B)
@@ -907,7 +972,7 @@ theorem eventually_forall_exists_monochromatic [Finite κ] (k : ℕ) (Q : Finset
 /-- **Section 17.4.** A sequence of natural numbers that represents an unlimited hypernatural
 (a member of $`{}^*\mathbb N - \mathbb N`, in the sense of Chapter 5) eventually exceeds every
 standard bound at almost all indices. This connects the hypothesis of
-{lit}`eventually_forall_exists_monochromatic` with the book's "unlimited hypernatural". -/
+{name}`Goldblatt.eventually_forall_exists_monochromatic` with the book's "unlimited hypernatural". -/
 theorem eventually_le_of_hnat_mem_unlimitedHyperNat {ν : ℕ → ℕ}
     (h : hnat ν ∈ unlimitedHyperNat) (b : ℕ) : ∀ᶠ n in hyperfilter ℕ, b ≤ ν n := by
   have hu : Unlimited (hnat ν) := (mem_unlimitedHyperNat.1 h).2
@@ -918,7 +983,7 @@ theorem eventually_le_of_hnat_mem_unlimitedHyperNat {ν : ℕ → ℕ}
   exact hlt.mono fun n hn => hn.le
 
 /-- **Section 17.4**, the transfer step, for a general selection property $`Q` (see
-{lit}`eventually_forall_exists_monochromatic`). There is a standard $`n` such that every
+{name}`Goldblatt.eventually_forall_exists_monochromatic`). There is a standard $`n` such that every
 colouring of the $`k`-element subsets of $`\{1, \dots, n\}` has a monochromatic subset with
 property $`Q`: the statement holds at almost every index of the unlimited hypernatural
 $`\omega = [1, 2, 3, \dots]`, hence at some index. -/
@@ -958,7 +1023,7 @@ theorem eventually_finite_ramsey_of_unlimited (k r m : ℕ) {ν : ℕ → ℕ}
     ν (eventually_le_of_hnat_mem_unlimitedHyperNat hν)
 
 /-- **Finite Ramsey Theorem**, in Mathlib's vocabulary: the $`k`-element subsets of a finite
-set are its {lit}`Finset.powersetCard`, and the colours form an arbitrary finite type. -/
+set are its {name}`Finset.powersetCard`, and the colours form an arbitrary finite type. -/
 theorem finite_ramsey_powersetCard (κ : Type*) [Finite κ] (k m : ℕ) :
     ∃ n, ∀ c : Finset ℕ → κ, ∃ B ⊆ Finset.Icc 1 n,
       m ≤ B.card ∧ ∃ i, ∀ t ∈ B.powersetCard k, c t = i := by
@@ -972,14 +1037,22 @@ theorem finite_ramsey_powersetCard (κ : Type*) [Finite κ] (k m : ℕ) :
   exact ht
 
 /-- **Finite Ramsey Theorem**, in the book's formulation by a cover. For all $`k`, $`m` and
-every nonempty finite index set there is $`n` such that whenever
+every finite index set there is $`n` such that whenever
 $`[\{1, \dots, n\}]^k \subseteq C_1 \cup \dots \cup C_r`, some
-$`B \subseteq \{1, \dots, n\}` with at least $`m` elements is monochromatic. (At least one
-colour class is assumed, so that the statement is not about covers of the empty family.) -/
-theorem finite_ramsey_cover (ι : Type*) [Finite ι] [Nonempty ι] (k m : ℕ) :
+$`B \subseteq \{1, \dots, n\}` with at least $`m` elements is monochromatic. With no colour
+classes at all ($`r = 0`) the statement holds for $`n = k`, since the $`k`-element set
+$`\{1, \dots, k\}` is then not covered. -/
+theorem finite_ramsey_cover (ι : Type*) [Finite ι] (k m : ℕ) :
     ∃ n, ∀ C : ι → Set (Finset ℕ), kSubsets (Finset.Icc 1 n : Set ℕ) k ⊆ ⋃ i, C i →
       ∃ B ⊆ Finset.Icc 1 n, m ≤ B.card ∧ IsMonochromatic C k (B : Set ℕ) := by
   classical
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · refine ⟨k, fun C hC => ?_⟩
+    have hmem : Finset.Icc 1 k ∈ kSubsets (Finset.Icc 1 k : Set ℕ) k :=
+      ⟨Subset.rfl, by simp⟩
+    have := hC hmem
+    rw [iUnion_of_empty] at this
+    exact absurd this (notMem_empty _)
   obtain ⟨n, hn⟩ := finite_ramsey_with (κ := ι) k (fun B => m ≤ B.card) fun D _ hD => by
     obtain ⟨B, hB, hc⟩ := hD.exists_subset_card_eq m
     exact ⟨B, hB, hc.ge⟩
@@ -1002,7 +1075,7 @@ language of the universe, so that the transfer principle applies to it. It has n
 content beyond that verification. In this formalization no formal language is involved: the
 transferred statement at the class of a sequence $`(\nu_n)` is by definition "$`\psi(\nu_n)` for
 almost all $`n`", and the two uses of transfer in the book's proof are the two halves of
-{lit}`eventually_forall_exists_monochromatic` and {lit}`finite_ramsey_with`: the choice of a
+{name}`Goldblatt.eventually_forall_exists_monochromatic` and {name}`Goldblatt.finite_ramsey_with`: the choice of a
 sequence of colourings from an almost-everywhere existence statement (the quantifier over
 internal colourings), and the passage from "almost all $`n`" to "some $`n`".
 
@@ -1048,10 +1121,10 @@ example : RelativelyLarge {2, 5} ∧ ¬ RelativelyLarge {3, 5} := by
     have hcard : ({3, 5} : Finset ℕ).card = 2 := by decide
     omega
 
-/-- **Section 17.5.** From an infinite set $`D` of natural numbers one can select relatively
-large finite subsets of unbounded size: for every $`m` there is a finite $`B \subseteq D` with
-$`|B| \ge m` that is relatively large. As in the book, pick $`j \in D` above $`m` and add
-$`j - 1` further elements of $`D` larger than $`j`, so that $`|B| = \min B = j`. -/
+/-- **Section 17.5.** Every infinite set $`D` of natural numbers contains, for each $`m`, a
+finite relatively large subset with at least $`m` elements. The construction is the book's:
+take $`j \in D` above $`m` together with $`j - 1` larger elements of $`D`, so that
+$`|B| = \min B = j`. -/
 theorem exists_relativelyLarge_subset {D : Set ℕ} (hD : D.Infinite) (m : ℕ) :
     ∃ B : Finset ℕ, (B : Set ℕ) ⊆ D ∧ m ≤ B.card ∧ RelativelyLarge B := by
   obtain ⟨j, hjD, hmj⟩ := hD.exists_gt m
