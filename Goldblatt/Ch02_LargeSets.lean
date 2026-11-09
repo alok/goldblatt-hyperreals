@@ -212,8 +212,8 @@ theorem IsFilter.mem_of_inter_subset (hF : IsFilter F) {A B C : Set I} (hA : A �
   hF.superset_mem (hF.inter_mem hA hB) h
 
 /-- **Section 2.2.** For an arbitrary collection $`\mathcal F`, the single requirement
-"$`A, B \in \mathcal F` and $`A \cap B \subseteq C` imply $`C \in \mathcal F`" is equivalent to
-the conjunction of closure under binary intersections and closure under supersets: take
+"$`A, B \in \mathcal F` and $`A \cap B \subseteq C` imply $`C \in \mathcal F`" is equivalent
+to the conjunction of closure under binary intersections and closure under supersets: take
 $`C = A \cap B` for the first and $`B = A` for the second. -/
 theorem filter_axioms_iff_mem_of_inter_subset (F : Set (Set I)) :
     ((∀ A B, A ∈ F → B ∈ F → A ∩ B ∈ F) ∧ (∀ A B, A ∈ F → A ⊆ B → B ∈ F)) ↔
@@ -237,7 +237,8 @@ theorem isFilter_iff_mem_of_inter_subset (F : Set (Set I)) :
 /-- **Section 2.3.** A filter contains the empty set if and only if it is the whole power
 set. -/
 theorem IsFilter.empty_mem_iff (hF : IsFilter F) : ∅ ∈ F ↔ F = univ :=
-  ⟨fun h => eq_univ_of_forall fun A => hF.superset_mem h (empty_subset A), fun h => h ▸ mem_univ _⟩
+  ⟨fun h => eq_univ_of_forall fun A => hF.superset_mem h (empty_subset A),
+    fun h => h ▸ mem_univ _⟩
 
 /-- **Section 2.3.** The power set of $`I` is a filter (the improper one). -/
 theorem isFilter_univ : IsFilter (univ : Set (Set I)) where
@@ -343,7 +344,8 @@ def IsUltrafilter.toUltrafilter (hF : IsUltrafilter F) : Ultrafilter I :=
 /-- **Section 2.3 (dictionary).** Membership in the bundled ultrafilter is membership in the
 collection. -/
 @[simp]
-theorem IsUltrafilter.mem_toUltrafilter (hF : IsUltrafilter F) : A ∈ hF.toUltrafilter ↔ A ∈ F :=
+theorem IsUltrafilter.mem_toUltrafilter (hF : IsUltrafilter F) :
+    A ∈ hF.toUltrafilter ↔ A ∈ F :=
   Iff.rfl
 
 /-- **Section 2.3 (dictionary).** Ultrafilters on $`I` in the book's sense are the same thing
@@ -461,9 +463,41 @@ theorem not_isUltrafilter_cofiniteFilter (I : Type*) : ¬ IsUltrafilter (cofinit
 the collection $`\mathcal F^{\mathcal H}` of all sets that include an intersection
 $`B_1 \cap \dots \cap B_n` of finitely many members of $`\mathcal H`. The empty intersection is
 $`I`, so for empty $`\mathcal H` this definition gives $`\{I\}`, which is the book's separate
-convention for that case (see {lit}`generatedFilter_empty`). -/
+convention for that case (see {lit}`generatedFilter_empty`); for nonempty $`\mathcal H` the
+book's literal form, with $`n \ge 1`, is {lit}`mem_generatedFilter_iff_of_nonempty`. -/
 def generatedFilter (H : Set (Set I)) : Set (Set I) :=
   {A | ∃ s : Finset (Set I), (↑s : Set (Set I)) ⊆ H ∧ ⋂₀ (↑s : Set (Set I)) ⊆ A}
+
+/-- **Example 2.4(3), membership.** Unfolding of the definition of
+$`\mathcal F^{\mathcal H}`: a set belongs to it exactly when it includes the intersection of
+some finite (possibly empty) subcollection of $`\mathcal H`. -/
+theorem mem_generatedFilter_iff {H : Set (Set I)} {A : Set I} :
+    A ∈ generatedFilter H ↔
+      ∃ s : Finset (Set I), (↑s : Set (Set I)) ⊆ H ∧ ⋂₀ (↑s : Set (Set I)) ⊆ A :=
+  Iff.rfl
+
+/-- **Example 2.4(3), the book's literal description.** For nonempty $`\mathcal H`, a set $`A`
+belongs to $`\mathcal F^{\mathcal H}` exactly when $`B_1 \cap \dots \cap B_n \subseteq A` for
+some $`n \ge 1` and some $`B_1, \dots, B_n \in \mathcal H`. The finite subcollection is given
+here as a nonempty {name}`Finset`. Compared with the definition, the empty subcollection is
+excluded; nothing is lost, because an empty intersection is $`I`, which forces $`A = I`, and
+then any single member of $`\mathcal H` does the job. -/
+theorem mem_generatedFilter_iff_of_nonempty {H : Set (Set I)} {A : Set I} (hH : H.Nonempty) :
+    A ∈ generatedFilter H ↔
+      ∃ s : Finset (Set I), s.Nonempty ∧ (↑s : Set (Set I)) ⊆ H ∧
+        ⋂₀ (↑s : Set (Set I)) ⊆ A := by
+  constructor
+  · rintro ⟨s, hs, hsA⟩
+    rcases s.eq_empty_or_nonempty with rfl | hne
+    · obtain ⟨B, hB⟩ := hH
+      refine ⟨{B}, Finset.singleton_nonempty B, ?_, ?_⟩
+      · rw [Finset.coe_singleton]
+        exact singleton_subset_iff.mpr hB
+      · rw [Finset.coe_empty, sInter_empty] at hsA
+        exact (subset_univ _).trans hsA
+    · exact ⟨s, hne, hs, hsA⟩
+  · rintro ⟨s, -, hs, hsA⟩
+    exact ⟨s, hs, hsA⟩
 
 /-- **Example 2.4(3), Exercise 2.7(4)(i), first half.** $`\mathcal F^{\mathcal H}` is a
 filter. -/
@@ -589,7 +623,8 @@ theorem isFilter_sUnion_of_chain (c : Set (Set (Set I))) (hne : c.Nonempty)
 /-- **Example 2.4(4), proper form.** The union of a nonempty chain of proper filters is a proper
 filter. -/
 theorem isProperFilter_sUnion_of_chain (c : Set (Set (Set I))) (hne : c.Nonempty)
-    (hc : ∀ F ∈ c, IsProperFilter F) (hchain : IsChain (· ⊆ ·) c) : IsProperFilter (⋃₀ c) where
+    (hc : ∀ F ∈ c, IsProperFilter F) (hchain : IsChain (· ⊆ ·) c) :
+    IsProperFilter (⋃₀ c) where
   toIsFilter := isFilter_sUnion_of_chain c hne (fun F hF => (hc F hF).toIsFilter) hchain
   empty_notMem := by
     rintro ⟨F, hF, h⟩
@@ -611,7 +646,8 @@ this file it comes last in the section, after (7) and (8), together with that ex
 requirement that $`A \cap B \in \mathcal F` if and only if $`A \in \mathcal F` and
 $`B \in \mathcal F`. -/
 theorem filter_axioms_iff_inter_mem_iff (F : Set (Set I)) :
-    ((∀ A B : Set I, A ∈ F → B ∈ F → A ∩ B ∈ F) ∧ (∀ A B : Set I, A ∈ F → A ⊆ B → B ∈ F)) ↔
+    ((∀ A B : Set I, A ∈ F → B ∈ F → A ∩ B ∈ F) ∧
+        (∀ A B : Set I, A ∈ F → A ⊆ B → B ∈ F)) ↔
       ∀ A B : Set I, A ∩ B ∈ F ↔ A ∈ F ∧ B ∈ F := by
   constructor
   · rintro ⟨hi, hs⟩ A B
@@ -640,13 +676,15 @@ theorem IsFilter.inter_mem_iff (hF : IsFilter F) : A ∩ B ∈ F ↔ A ∈ F ∧
 /-- **Fact 2.5(2).** A collection satisfying the superset axiom is nonempty if and only if it
 contains $`I`. (Consequently $`\{I\} \subseteq \mathcal F` for every filter; see
 {name}`Goldblatt.IsFilter.singleton_univ_subset`.) -/
-theorem nonempty_iff_univ_mem_of_superset (hsup : ∀ A B : Set I, A ∈ F → A ⊆ B → B ∈ F) :
+theorem nonempty_iff_univ_mem_of_superset
+    (hsup : ∀ A B : Set I, A ∈ F → A ⊆ B → B ∈ F) :
     F.Nonempty ↔ univ ∈ F :=
   ⟨fun ⟨A, hA⟩ => hsup A univ hA (subset_univ A), fun h => ⟨univ, h⟩⟩
 
 /-- **Fact 2.5(3), intersections.** In an ultrafilter, $`A \cap B` is a member if and only if
 both $`A` and $`B` are. -/
-theorem IsUltrafilter.inter_mem_iff (hF : IsUltrafilter F) : A ∩ B ∈ F ↔ A ∈ F ∧ B ∈ F :=
+theorem IsUltrafilter.inter_mem_iff (hF : IsUltrafilter F) :
+    A ∩ B ∈ F ↔ A ∈ F ∧ B ∈ F :=
   hF.toIsFilter.inter_mem_iff
 
 /-- **Fact 2.5(3), complements.** In an ultrafilter, $`A^c` is a member if and only if $`A` is
@@ -662,7 +700,8 @@ theorem IsUltrafilter.compl_mem_iff (hF : IsUltrafilter F) : Aᶜ ∈ F ↔ A �
 
 /-- **Fact 2.5(3), unions.** In an ultrafilter, $`A \cup B` is a member if and only if $`A` is
 or $`B` is. -/
-theorem IsUltrafilter.union_mem_iff (hF : IsUltrafilter F) : A ∪ B ∈ F ↔ A ∈ F ∨ B ∈ F := by
+theorem IsUltrafilter.union_mem_iff (hF : IsUltrafilter F) :
+    A ∪ B ∈ F ↔ A ∈ F ∨ B ∈ F := by
   constructor
   · intro hAB
     by_contra hcon
@@ -712,7 +751,8 @@ theorem IsFilter.isUltrafilter_iff_xor (hF : IsFilter F) :
 $`A_1 \cup \dots \cup A_n`, it contains one of the $`A_i`. (No disjointness is needed for
 this half.) -/
 theorem IsUltrafilter.exists_mem_of_biUnion_mem {ι : Type*} (hF : IsUltrafilter F)
-    (s : Finset ι) (A : ι → Set I) (hU : (⋃ i ∈ s, A i) ∈ F) : ∃ i ∈ s, A i ∈ F := by
+    (s : Finset ι) (A : ι → Set I) (hU : (⋃ i ∈ s, A i) ∈ F) :
+    ∃ i ∈ s, A i ∈ F := by
   classical
   induction s using Finset.induction_on with
   | empty =>
@@ -857,8 +897,8 @@ theorem hasFIP_iff_exists_isProperFilter [Nonempty I] :
   ⟨fun h => ⟨generatedFilter H, (isProperFilter_generatedFilter_iff H).mpr h,
     subset_generatedFilter H⟩, fun ⟨_, hF, hHF⟩ => hF.hasFIP.mono hHF⟩
 
-/-- **Fact 2.5(8), auxiliary** (also used for Exercise 2.7(5)(i)). A point of $`A` lying in every member of $`s` other than $`A` lies in every
-member of $`s`. -/
+/-- **Fact 2.5(8), auxiliary** (also used for Exercise 2.7(5)(i)). A point of $`A` lying in
+every member of $`s` other than $`A` lies in every member of $`s`. -/
 private theorem mem_sInter_of_mem_sInter_erase [DecidableEq (Set I)] {s : Finset (Set I)}
     {x : I} (hx : x ∈ ⋂₀ (↑(s.erase A) : Set (Set I))) (hxA : x ∈ A) :
     x ∈ ⋂₀ (↑s : Set (Set I)) := by
@@ -869,8 +909,8 @@ private theorem mem_sInter_of_mem_sInter_erase [DecidableEq (Set I)] {s : Finset
     exact hxA
   · exact hx C (Finset.mem_coe.mpr (Finset.mem_erase.mpr ⟨hCA, Finset.mem_coe.mp hC⟩))
 
-/-- **Fact 2.5(8), auxiliary** (also used for Exercise 2.7(5)(i)). Removing $`A` from a finite subcollection of $`\mathcal H \cup \{A\}` leaves a
-subcollection of $`\mathcal H`. -/
+/-- **Fact 2.5(8), auxiliary** (also used for Exercise 2.7(5)(i)). Removing $`A` from a
+finite subcollection of $`\mathcal H \cup \{A\}` leaves a subcollection of $`\mathcal H`. -/
 private theorem coe_erase_subset_of_subset_insert [DecidableEq (Set I)] {s : Finset (Set I)}
     (hs : (↑s : Set (Set I)) ⊆ insert A H) : (↑(s.erase A) : Set (Set I)) ⊆ H := by
   intro C hC
@@ -927,7 +967,8 @@ theorem IsProperFilter.hasFIP_insert_compl_iff (hF : IsProperFilter F) (A : Set 
   · intro hA s _ hs
     have hmem : ⋂₀ (↑(s.erase Aᶜ) : Set (Set I)) ∈ F :=
       hF.sInter_mem _ (coe_erase_subset_of_subset_insert hs)
-    have hnot : ¬ ⋂₀ (↑(s.erase Aᶜ) : Set (Set I)) ⊆ A := fun h => hA (hF.superset_mem hmem h)
+    have hnot : ¬ ⋂₀ (↑(s.erase Aᶜ) : Set (Set I)) ⊆ A :=
+      fun h => hA (hF.superset_mem hmem h)
     obtain ⟨x, hx, hxA⟩ := not_subset.mp hnot
     exact ⟨x, mem_sInter_of_mem_sInter_erase hx (mem_compl hxA)⟩
 
@@ -959,7 +1000,8 @@ theorem isUltrafilter_iff_maximal :
 
 /-- **Fact 2.5(6), order-theoretic form.** The ultrafilters are exactly the maximal elements,
 for inclusion, among proper filters, stated with Mathlib's {name}`Maximal`. -/
-theorem isUltrafilter_iff_maximal_isProperFilter : IsUltrafilter F ↔ Maximal IsProperFilter F := by
+theorem isUltrafilter_iff_maximal_isProperFilter :
+    IsUltrafilter F ↔ Maximal IsProperFilter F := by
   rw [isUltrafilter_iff_maximal]
   exact ⟨fun h => ⟨h.1, fun G hG hFG => (h.2 G hG hFG).le⟩,
     fun h => ⟨h.1, fun G hG hFG => Subset.antisymm (h.2 hG hFG) hFG⟩⟩
@@ -1006,8 +1048,11 @@ theorem IsProperFilter.exists_isUltrafilter_superset (hF : IsProperFilter F) :
   refine ⟨M, isUltrafilter_iff_maximal.mpr ⟨hmax.prop.1, fun G hG hMG => ?_⟩, hFM⟩
   exact Subset.antisymm (hmax.2 ⟨hG, hmax.prop.2.trans hMG⟩ hMG) hMG
 
-/-- **Theorem 2.6.1 (ultrafilter theorem).** Any collection of subsets of a nonempty set $`I`
-that has the finite intersection property can be extended to an ultrafilter on $`I`. -/
+/-- **Theorem 2.6.1 (ultrafilter theorem).** On a nonempty index set $`I`, every collection
+$`\mathcal H` with the fip is included in some ultrafilter: there is an ultrafilter
+$`\mathcal U` on $`I` with $`\mathcal H \subseteq \mathcal U`. The proof first passes to the
+proper filter $`\mathcal F^{\mathcal H}` (Fact 2.5(7)) and then enlarges that to a maximal
+proper filter by Zorn's lemma. -/
 theorem HasFIP.exists_isUltrafilter_superset [Nonempty I] (hH : HasFIP H) :
     ∃ U, IsUltrafilter U ∧ H ⊆ U := by
   obtain ⟨U, hU, hHU⟩ :=
@@ -1061,7 +1106,8 @@ theorem exists_ultrafilter_ne_pure (I : Type*) [Infinite I] :
 an infinite set $`I` carries as many nonprincipal ultrafilters as there are members of
 $`\mathcal P(\mathcal P(I))`. This form counts terms of Mathlib's bundled {name}`Ultrafilter`
 other than the {lit}`pure i`, and writes the answer as a cardinal power; the statement about
-the chapter's own objects is {lit}`mk_isUltrafilter_not_isPrincipal`. It is derived from Mathlib's count
+the chapter's own objects is {lit}`mk_isUltrafilter_not_isPrincipal`. It is derived from
+Mathlib's count
 {name}`Cardinal.mk_ultrafilter_of_infinite` of all ultrafilters: removing the principal ones,
 of which there are only as many as points of $`I`, does not change the cardinality
 $`2^{2^{|I|}}`. -/
@@ -1142,7 +1188,8 @@ theorem exists_isUltrafilter_not_isPrincipal_mem (hA : A.Infinite) :
 ultrafilter if and only if it is infinite. -/
 theorem exists_isUltrafilter_not_isPrincipal_mem_iff :
     (∃ F, IsUltrafilter F ∧ ¬ IsPrincipal F ∧ A ∈ F) ↔ A.Infinite :=
-  ⟨fun ⟨_, hF, hnp, hA⟩ => hF.not_finite_of_mem hnp hA, exists_isUltrafilter_not_isPrincipal_mem⟩
+  ⟨fun ⟨_, hF, hnp, hA⟩ => hF.not_finite_of_mem hnp hA,
+    exists_isUltrafilter_not_isPrincipal_mem⟩
 
 /-- **Exercise 2.7(2), first half.** There is a nonprincipal ultrafilter on $`\mathbb N`
 containing the set of even numbers. -/
@@ -1245,11 +1292,13 @@ theorem mem_hyperfilter_of_superset (hS : S ∈ hyperfilter J) (hST : S ⊆ T) :
 
 /-- **Index ultrafilter, Fact 2.5(3).** An intersection is large if and only if both sets
 are. -/
-theorem inter_mem_hyperfilter_iff : S ∩ T ∈ hyperfilter J ↔ S ∈ hyperfilter J ∧ T ∈ hyperfilter J :=
+theorem inter_mem_hyperfilter_iff :
+    S ∩ T ∈ hyperfilter J ↔ S ∈ hyperfilter J ∧ T ∈ hyperfilter J :=
   Filter.inter_mem_iff
 
 /-- **Index ultrafilter, Fact 2.5(3).** A union is large if and only if one of the sets is. -/
-theorem union_mem_hyperfilter_iff : S ∪ T ∈ hyperfilter J ↔ S ∈ hyperfilter J ∨ T ∈ hyperfilter J :=
+theorem union_mem_hyperfilter_iff :
+    S ∪ T ∈ hyperfilter J ↔ S ∈ hyperfilter J ∨ T ∈ hyperfilter J :=
   Ultrafilter.union_mem_iff
 
 /-- **Index ultrafilter, Fact 2.5(3).** A complement is large if and only if the set is not. -/
@@ -1274,7 +1323,8 @@ theorem setOf_le_mem_hyperfilter (N : ℕ) : {n : ℕ | N ≤ n} ∈ hyperfilter
 
 /-- **Index ultrafilter.** A property of natural numbers that holds from some index on holds on
 a large set. -/
-theorem eventually_hyperfilter_of_forall_ge {p : ℕ → Prop} (N : ℕ) (h : ∀ n, N ≤ n → p n) :
+theorem eventually_hyperfilter_of_forall_ge {p : ℕ → Prop} (N : ℕ)
+    (h : ∀ n, N ≤ n → p n) :
     ∀ᶠ n in hyperfilter ℕ, p n :=
   mem_hyperfilter_of_superset (setOf_le_mem_hyperfilter N) h
 
@@ -1286,8 +1336,8 @@ theorem eventually_hyperfilter_of_eventually_atTop {p : ℕ → Prop} (h : ∀�
 
 /-- **Index ultrafilter.** A property that holds on a large set of natural numbers holds at
 arbitrarily large indices. -/
-theorem exists_ge_of_eventually_hyperfilter {p : ℕ → Prop} (h : ∀ᶠ n in hyperfilter ℕ, p n)
-    (N : ℕ) : ∃ n, N ≤ n ∧ p n := by
+theorem exists_ge_of_eventually_hyperfilter {p : ℕ → Prop}
+    (h : ∀ᶠ n in hyperfilter ℕ, p n) (N : ℕ) : ∃ n, N ≤ n ∧ p n := by
   obtain ⟨n, hn⟩ := Filter.nonempty_of_mem (Filter.inter_mem (setOf_le_mem_hyperfilter N) h)
   exact ⟨n, hn.1, hn.2⟩
 
