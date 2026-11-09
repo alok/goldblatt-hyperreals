@@ -362,30 +362,59 @@ theorem PosUnlimited.hfloor {x : ℝ*} (hx : PosUnlimited x) :
   have h2 := lt_hfloor_add_one x
   linarith
 
+/-- **Exercise 11.11.2, first half, the construction.** Let $`(s_n)` be a sequence of
+unlimited hypernaturals and let $`\delta` be an infinitesimal with $`1/s_n \le \delta` for
+all $`n`. Then the integer part of $`1/\delta` is an unlimited hypernatural lower bound of
+the $`s_n`. No saturation and no global hypothesis is involved: the bound is computed from
+$`\delta`. -/
+theorem hfloor_inv_unlimited_lower_bound {s : ℕ → ℝ*} {d : ℝ*} (hs : ∀ n, s n ∈ ℕ*)
+    (hU : ∀ n, Unlimited (s n)) (hd : Infinitesimal d) (hle : ∀ n, (s n)⁻¹ ≤ d) :
+    hfloor d⁻¹ ∈ ℕ* ∧ Unlimited (hfloor d⁻¹) ∧ ∀ n, hfloor d⁻¹ ≤ s n := by
+  have hs0 : ∀ n, 0 < s n := fun n => (posUnlimited_of_mem_hyperNat (hs n) (hU n)).pos
+  have hd0 : 0 < d := lt_of_lt_of_le (inv_pos.2 (hs0 0)) (hle 0)
+  have hdU : PosUnlimited d⁻¹ :=
+    posUnlimited_iff.2 ⟨hd.inv_unlimited hd0.ne', inv_pos.2 hd0⟩
+  refine ⟨hdU.hfloor.1, hdU.hfloor.2.unlimited, fun n => (hfloor_le _).trans ?_⟩
+  exact (inv_le_comm₀ (hs0 n) hd0).1 (hle n)
+
+/-- **Exercise 11.11.2, second half, the construction.** Let $`(\varepsilon_n)` be any
+sequence of hyperreals and let $`K` be an unlimited hypernatural that is at most the integer
+part of $`1/|\varepsilon_n|` for every $`n` with $`\varepsilon_n \ne 0`. Then $`1/K` is an
+infinitesimal upper bound of the $`\varepsilon_n`. Again the bound is computed from $`K`,
+with no saturation and no global hypothesis. -/
+theorem inv_infinitesimal_upper_bound {e : ℕ → ℝ*} {K : ℝ*} (hK : K ∈ ℕ*) (hKU : Unlimited K)
+    (hKle : ∀ n, e n ≠ 0 → K ≤ hfloor |e n|⁻¹) :
+    Infinitesimal K⁻¹ ∧ ∀ n, e n ≤ K⁻¹ := by
+  have hK0 : 0 < K := (posUnlimited_of_mem_hyperNat hK hKU).pos
+  refine ⟨hKU.inv_infinitesimal, fun n => ?_⟩
+  by_cases hn : e n = 0
+  · rw [hn]
+    exact (inv_pos.2 hK0).le
+  · have h2 : K ≤ |e n|⁻¹ := (hKle n hn).trans (hfloor_le _)
+    exact (le_abs_self _).trans ((le_inv_comm₀ (abs_pos.2 hn) hK0).2 h2)
+
 /-- **Exercise 11.11.2, first half.** The existence of infinitesimal upper bounds for
 sequences of infinitesimals implies the existence of unlimited hypernatural lower bounds for
 sequences of unlimited hypernaturals, without saturation: if $`\delta` is an infinitesimal
 upper bound of the reciprocals $`1/s_n`, then the integer part of $`1/\delta` is an unlimited
-hypernatural lower bound of the $`s_n`. The proof uses only the hypothesis; both properties
-are in fact true (by the two preceding theorems), so the content of the exercise is in the
-proof. -/
+hypernatural lower bound of the $`s_n`. Both properties are in fact true (by the two theorems
+before these), so as a statement this implication is trivially true; its content is the
+construction, which is stated on its own, free of any hypothesis that could make it vacuous,
+as {name}`Goldblatt.hfloor_inv_unlimited_lower_bound`. -/
 theorem unlimited_lower_bound_of_infinitesimal_upper_bound
     (H : ∀ e : ℕ → ℝ*, (∀ n, Infinitesimal (e n)) → ∃ d, Infinitesimal d ∧ ∀ n, e n ≤ d)
     (s : ℕ → ℝ*) (hs : ∀ n, s n ∈ ℕ*) (hU : ∀ n, Unlimited (s n)) :
     ∃ K ∈ ℕ*, Unlimited K ∧ ∀ n, K ≤ s n := by
   obtain ⟨d, hd, hle⟩ := H (fun n => (s n)⁻¹) fun n => (hU n).inv_infinitesimal
-  have hs0 : ∀ n, 0 < s n := fun n => (posUnlimited_of_mem_hyperNat (hs n) (hU n)).pos
-  have hd0 : 0 < d := lt_of_lt_of_le (inv_pos.2 (hs0 0)) (hle 0)
-  have hdU : PosUnlimited d⁻¹ :=
-    posUnlimited_iff.2 ⟨hd.inv_unlimited hd0.ne', inv_pos.2 hd0⟩
-  refine ⟨hfloor d⁻¹, hdU.hfloor.1, hdU.hfloor.2.unlimited, fun n => (hfloor_le _).trans ?_⟩
-  exact (inv_le_comm₀ (hs0 n) hd0).1 (hle n)
+  obtain ⟨h1, h2, h3⟩ := hfloor_inv_unlimited_lower_bound hs hU hd hle
+  exact ⟨hfloor d⁻¹, h1, h2, h3⟩
 
 /-- **Exercise 11.11.2, second half.** The existence of unlimited hypernatural lower bounds
 implies the existence of infinitesimal upper bounds, without saturation: replace each nonzero
 $`\varepsilon_n` by the integer part of $`1/|\varepsilon_n|`, an unlimited hypernatural; if
 $`K` is an unlimited lower bound of these numbers then $`1/K` is an infinitesimal upper bound
-of the $`\varepsilon_n`. -/
+of the $`\varepsilon_n`. The construction on its own is
+{name}`Goldblatt.inv_infinitesimal_upper_bound`. -/
 theorem infinitesimal_upper_bound_of_unlimited_lower_bound
     (H : ∀ s : ℕ → ℝ*, (∀ n, s n ∈ ℕ*) → (∀ n, Unlimited (s n)) →
       ∃ K ∈ ℕ*, Unlimited K ∧ ∀ n, K ≤ s n)
@@ -407,14 +436,9 @@ theorem infinitesimal_upper_bound_of_unlimited_lower_bound
         exact unlimited_omega
       · simp only [hn, ↓reduceIte]
         exact (hinv n hn).hfloor.2.unlimited)
-  have hK0 : 0 < K := (posUnlimited_of_mem_hyperNat hK hKU).pos
-  refine ⟨K⁻¹, hKU.inv_infinitesimal, fun n => ?_⟩
-  by_cases hn : e n = 0
-  · rw [hn]
-    exact (inv_pos.2 hK0).le
-  · have h1 : K ≤ hfloor |e n|⁻¹ := by simpa only [hn, ↓reduceIte] using hKle n
-    have h2 : K ≤ |e n|⁻¹ := h1.trans (hfloor_le _)
-    exact (le_abs_self _).trans ((le_inv_comm₀ (abs_pos.2 hn) hK0).2 h2)
+  obtain ⟨h1, h2⟩ := inv_infinitesimal_upper_bound (e := e) hK hKU fun n hn => by
+    simpa only [hn, ↓reduceIte] using hKle n
+  exact ⟨K⁻¹, h1, h2⟩
 
 end Entities
 
@@ -526,7 +550,8 @@ saturation, and an exercise asks for a second proof from overflow; both are give
 section Shadow
 
 /-- **Section 11.13.** The shadow $`\operatorname{sh}(X)` of a set $`X` of hyperreals: the
-set of shadows of the limited members of $`X`. -/
+set of shadows of the limited members of $`X`. This is the definition that later chapters
+should reuse for shadows of sets. -/
 def shSet (X : Set ℝ*) : Set ℝ := {r | ∃ x ∈ X, Limited x ∧ sh x = r}
 
 /-- **Section 11.13.** A real number belongs to the shadow of $`X` if and only if it is
@@ -616,26 +641,41 @@ theorem IsInternal.isClosed_shSet {X : Set ℝ*} (hX : IsInternal X) : IsClosed 
   refine mem_shSet_iff.2 ⟨y, (hy' 0).1, infinitesimal_of_forall_abs_lt_one_div fun n => ?_⟩
   exact abs_lt.2 ⟨by linarith [(hy' n).2.1], by linarith [(hy' n).2.2]⟩
 
-/-- **Exercise 11.13.2, the definable set.** For an internal set $`X` and a hyperreal $`r`,
-the set of hypernaturals $`n` for which $`X` meets the interval
-$`(r - \tfrac1n, r + \tfrac1n)` is internal. -/
-theorem IsInternal.isInternal_setOf_ball_inter_nonempty {X : Set ℝ*} (hX : IsInternal X)
-    (r : ℝ*) :
-    IsInternal {k : ℝ* | k ∈ ℕ* ∧ (X ∩ Ioo (r - 1 / k) (r + 1 / k)).Nonempty} := by
-  obtain ⟨A, rfl⟩ := hX
+/-- **Exercise 11.13.2, the atomic formula.** In the ultrapower the atomic formula
+$`x_2 - 1/x_1 < x_0 \wedge x_0 < x_2 + 1/x_1` says what it should. -/
+theorem starRealize_mem_Ioo_sub_add_one_div (y k r : ℝ*) :
+    (IFormula.rel fun _ (v : Fin 3 → ℝ) =>
+        v 2 - 1 / v 1 < v 0 ∧ v 0 < v 2 + 1 / v 1).starRealize (Fin.cons y ![k, r]) ↔
+      y ∈ Ioo (r - 1 / k) (r + 1 / k) := by
+  obtain ⟨η, rfl⟩ := hyperreal_exists_rep y
+  obtain ⟨κ, rfl⟩ := hyperreal_exists_rep k
   obtain ⟨ρ, rfl⟩ := hyperreal_exists_rep r
-  refine ⟨fun n => {a | a ∈ range ((↑) : ℕ → ℝ) ∧
-    (A n ∩ Ioo (ρ n - 1 / a) (ρ n + 1 / a)).Nonempty}, ?_⟩
-  ext x
-  obtain ⟨κ, rfl⟩ := hyperreal_exists_rep x
-  rw [hyperreal_ofSeq_mem_internalSet]
-  simp only [mem_ofPred_eq, almostAll_and]
-  refine and_congr hyperreal_ofSeq_mem_starSet ?_
   have e1 : Hyperreal.ofSeq ρ - 1 / Hyperreal.ofSeq κ =
       Hyperreal.ofSeq fun n => ρ n - 1 / κ n := rfl
   have e2 : Hyperreal.ofSeq ρ + 1 / Hyperreal.ofSeq κ =
       Hyperreal.ofSeq fun n => ρ n + 1 / κ n := rfl
-  rw [e1, e2, ← internalSet_Ioo, internalSet_inter, internalSet_nonempty_iff]
+  rw [mem_Ioo, e1, e2, ofSeq_lt_ofSeq_iff, ofSeq_lt_ofSeq_iff, ← almostAll_and]
+  exact hyperreal_internalRelN_vec₃
+
+/-- **Exercise 11.13.2, the definable set.** For an internal set $`X` and a hyperreal $`r`,
+the set of hypernaturals $`n` for which $`X` meets the interval
+$`(r - \tfrac1n, r + \tfrac1n)` is internal, by the internal set definition principle: it is
+defined by the formula
+$`x \in \mathbb N \wedge \exists z\,(z \in A \wedge y - \tfrac1x < z < y + \tfrac1x)` with
+the parameter $`r` for $`y` and the internal set $`X` for $`A`. -/
+theorem IsInternal.isInternal_setOf_ball_inter_nonempty {X : Set ℝ*} (hX : IsInternal X)
+    (r : ℝ*) :
+    IsInternal {k : ℝ* | k ∈ ℕ* ∧ (X ∩ Ioo (r - 1 / k) (r + 1 / k)).Nonempty} := by
+  obtain ⟨A, rfl⟩ := hX
+  refine IFormula.isInternalSet_of_forall_iff (α := ℝ)
+    ((IFormula.mem 0 fun _ => range ((↑) : ℕ → ℝ)).and
+      (IFormula.ex ((IFormula.mem 0 A).and
+        (IFormula.rel fun _ v => v 2 - 1 / v 1 < v 0 ∧ v 0 < v 2 + 1 / v 1))))
+    ![r] fun x => ?_
+  simp only [IFormula.starRealize_ex, IFormula.starRealize_and, IFormula.starRealize_mem,
+    internalSet_const_range_natCast, mem_ofPred_eq]
+  refine and_congr Iff.rfl (exists_congr fun y => and_congr Iff.rfl ?_)
+  exact (starRealize_mem_Ioo_sub_add_one_div y x r).symm
 
 /-- **Exercise 11.13.2.** The shadow of an internal set is closed, proved by overflow instead
 of countable saturation. If $`r` is a closure point of the shadow of $`X`, then $`X` meets
@@ -681,7 +721,10 @@ contain the halo of each of their points.
 
 The notions of Section 10.5 are restated here, in the namespace {lit}`HyperTopology`, in
 their pointwise form: a set is a union of sets from a family exactly when each of its points
-lies in a member of the family that is included in the set.
+lies in a member of the family that is included in the set. They are restated rather than
+imported because this chapter does not depend on Chapter 10; when the Chapter 10 page defines
+them, these local copies are meant to be replaced by, or proved equivalent to, the
+definitions made there.
 -/
 
 section HyperOpen

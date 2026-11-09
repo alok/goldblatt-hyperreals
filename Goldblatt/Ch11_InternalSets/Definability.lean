@@ -44,8 +44,18 @@ The formalization has three layers.
   deeply embedded language ({lit}`Goldblatt.IFormula`): atomic formulas are internal
   relations of any finite arity between the variables, and formulas are closed under
   negation, conjunction and universal quantification. Internal sets, enlargements of
-  standard relations and graphs of extended functions are all atomic in this language, so it
-  covers the formulas of the book.
+  standard relations and conditions on values of extended functions are all atomic in this
+  language: the atoms {lit}`Goldblatt.IFormula.mem`, {lit}`Goldblatt.IFormula.star`,
+  {lit}`Goldblatt.IFormula.memMap`, {lit}`Goldblatt.IFormula.rel₂Map` and
+  {lit}`Goldblatt.IFormula.relTerms` come with lemmas that read them in the ultrapower as
+  membership in an internal set, as the enlargement of a standard relation in the sense of
+  Chapter 3, and as internal relations between values of extended functions. So the language
+  covers the formulas of the book, and the definable sets used later in the chapter are
+  obtained from it.
+* The transfer principle for sentences with set symbols, marked with a dagger in the book, is
+  proved for a second small language {lit}`Goldblatt.SFormula` that has set symbols in
+  addition: a formula that holds of all sets of standard elements holds of all internal sets
+  ({lit}`Goldblatt.SFormula.starRealize_of_forall_realize`).
 -/
 
 section Quantifiers
@@ -282,6 +292,45 @@ theorem exists_rep_fun {ι : Type*} (x : ι → αS) :
   choose r hr using fun i => ofSeq_surjective (α := α) (x i)
   exact ⟨r, funext fun i => (hr i).symm⟩
 
+/-- **Section 11.7.** The internal relation of a constant sequence is the enlargement of the
+standard relation, in the sense of Chapter 3: for a relation $`P` of finite arity on the
+standard type, the internal relation defined by the sequence $`(P, P, P, \dots)` is
+$`{}^*P`. -/
+theorem internalRelN_const_iff_starRel {ι : Type*} [Finite ι] {P : Set (ι → α)} {x : ι → αS} :
+    internalRelN (fun _ v => v ∈ P) x ↔ x ∈ starRel P := by
+  obtain ⟨r, rfl⟩ := exists_rep_fun (α := α) x
+  rw [internalRelN_ofSeq, starRel_ofSeq]
+
+/-- **Section 11.7.** Substituting standard functions of the variables into an internal
+relation: the internal relation defined by the relations
+$`R_n(t_1(\vec a), \dots, t_m(\vec a))` holds of a tuple $`\vec x` of the ultrapower if and
+only if the internal relation $`[R_n]` holds of the values
+$`{}^*t_1(\vec x), \dots, {}^*t_m(\vec x)` of the extended functions. -/
+theorem internalRelN_comp_starMapN {ι κ : Type*} [Finite ι] [Finite κ]
+    (R : ℕ → (κ → α) → Prop) (t : κ → (ι → α) → α) (x : ι → αS) :
+    internalRelN (fun n v => R n fun j => t j v) x ↔
+      internalRelN R fun j => (starMapN (t j) x : αS) := by
+  obtain ⟨r, rfl⟩ := exists_rep_fun (α := α) x
+  have e : (fun j => (starMapN (t j) (fun i => (ofSeq (r i) : αS)) : αS)) =
+      fun j => ofSeq fun n => t j fun i => r i n := funext fun j => starMapN_ofSeq (t j) r
+  rw [e, internalRelN_ofSeq, internalRelN_ofSeq]
+
+/-- **Section 11.7, the almost-all criterion for ternary internal relations**, for a triple
+written out as a vector. -/
+theorem internalRelN_vec₃ {R : ℕ → (Fin 3 → α) → Prop} {a b c : ℕ → α} :
+    internalRelN R ![(ofSeq a : αS), ofSeq b, ofSeq c] ↔
+      ∀ᶠ n in hyperfilter ℕ, R n ![a n, b n, c n] := by
+  have e : (![(ofSeq a : αS), ofSeq b, ofSeq c] : Fin 3 → αS) =
+      fun i => ofSeq ((![a, b, c] : Fin 3 → ℕ → α) i) := by
+    funext i
+    fin_cases i <;> rfl
+  rw [e, internalRelN_ofSeq]
+  refine eventually_congr (Eventually.of_forall fun n => ?_)
+  have e' : (fun i => (![a, b, c] : Fin 3 → ℕ → α) i n) = ![a n, b n, c n] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [e']
+
 /-- **Section 11.7.** First-order formulas with $`k` free variables over internal relations.
 The variables are numbered from $`0`, and a quantifier binds variable $`0` and shifts the
 others up by one. Disjunction, implication and the existential quantifier are defined from
@@ -314,6 +363,25 @@ def mem {k : ℕ} (i : Fin k) (A : ℕ → Set α) : IFormula α k := .rel fun n
 relation $`[R_n]`. -/
 def rel₂ {k : ℕ} (i j : Fin k) (R : ℕ → α → α → Prop) : IFormula α k :=
   .rel fun n v => R n (v i) (v j)
+
+/-- The atomic formula given by a standard relation $`P` between the variables. In the
+ultrapower it is read as the enlargement $`{}^*P`. -/
+def star {k : ℕ} (P : Set (Fin k → α)) : IFormula α k := .rel fun _ v => v ∈ P
+
+/-- The atomic formula obtained from an internal relation $`[R_n]` of arity $`m` by
+substituting the terms $`t_1, \dots, t_m`, which are standard functions of the variables. -/
+def relTerms {k m : ℕ} (R : ℕ → (Fin m → α) → Prop) (t : Fin m → (Fin k → α) → α) :
+    IFormula α k := .rel fun n v => R n fun j => t j v
+
+/-- The atomic formula saying that the value of the standard function $`f` at variable $`i`
+belongs to the internal set $`[A_n]`. -/
+def memMap {k : ℕ} (i : Fin k) (f : α → α) (A : ℕ → Set α) : IFormula α k :=
+  .rel fun n v => f (v i) ∈ A n
+
+/-- The atomic formula saying that the values of the standard functions $`f` at variable
+$`i` and $`g` at variable $`j` are related by the binary internal relation $`[R_n]`. -/
+def rel₂Map {k : ℕ} (i j : Fin k) (f g : α → α) (R : ℕ → α → α → Prop) : IFormula α k :=
+  .rel fun n v => R n (f (v i)) (g (v j))
 
 /-- **Section 11.7.** The standard reading of a formula at index $`n`: atomic formulas are
 read by their $`n`-th relation, and quantifiers range over the standard type. -/
@@ -410,10 +478,52 @@ theorem starRealize_rel₂ {k : ℕ} (i j : Fin k) (R : ℕ → α → α → Pr
   obtain ⟨r, rfl⟩ := exists_rep_fun (α := α) v
   rw [rel₂, starRealize, internalRelN_ofSeq, internalRel_ofSeq]
 
-/-- **Section 11.7, the transfer principle (†) for internal sets.** A sentence holds in the
-ultrapower if and only if its standard reading holds at almost all indices. In particular a
-sentence about a set symbol that is true for every set of standard elements is true for every
-internal set. -/
+/-- **Section 11.7.** In the ultrapower an atomic formula is read as the internal relation of
+its sequence of relations. -/
+theorem starRealize_rel {k : ℕ} (R : ℕ → (Fin k → α) → Prop) (v : Fin k → αS) :
+    (IFormula.rel R).starRealize v ↔ internalRelN R v :=
+  Iff.rfl
+
+/-- **Section 11.7.** In the ultrapower, the atomic formula of a standard relation $`P` says
+that the values of the variables are related by the enlargement $`{}^*P` of Chapter 3
+({name}`Goldblatt.starRel`). -/
+theorem starRealize_star {k : ℕ} (P : Set (Fin k → α)) (v : Fin k → αS) :
+    (star P).starRealize v ↔ v ∈ starRel P :=
+  internalRelN_const_iff_starRel
+
+/-- **Section 11.7.** In the ultrapower, an atomic formula with terms says that the values of
+the extended terms ({name}`Goldblatt.starMapN`) are related by the internal relation. -/
+theorem starRealize_relTerms {k m : ℕ} (R : ℕ → (Fin m → α) → Prop)
+    (t : Fin m → (Fin k → α) → α) (v : Fin k → αS) :
+    (relTerms R t).starRealize v ↔ internalRelN R fun j => (starMapN (t j) v : αS) :=
+  internalRelN_comp_starMapN R t v
+
+/-- **Section 11.7.** In the ultrapower, the atomic formula $`f(x_i) \in A` says that the
+value of the extended function $`{}^*f` at the variable belongs to the internal set
+$`[A_n]`. -/
+theorem starRealize_memMap {k : ℕ} (i : Fin k) (f : α → α) (A : ℕ → Set α) (v : Fin k → αS) :
+    (memMap i f A).starRealize v ↔ (starMap f (v i) : αS) ∈ internalSet A := by
+  obtain ⟨r, rfl⟩ := exists_rep_fun (α := α) v
+  rw [memMap, starRealize, internalRelN_ofSeq, starMap_ofSeq, ofSeq_mem_internalSet]
+  rfl
+
+/-- **Section 11.7.** In the ultrapower, the atomic formula $`R(f(x_i), g(x_j))` says that
+the values of the extended functions $`{}^*f` and $`{}^*g` at the variables are related by
+the internal relation $`[R_n]`. -/
+theorem starRealize_rel₂Map {k : ℕ} (i j : Fin k) (f g : α → α) (R : ℕ → α → α → Prop)
+    (v : Fin k → αS) :
+    (rel₂Map i j f g R).starRealize v ↔
+      internalRel R (starMap f (v i) : αS) (starMap g (v j) : αS) := by
+  obtain ⟨r, rfl⟩ := exists_rep_fun (α := α) v
+  rw [rel₂Map, starRealize, internalRelN_ofSeq, starMap_ofSeq, starMap_ofSeq, internalRel_ofSeq]
+  rfl
+
+/-- **Section 11.7, the equivalence of (i) and (ii) for sentences.** A sentence over internal
+relations holds in the ultrapower if and only if its standard reading holds at almost all
+indices. Here the internal sets that the sentence mentions are part of the sentence; the
+transfer principle marked with a dagger in the book, in which a set symbol ranges over all
+sets on one side and over all internal sets on the other, is
+{lit}`Goldblatt.SFormula.starRealize_of_forall_realize` below. -/
 theorem starRealize_sentence (φ : IFormula α 0) (v : Fin 0 → αS) :
     φ.starRealize v ↔ ∀ᶠ n in hyperfilter ℕ, φ.realize n Fin.elim0 := by
   have e : v = fun i => (ofSeq ((Fin.elim0 : Fin 0 → ℕ → α) i) : αS) := Subsingleton.elim _ _
@@ -421,8 +531,8 @@ theorem starRealize_sentence (φ : IFormula α 0) (v : Fin 0 → αS) :
   refine eventually_congr (Eventually.of_forall fun n => ?_)
   rw [show (fun i => (Fin.elim0 : Fin 0 → ℕ → α) i n) = Fin.elim0 from Subsingleton.elim _ _]
 
-/-- **Section 11.7, the transfer principle (†) for internal sets.** A sentence whose standard
-reading is true at every index is true in the ultrapower. -/
+/-- **Section 11.7, the equivalence of (i) and (ii) for sentences.** A sentence whose
+standard reading is true at every index is true in the ultrapower. -/
 theorem starRealize_of_forall_realize (φ : IFormula α 0)
     (h : ∀ n, φ.realize n Fin.elim0) (v : Fin 0 → αS) : φ.starRealize v :=
   (starRealize_sentence φ v).2 (Eventually.of_forall h)
@@ -452,7 +562,256 @@ theorem isInternalSet_setOf_starRealize {k : ℕ} (φ : IFormula α (k + 1)) (c 
   obtain ⟨c, rfl⟩ := exists_rep_fun (α := α) c
   exact ⟨_, setOf_starRealize_eq_internalSet φ c⟩
 
+/-- **Theorem 11.7.1** (internal set definition principle), in the form in which it is
+applied: a set whose membership condition is the reading in the ultrapower of a formula, with
+parameters from the ultrapower, is internal. -/
+theorem isInternalSet_of_forall_iff {k : ℕ} (φ : IFormula α (k + 1)) (c : Fin k → αS)
+    {X : Set αS} (h : ∀ x, x ∈ X ↔ φ.starRealize (Fin.cons x c)) : IsInternalSet α X := by
+  have e : X = {b : αS | φ.starRealize (Fin.cons b c)} := Set.ext h
+  rw [e]
+  exact isInternalSet_setOf_starRealize φ c
+
 end IFormula
+
+/-!
+### Formulas with set symbols and the transfer principle for internal sets
+
+In a formula of the previous kind the internal sets are fixed parameters. The transfer
+principle that the book marks with a dagger speaks instead of a sentence $`\varphi(A)` in
+which $`A` is a _set symbol_: if $`\varphi(A)` is true for every set $`A` of standard
+elements, then its transform is true when the symbol is read as any internal set. To state
+this, the language is extended by $`m` set symbols. A formula of the extended language has a
+standard reading for each choice of $`m` sets of standard elements, and a reading in the
+ultrapower for each choice of $`m` sets of elements of the ultrapower. When the latter are
+internal sets $`[A^1_n], \dots, [A^m_n]`, the reading in the ultrapower is that of the
+formula of the previous kind obtained by substituting the defining sequences for the set
+symbols, and so it holds exactly when the standard reading with the sets
+$`A^1_n, \dots, A^m_n` holds for almost all $`n`.
+-/
+
+/-- **Section 11.7.** First-order formulas with $`k` free variables and $`m` set symbols.
+The atomic formulas are internal relations between the variables, as for
+{name}`Goldblatt.IFormula`, and membership of a variable in a set symbol. -/
+inductive SFormula (α : Type u) (m : ℕ) : ℕ → Type u
+  /-- An atomic formula: a sequence of relations between the free variables. -/
+  | rel {k : ℕ} (R : ℕ → (Fin k → α) → Prop) : SFormula α m k
+  /-- The atomic formula saying that variable $`i` belongs to the set symbol $`j`. -/
+  | mem {k : ℕ} (i : Fin k) (j : Fin m) : SFormula α m k
+  /-- Negation. -/
+  | not {k : ℕ} (φ : SFormula α m k) : SFormula α m k
+  /-- Conjunction. -/
+  | and {k : ℕ} (φ ψ : SFormula α m k) : SFormula α m k
+  /-- Universal quantification over variable $`0`. -/
+  | all {k : ℕ} (φ : SFormula α m (k + 1)) : SFormula α m k
+
+namespace SFormula
+
+variable {m : ℕ}
+
+/-- Disjunction of formulas with set symbols. -/
+def or {k : ℕ} (φ ψ : SFormula α m k) : SFormula α m k := .not (.and (.not φ) (.not ψ))
+
+/-- Implication between formulas with set symbols. -/
+def imp {k : ℕ} (φ ψ : SFormula α m k) : SFormula α m k := .not (.and φ (.not ψ))
+
+/-- Existential quantification over variable $`0`. -/
+def ex {k : ℕ} (φ : SFormula α m (k + 1)) : SFormula α m k := .not (.all (.not φ))
+
+/-- The atomic formula saying that variable $`i` belongs to the fixed internal set
+$`[A_n]`. -/
+def memI {k : ℕ} (i : Fin k) (A : ℕ → Set α) : SFormula α m k := .rel fun n v => v i ∈ A n
+
+/-- The atomic formula saying that variables $`i` and $`j` are related by the binary internal
+relation $`[R_n]`. -/
+def rel₂ {k : ℕ} (i j : Fin k) (R : ℕ → α → α → Prop) : SFormula α m k :=
+  .rel fun n v => R n (v i) (v j)
+
+/-- **Section 11.7.** Substitution of sequences of sets for the set symbols: the result is a
+formula over internal relations, in which the set symbol $`j` has become the internal set
+$`[A^j_n]`. -/
+def subst : {k : ℕ} → SFormula α m k → (Fin m → ℕ → Set α) → IFormula α k
+  | _, .rel R, _ => .rel R
+  | _, .mem i j, A => IFormula.mem i (A j)
+  | _, .not φ, A => (φ.subst A).not
+  | _, .and φ ψ, A => (φ.subst A).and (ψ.subst A)
+  | _, .all φ, A => (φ.subst A).all
+
+/-- **Section 11.7.** The standard reading $`\varphi(S_1, \dots, S_m)` of a formula with set
+symbols at index $`n`, for sets $`S_1, \dots, S_m` of standard elements. -/
+def realize : {k : ℕ} → SFormula α m k → (Fin m → Set α) → ℕ → (Fin k → α) → Prop
+  | _, .rel R, _, n, v => R n v
+  | _, .mem i j, S, _, v => v i ∈ S j
+  | _, .not φ, S, n, v => ¬ φ.realize S n v
+  | _, .and φ ψ, S, n, v => φ.realize S n v ∧ ψ.realize S n v
+  | _, .all φ, S, n, v => ∀ a : α, φ.realize S n (Fin.cons a v)
+
+/-- **Section 11.7.** The reading $`{}^*\varphi(X_1, \dots, X_m)` of a formula with set
+symbols in the ultrapower, for arbitrary sets $`X_1, \dots, X_m` of elements of the
+ultrapower. -/
+def starRealize : {k : ℕ} → SFormula α m k → (Fin m → Set αS) → (Fin k → αS) → Prop
+  | _, .rel R, _, v => internalRelN R v
+  | _, .mem i j, X, v => v i ∈ X j
+  | _, .not φ, X, v => ¬ φ.starRealize X v
+  | _, .and φ ψ, X, v => φ.starRealize X v ∧ ψ.starRealize X v
+  | _, .all φ, X, v => ∀ x : αS, φ.starRealize X (Fin.cons x v)
+
+/-- **Section 11.7.** The standard reading at index $`n` of a formula in which sequences of
+sets have been substituted for the set symbols is the standard reading of the original
+formula with the $`n`-th sets. -/
+theorem realize_subst {k : ℕ} (Φ : SFormula α m k) (A : Fin m → ℕ → Set α) (n : ℕ)
+    (v : Fin k → α) : (Φ.subst A).realize n v ↔ Φ.realize (fun j => A j n) n v := by
+  induction Φ with
+  | rel R => exact Iff.rfl
+  | mem i j => exact Iff.rfl
+  | not φ ih => simp only [subst, IFormula.realize, realize, ih]
+  | and φ ψ ih1 ih2 => simp only [subst, IFormula.realize, realize, ih1, ih2]
+  | all φ ih => simp only [subst, IFormula.realize, realize, ih]
+
+/-- **Section 11.7.** Reading the set symbols as the internal sets $`[A^j_n]` is the same as
+substituting the defining sequences. -/
+theorem starRealize_internalSet {k : ℕ} (Φ : SFormula α m k) (A : Fin m → ℕ → Set α)
+    (v : Fin k → αS) :
+    Φ.starRealize (fun j => (internalSet (A j) : Set αS)) v ↔ (Φ.subst A).starRealize v := by
+  induction Φ with
+  | rel R => exact Iff.rfl
+  | mem i j => exact (IFormula.starRealize_mem i (A j) v).symm
+  | not φ ih => simp only [subst, IFormula.starRealize, starRealize, ih]
+  | and φ ψ ih1 ih2 => simp only [subst, IFormula.starRealize, starRealize, ih1, ih2]
+  | all φ ih => simp only [subst, IFormula.starRealize, starRealize, ih]
+
+/-- **Section 11.7, the equivalence of (i) and (ii), with set symbols.** The sentence
+$`{}^*\varphi([r^1_n], \dots, [r^k_n], [A^1_n], \dots, [A^m_n])` is true if and only if
+$`\varphi(r^1_n, \dots, r^k_n, A^1_n, \dots, A^m_n)` is true for almost all $`n`. -/
+theorem starRealize_internalSet_ofSeq {k : ℕ} (Φ : SFormula α m k) (A : Fin m → ℕ → Set α)
+    (r : Fin k → ℕ → α) :
+    Φ.starRealize (fun j => (internalSet (A j) : Set αS)) (fun i => (ofSeq (r i) : αS)) ↔
+      ∀ᶠ n in hyperfilter ℕ, Φ.realize (fun j => A j n) n fun i => r i n := by
+  rw [starRealize_internalSet, IFormula.starRealize_ofSeq]
+  exact eventually_congr (Eventually.of_forall fun n => realize_subst Φ A n _)
+
+/-- **Section 11.7, the transfer principle marked with a dagger.** If $`\varphi(A)` is true
+whenever the set symbol $`A` is read as an arbitrary set of standard elements, then
+$`{}^*\varphi(X)` is true whenever it is read as an arbitrary internal set. The statement is
+proved for any number of set symbols and for formulas with free variables (a formula true of
+all standard elements is true of all elements of the ultrapower), of which the book's
+statement about sentences with one set symbol is the case $`m = 1`, $`k = 0`. Atomic formulas
+may be sequences of relations, so the hypothesis asks for truth at every index; for a formula
+whose atoms are standard relations, that is, constant sequences, the index plays no role and
+the hypothesis is literally that $`\varphi(A)` is true for all $`A`. -/
+theorem starRealize_of_forall_realize {k : ℕ} (Φ : SFormula α m k)
+    (h : ∀ (S : Fin m → Set α) (n : ℕ) (a : Fin k → α), Φ.realize S n a)
+    {X : Fin m → Set αS} (hX : ∀ j, IsInternalSet α (X j)) (v : Fin k → αS) :
+    Φ.starRealize X v := by
+  choose A hA using hX
+  obtain ⟨r, rfl⟩ := exists_rep_fun (α := α) v
+  have e : X = fun j => (internalSet (A j) : Set αS) := funext hA
+  rw [e, starRealize_internalSet_ofSeq]
+  exact Eventually.of_forall fun n => h _ n _
+
+/-- The reading of a negation in the ultrapower. -/
+theorem starRealize_not {k : ℕ} (φ : SFormula α m k) (X : Fin m → Set αS) (v : Fin k → αS) :
+    φ.not.starRealize X v ↔ ¬ φ.starRealize X v :=
+  Iff.rfl
+
+/-- The reading of a conjunction in the ultrapower. -/
+theorem starRealize_and {k : ℕ} (φ ψ : SFormula α m k) (X : Fin m → Set αS) (v : Fin k → αS) :
+    (φ.and ψ).starRealize X v ↔ φ.starRealize X v ∧ ψ.starRealize X v :=
+  Iff.rfl
+
+/-- The reading of a universal quantifier in the ultrapower. -/
+theorem starRealize_all {k : ℕ} (φ : SFormula α m (k + 1)) (X : Fin m → Set αS)
+    (v : Fin k → αS) :
+    φ.all.starRealize X v ↔ ∀ x : αS, φ.starRealize X (Fin.cons x v) :=
+  Iff.rfl
+
+/-- The reading of a disjunction in the ultrapower. -/
+theorem starRealize_or {k : ℕ} (φ ψ : SFormula α m k) (X : Fin m → Set αS) (v : Fin k → αS) :
+    (φ.or ψ).starRealize X v ↔ φ.starRealize X v ∨ ψ.starRealize X v := by
+  simp only [SFormula.or, starRealize, not_and_or, not_not]
+
+/-- The reading of an implication in the ultrapower. -/
+theorem starRealize_imp {k : ℕ} (φ ψ : SFormula α m k) (X : Fin m → Set αS) (v : Fin k → αS) :
+    (φ.imp ψ).starRealize X v ↔ (φ.starRealize X v → ψ.starRealize X v) := by
+  simp only [SFormula.imp, starRealize, not_and, not_not]
+
+/-- The reading of an existential quantifier in the ultrapower. -/
+theorem starRealize_ex {k : ℕ} (φ : SFormula α m (k + 1)) (X : Fin m → Set αS)
+    (v : Fin k → αS) :
+    φ.ex.starRealize X v ↔ ∃ x : αS, φ.starRealize X (Fin.cons x v) := by
+  simp only [SFormula.ex, starRealize, not_forall, not_not]
+
+/-- In the ultrapower, membership of a variable in a set symbol is membership of its value in
+the set that the symbol is read as. -/
+theorem starRealize_mem {k : ℕ} (i : Fin k) (j : Fin m) (X : Fin m → Set αS) (v : Fin k → αS) :
+    (mem i j : SFormula α m k).starRealize X v ↔ v i ∈ X j :=
+  Iff.rfl
+
+/-- In the ultrapower, the atomic formula for membership of variable $`i` in $`[A_n]` says
+that the value of the variable belongs to the internal set. -/
+theorem starRealize_memI {k : ℕ} (i : Fin k) (A : ℕ → Set α) (X : Fin m → Set αS)
+    (v : Fin k → αS) :
+    (memI i A : SFormula α m k).starRealize X v ↔ v i ∈ internalSet A :=
+  IFormula.starRealize_mem i A v
+
+/-- In the ultrapower, the atomic formula for a binary internal relation between two
+variables says that their values are related by it. -/
+theorem starRealize_rel₂ {k : ℕ} (i j : Fin k) (R : ℕ → α → α → Prop) (X : Fin m → Set αS)
+    (v : Fin k → αS) :
+    (rel₂ i j R : SFormula α m k).starRealize X v ↔ internalRel R (v i) (v j) :=
+  IFormula.starRealize_rel₂ i j R v
+
+/-- The standard reading of a negation. -/
+theorem realize_not {k : ℕ} (φ : SFormula α m k) (S : Fin m → Set α) (n : ℕ) (v : Fin k → α) :
+    φ.not.realize S n v ↔ ¬ φ.realize S n v :=
+  Iff.rfl
+
+/-- The standard reading of a conjunction. -/
+theorem realize_and {k : ℕ} (φ ψ : SFormula α m k) (S : Fin m → Set α) (n : ℕ) (v : Fin k → α) :
+    (φ.and ψ).realize S n v ↔ φ.realize S n v ∧ ψ.realize S n v :=
+  Iff.rfl
+
+/-- The standard reading of a universal quantifier. -/
+theorem realize_all {k : ℕ} (φ : SFormula α m (k + 1)) (S : Fin m → Set α) (n : ℕ)
+    (v : Fin k → α) :
+    φ.all.realize S n v ↔ ∀ a : α, φ.realize S n (Fin.cons a v) :=
+  Iff.rfl
+
+/-- The standard reading of a disjunction. -/
+theorem realize_or {k : ℕ} (φ ψ : SFormula α m k) (S : Fin m → Set α) (n : ℕ) (v : Fin k → α) :
+    (φ.or ψ).realize S n v ↔ φ.realize S n v ∨ ψ.realize S n v := by
+  simp only [SFormula.or, realize, not_and_or, not_not]
+
+/-- The standard reading of an implication. -/
+theorem realize_imp {k : ℕ} (φ ψ : SFormula α m k) (S : Fin m → Set α) (n : ℕ) (v : Fin k → α) :
+    (φ.imp ψ).realize S n v ↔ (φ.realize S n v → ψ.realize S n v) := by
+  simp only [SFormula.imp, realize, not_and, not_not]
+
+/-- The standard reading of an existential quantifier. -/
+theorem realize_ex {k : ℕ} (φ : SFormula α m (k + 1)) (S : Fin m → Set α) (n : ℕ)
+    (v : Fin k → α) :
+    φ.ex.realize S n v ↔ ∃ a : α, φ.realize S n (Fin.cons a v) := by
+  simp only [SFormula.ex, realize, not_forall, not_not]
+
+/-- The standard reading of membership of a variable in a set symbol. -/
+theorem realize_mem {k : ℕ} (i : Fin k) (j : Fin m) (S : Fin m → Set α) (n : ℕ)
+    (v : Fin k → α) :
+    (mem i j : SFormula α m k).realize S n v ↔ v i ∈ S j :=
+  Iff.rfl
+
+/-- The standard reading at index $`n` of membership of a variable in $`[A_n]`. -/
+theorem realize_memI {k : ℕ} (i : Fin k) (A : ℕ → Set α) (S : Fin m → Set α) (n : ℕ)
+    (v : Fin k → α) :
+    (memI i A : SFormula α m k).realize S n v ↔ v i ∈ A n :=
+  Iff.rfl
+
+/-- The standard reading at index $`n` of a binary internal relation between two
+variables. -/
+theorem realize_rel₂ {k : ℕ} (i j : Fin k) (R : ℕ → α → α → Prop) (S : Fin m → Set α) (n : ℕ)
+    (v : Fin k → α) :
+    (rel₂ i j R : SFormula α m k).realize S n v ↔ R n (v i) (v j) :=
+  Iff.rfl
+
+end SFormula
 
 end Formulas
 
@@ -460,7 +819,12 @@ end Formulas
 ### Using the principle
 
 The examples of Section 11.1 can be recovered from the principle, as the book remarks: an
-open interval is defined by the formula $`x_1 < x_0 \wedge x_0 < x_2`. The first substantial
+open interval is defined by the formula $`x_1 < x_0 \wedge x_0 < x_2`. Exercise 11.7.1 asks
+for the same to be done for the other intervals, for an initial segment of the hypernaturals
+and for a hyperfinite grid; these are the theorems below whose names end in
+{lit}`_of_definition`, each obtained from {lit}`Goldblatt.IFormula.isInternalSet_of_forall_iff`
+by writing down the defining formula. The least number principle of Section 11.3 is derived
+once more, from the transfer principle for sentences with a set symbol. The first substantial
 application is the proof that an internal set of real numbers must be finite.
 -/
 
@@ -478,6 +842,19 @@ theorem internalRel_le {x y : ℝ*} : internalRel (fun _ (a b : ℝ) => a ≤ b)
   rw [← starRel₂_iff_internalRel]
   exact starRel₂_le
 
+/-- The internal set of the constant sequence of the set of natural numbers is the set of
+hypernaturals. -/
+theorem internalSet_const_range_natCast :
+    (internalSet fun _ : ℕ => range ((↑) : ℕ → ℝ) : Set ℝ*) = ℕ* :=
+  (starSet_eq_internalSet _).symm
+
+/-- **Section 11.7, the almost-all criterion for ternary internal relations** on the
+hyperreals. -/
+theorem hyperreal_internalRelN_vec₃ {R : ℕ → (Fin 3 → ℝ) → Prop} {a b c : ℕ → ℝ} :
+    internalRelN R ![Hyperreal.ofSeq a, Hyperreal.ofSeq b, Hyperreal.ofSeq c] ↔
+      ∀ᶠ n in hyperfilter ℕ, R n ![a n, b n, c n] :=
+  internalRelN_vec₃
+
 /-- **Section 11.7, second example after the principle; Exercise 11.7.1.** The open interval
 $`(a, b)` is internal because it is defined by the formula $`x_1 < x_0 \wedge x_0 < x_2` with
 the parameters $`a, b`. This is {name}`Goldblatt.isInternal_Ioo` again, now obtained from the
@@ -492,6 +869,147 @@ theorem isInternal_Ioo_of_definition (a b : ℝ*) : IsInternal (Ioo a b) := by
       internalRel_lt, mem_Ioo]
     exact Iff.rfl
   rwa [e] at h
+
+/-- **Exercise 11.7.1.** The interval $`(a, b]` is internal by the internal set definition
+principle: it is defined by the formula $`x_1 < x_0 \wedge x_0 \le x_2` with the parameters
+$`a, b`. -/
+theorem isInternal_Ioc_of_definition (a b : ℝ*) : IsInternal (Ioc a b) :=
+  IFormula.isInternalSet_of_forall_iff (α := ℝ)
+    ((IFormula.rel₂ 1 0 fun _ x y => x < y).and (IFormula.rel₂ 0 2 fun _ x y => x ≤ y)) ![a, b]
+    fun x => by
+      simp only [IFormula.starRealize_and, IFormula.starRealize_rel₂, internalRel_lt,
+        internalRel_le, mem_Ioc]
+      exact Iff.rfl
+
+/-- **Exercise 11.7.1.** The interval $`[a, b)` is internal by the internal set definition
+principle: it is defined by the formula $`x_1 \le x_0 \wedge x_0 < x_2`. -/
+theorem isInternal_Ico_of_definition (a b : ℝ*) : IsInternal (Ico a b) :=
+  IFormula.isInternalSet_of_forall_iff (α := ℝ)
+    ((IFormula.rel₂ 1 0 fun _ x y => x ≤ y).and (IFormula.rel₂ 0 2 fun _ x y => x < y)) ![a, b]
+    fun x => by
+      simp only [IFormula.starRealize_and, IFormula.starRealize_rel₂, internalRel_lt,
+        internalRel_le, mem_Ico]
+      exact Iff.rfl
+
+/-- **Exercise 11.7.1.** The interval $`[a, b]` is internal by the internal set definition
+principle: it is defined by the formula $`x_1 \le x_0 \wedge x_0 \le x_2`. -/
+theorem isInternal_Icc_of_definition (a b : ℝ*) : IsInternal (Icc a b) :=
+  IFormula.isInternalSet_of_forall_iff (α := ℝ)
+    ((IFormula.rel₂ 1 0 fun _ x y => x ≤ y).and (IFormula.rel₂ 0 2 fun _ x y => x ≤ y)) ![a, b]
+    fun x => by
+      simp only [IFormula.starRealize_and, IFormula.starRealize_rel₂, internalRel_le, mem_Icc]
+      exact Iff.rfl
+
+/-- **Exercise 11.7.1.** The ray $`\{x : a < x\}` is internal by the internal set definition
+principle: it is defined by the formula $`x_1 < x_0`. -/
+theorem isInternal_Ioi_of_definition (a : ℝ*) : IsInternal (Ioi a) :=
+  IFormula.isInternalSet_of_forall_iff (α := ℝ) (IFormula.rel₂ 1 0 fun _ x y => x < y) ![a]
+    fun x => by
+      simp only [IFormula.starRealize_rel₂, internalRel_lt, mem_Ioi]
+      exact Iff.rfl
+
+/-- **Exercise 11.7.1.** The ray $`\{x : a \le x\}` is internal by the internal set
+definition principle: it is defined by the formula $`x_1 \le x_0`. -/
+theorem isInternal_Ici_of_definition (a : ℝ*) : IsInternal (Ici a) :=
+  IFormula.isInternalSet_of_forall_iff (α := ℝ) (IFormula.rel₂ 1 0 fun _ x y => x ≤ y) ![a]
+    fun x => by
+      simp only [IFormula.starRealize_rel₂, internalRel_le, mem_Ici]
+      exact Iff.rfl
+
+/-- **Exercise 11.7.1.** The ray $`\{x : x < a\}` is internal by the internal set definition
+principle: it is defined by the formula $`x_0 < x_1`. -/
+theorem isInternal_Iio_of_definition (a : ℝ*) : IsInternal (Iio a) :=
+  IFormula.isInternalSet_of_forall_iff (α := ℝ) (IFormula.rel₂ 0 1 fun _ x y => x < y) ![a]
+    fun x => by
+      simp only [IFormula.starRealize_rel₂, internalRel_lt, mem_Iio]
+      exact Iff.rfl
+
+/-- **Exercise 11.7.1.** The ray $`\{x : x \le a\}` is internal by the internal set
+definition principle: it is defined by the formula $`x_0 \le x_1`. -/
+theorem isInternal_Iic_of_definition (a : ℝ*) : IsInternal (Iic a) :=
+  IFormula.isInternalSet_of_forall_iff (α := ℝ) (IFormula.rel₂ 0 1 fun _ x y => x ≤ y) ![a]
+    fun x => by
+      simp only [IFormula.starRealize_rel₂, internalRel_le, mem_Iic]
+      exact Iff.rfl
+
+/-- **Exercise 11.7.1.** The set $`\{k \in {}^*\mathbb N : 1 \le k \le N\}` is internal by
+the internal set definition principle: it is defined by the formula
+$`x_0 \in \mathbb N \wedge x_1 \le x_0 \wedge x_0 \le x_2` with the parameters $`1, N`.
+Derived in this way the statement needs no hypothesis on $`N`. -/
+theorem isInternal_setOf_hyperNat_one_le_le_of_definition (N : ℝ*) :
+    IsInternal {k : ℝ* | k ∈ ℕ* ∧ 1 ≤ k ∧ k ≤ N} :=
+  IFormula.isInternalSet_of_forall_iff (α := ℝ)
+    ((IFormula.mem 0 fun _ => range ((↑) : ℕ → ℝ)).and
+      ((IFormula.rel₂ 1 0 fun _ x y => x ≤ y).and (IFormula.rel₂ 0 2 fun _ x y => x ≤ y)))
+    ![1, N] fun x => by
+      simp only [IFormula.starRealize_and, IFormula.starRealize_rel₂, IFormula.starRealize_mem,
+        internalRel_le, internalSet_const_range_natCast, mem_ofPred_eq]
+      exact Iff.rfl
+
+/-- **Exercise 11.7.1, an atomic formula with a function symbol.** In the ultrapower the
+atomic formula $`x_1 = x_0 / x_2` says what it should. -/
+theorem starRealize_eq_div (k x N : ℝ*) :
+    (IFormula.rel fun _ (v : Fin 3 → ℝ) => v 1 = v 0 / v 2).starRealize (Fin.cons k ![x, N]) ↔
+      x = k / N := by
+  obtain ⟨a, rfl⟩ := hyperreal_exists_rep k
+  obtain ⟨b, rfl⟩ := hyperreal_exists_rep x
+  obtain ⟨c, rfl⟩ := hyperreal_exists_rep N
+  have e : Hyperreal.ofSeq a / Hyperreal.ofSeq c = Hyperreal.ofSeq fun n => a n / c n := rfl
+  rw [e, ofSeq_eq_ofSeq_iff]
+  exact hyperreal_internalRelN_vec₃
+
+/-- **Exercise 11.7.1.** The set $`\{k/N : k \in {}^*\mathbb N,\ k \le N\} =
+\{0, \tfrac1N, \tfrac2N, \dots, 1\}` is internal by the internal set definition principle:
+it is defined by the formula
+$`\exists z\,(z \in \mathbb N \wedge z \le x_1 \wedge x_0 = z / x_1)` with the parameter
+$`N`. -/
+theorem isInternal_setOf_div_hyperNat_of_definition (N : ℝ*) :
+    IsInternal {x : ℝ* | ∃ k ∈ ℕ*, k ≤ N ∧ x = k / N} :=
+  IFormula.isInternalSet_of_forall_iff (α := ℝ)
+    (IFormula.ex ((IFormula.mem 0 fun _ => range ((↑) : ℕ → ℝ)).and
+      ((IFormula.rel₂ 0 2 fun _ x y => x ≤ y).and
+        (IFormula.rel fun _ v => v 1 = v 0 / v 2))))
+    ![N] fun x => by
+      simp only [IFormula.starRealize_ex, IFormula.starRealize_and, IFormula.starRealize_rel₂,
+        IFormula.starRealize_mem, internalRel_le, internalSet_const_range_natCast,
+        mem_ofPred_eq]
+      refine exists_congr fun k => and_congr Iff.rfl (and_congr Iff.rfl ?_)
+      exact (starRealize_eq_div k x N).symm
+
+/-- **Section 11.7, the first sentence discussed in the section; Theorem 11.3.1 by
+transfer.** The sentence
+$$`\bigl[\exists x\,(x \in A) \wedge \forall x\,(x \in A \to x \in \mathbb N)\bigr] \to
+\exists x\,\bigl(x \in A \wedge \forall y\,(y \in A \to x \le y)\bigr)`
+is true for every set $`A` of real numbers, because the natural numbers are well ordered. By
+the transfer principle for sentences with a set symbol
+({name}`Goldblatt.SFormula.starRealize_of_forall_realize`) its transform is true of every
+internal set, and this is the internal least number principle
+({name}`Goldblatt.IsInternal.exists_isLeast`), obtained here without an ultrafilter
+calculation. -/
+theorem IsInternal.exists_isLeast_of_transfer {X : Set ℝ*} (hX : IsInternal X) (hsub : X ⊆ ℕ*)
+    (hne : X.Nonempty) : ∃ a, IsLeast X a := by
+  have h := SFormula.starRealize_of_forall_realize (α := ℝ) (m := 1)
+    (((SFormula.ex (SFormula.mem 0 0)).and
+      (SFormula.all ((SFormula.mem 0 0).imp (SFormula.memI 0 fun _ => range ((↑) : ℕ → ℝ))))).imp
+      (SFormula.ex ((SFormula.mem 0 0).and
+        (SFormula.all ((SFormula.mem 0 0).imp (SFormula.rel₂ 1 0 fun _ x y => x ≤ y))))))
+    (fun S n a => by
+      simp only [SFormula.realize_imp, SFormula.realize_and, SFormula.realize_ex,
+        SFormula.realize_all, SFormula.realize_mem, SFormula.realize_memI,
+        SFormula.realize_rel₂]
+      rintro ⟨⟨x, hx⟩, hN⟩
+      have hT : {k : ℕ | (k : ℝ) ∈ S 0}.Nonempty := by
+        obtain ⟨k, hk⟩ := hN x hx
+        exact ⟨k, by rw [mem_ofPred_eq, hk]; exact hx⟩
+      refine ⟨((sInf {k : ℕ | (k : ℝ) ∈ S 0} : ℕ) : ℝ), Nat.sInf_mem hT, fun y hy => ?_⟩
+      obtain ⟨k, rfl⟩ := hN y hy
+      exact Nat.cast_le.2 (Nat.sInf_le hy))
+    (X := fun _ => X) (fun _ => hX) Fin.elim0
+  simp only [SFormula.starRealize_imp, SFormula.starRealize_and, SFormula.starRealize_ex,
+    SFormula.starRealize_all, SFormula.starRealize_mem, SFormula.starRealize_memI,
+    SFormula.starRealize_rel₂, internalRel_le, internalSet_const_range_natCast] at h
+  obtain ⟨a, ha, hmin⟩ := h ⟨hne, hsub⟩
+  exact ⟨a, ha, hmin⟩
 
 /-- **Section 11.7, the formula discussed before the principle.** For an internal set $`X`
 and a hyperreal $`c`, the set of $`b` such that every $`z` strictly between $`b` and $`c`
@@ -516,8 +1034,10 @@ theorem IsInternal.isInternal_setOf_Ioo_subset {X : Set ℝ*} (hX : IsInternal X
 /-- **Section 11.7.** Every internal set of real numbers is finite; equivalently, every
 infinite set of reals is external. The proof is the book's. An infinite set $`A` contains the
 range $`X` of an injective sequence $`f`, and $`X` is internal with $`A`. The set of
-hypernaturals $`n` with $`{}^*f(n) \in X` is then internal by internal set definition, but
-since $`f` is injective this set is the external set of standard natural numbers. -/
+hypernaturals $`n` with $`{}^*f(n) \in X` is then internal by internal set definition (it is
+defined by the formula $`x \in \mathbb N \wedge f(x) \in X`, whose second conjunct is the
+atom {name}`Goldblatt.IFormula.memMap`), but since $`f` is injective this set is the external
+set of standard natural numbers. -/
 theorem finite_of_isInternal_image_coe {A : Set ℝ} (hA : IsInternal (((↑) : ℝ → ℝ*) '' A)) :
     A.Finite := by
   by_contra hinf
@@ -529,12 +1049,13 @@ theorem finite_of_isInternal_image_coe {A : Set ℝ} (hA : IsInternal (((↑) : 
   obtain ⟨C, hC⟩ := hA.image_coe_subset hfA
   let g : ℝ → ℝ := fun r => f ⌊r⌋₊
   have hB : IsInternal {x : ℝ* | x ∈ ℕ* ∧ ⋆g x ∈ (((↑) : ℝ → ℝ*) '' range f)} := by
-    refine ⟨fun n => {a | a ∈ range ((↑) : ℕ → ℝ) ∧ g a ∈ C n}, ?_⟩
-    ext x
-    obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
     rw [hC]
-    simp only [mem_ofPred_eq, hyperNat, hyperreal_ofSeq_mem_starSet, starMap_hyperreal_ofSeq,
-      hyperreal_ofSeq_mem_internalSet, almostAll_and]
+    refine IFormula.isInternalSet_of_forall_iff (α := ℝ)
+      ((IFormula.mem 0 fun _ => range ((↑) : ℕ → ℝ)).and (IFormula.memMap 0 g C)) Fin.elim0
+      fun x => ?_
+    simp only [IFormula.starRealize_and, IFormula.starRealize_mem, IFormula.starRealize_memMap,
+      internalSet_const_range_natCast, mem_ofPred_eq]
+    exact Iff.rfl
   refine isExternal_range_natCast ?_
   have e : {x : ℝ* | x ∈ ℕ* ∧ ⋆g x ∈ (((↑) : ℝ → ℝ*) '' range f)} = range ((↑) : ℕ → ℝ*) := by
     ext x
@@ -581,22 +1102,24 @@ section Underflow
 
 /-- **Theorem 11.8.1, the definable set.** For an internal set $`X` and a hyperreal $`K`,
 the set of hypernaturals $`k \le K` such that every hypernatural $`z` with $`k \le z \le K`
-belongs to $`X` is internal. It is defined by the formula
-$`x \in \mathbb N \wedge x \le y \wedge \forall z \in \mathbb N\,(x \le z \le y \to z \in A)`. -/
+belongs to $`X` is internal, by the internal set definition principle: it is defined by the
+formula
+$`x \in \mathbb N \wedge x \le y \wedge \forall z \in \mathbb N\,(x \le z \le y \to z \in A)`
+with the parameter $`K` for $`y` and the internal set $`X` for $`A`. -/
 theorem IsInternal.isInternal_setOf_segment_subset {X : Set ℝ*} (hX : IsInternal X) (K : ℝ*) :
     IsInternal {k : ℝ* | k ∈ ℕ* ∧ k ≤ K ∧ ∀ z ∈ ℕ*, k ≤ z → z ≤ K → z ∈ X} := by
   obtain ⟨A, rfl⟩ := hX
-  obtain ⟨κ, rfl⟩ := hyperreal_exists_rep K
-  refine ⟨fun n => {a | a ∈ range ((↑) : ℕ → ℝ) ∧ a ≤ κ n ∧
-    ∀ z ∈ range ((↑) : ℕ → ℝ), a ≤ z → z ≤ κ n → z ∈ A n}, ?_⟩
-  ext x
-  obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
-  rw [hyperreal_ofSeq_mem_internalSet]
-  simp only [mem_ofPred_eq, almostAll_and]
-  refine and_congr hyperreal_ofSeq_mem_starSet (and_congr ofSeq_le_ofSeq_iff ?_)
-  refine hyperreal_forall_iff fun s => ?_
-  simp only [hyperNat, hyperreal_ofSeq_mem_starSet, ofSeq_le_ofSeq_iff,
-    hyperreal_ofSeq_mem_internalSet, almostAll_imp]
+  refine IFormula.isInternalSet_of_forall_iff (α := ℝ)
+    ((IFormula.mem 0 fun _ => range ((↑) : ℕ → ℝ)).and
+      ((IFormula.rel₂ 0 1 fun _ x y => x ≤ y).and
+        (IFormula.all ((IFormula.mem 0 fun _ => range ((↑) : ℕ → ℝ)).imp
+          ((IFormula.rel₂ 1 0 fun _ x y => x ≤ y).imp
+            ((IFormula.rel₂ 0 2 fun _ x y => x ≤ y).imp (IFormula.mem 0 A)))))))
+    ![K] fun x => ?_
+  simp only [IFormula.starRealize_all, IFormula.starRealize_imp, IFormula.starRealize_and,
+    IFormula.starRealize_rel₂, IFormula.starRealize_mem, internalRel_le,
+    internalSet_const_range_natCast, mem_ofPred_eq]
+  exact Iff.rfl
 
 /-- **Theorem 11.8.1** (underflow). Let $`X` be an internal set and $`K` an unlimited
 hypernatural. If every unlimited hypernatural $`H \le K` belongs to $`X`, then there is a
@@ -701,24 +1224,37 @@ section is the permanence principle for halos, around an arbitrary hyperreal poi
 
 section Permanence
 
-/-- **Theorem 11.9.1, the definable set.** For an internal set $`X` and a hyperreal $`b`,
-the set of hypernaturals $`k` such that the interval $`(b - \tfrac1k, b + \tfrac1k)` is
-included in $`X` is internal. It is defined by the formula
-$`x \in \mathbb N \wedge \forall z\,(|z - y| < \tfrac1x \to z \in A)`. -/
-theorem IsInternal.isInternal_setOf_ball_subset {X : Set ℝ*} (hX : IsInternal X) (b : ℝ*) :
-    IsInternal {k : ℝ* | k ∈ ℕ* ∧ ∀ z : ℝ*, |z - b| < 1 / k → z ∈ X} := by
-  obtain ⟨A, rfl⟩ := hX
+/-- **Theorem 11.9.1, the atomic formula.** In the ultrapower the atomic formula
+$`|x_0 - x_2| < 1/x_1`, which is the standard ternary relation with these function symbols,
+says what it should. -/
+theorem starRealize_abs_sub_lt_one_div (z k b : ℝ*) :
+    (IFormula.rel fun _ (v : Fin 3 → ℝ) => |v 0 - v 2| < 1 / v 1).starRealize
+      (Fin.cons z ![k, b]) ↔ |z - b| < 1 / k := by
+  obtain ⟨s, rfl⟩ := hyperreal_exists_rep z
+  obtain ⟨r, rfl⟩ := hyperreal_exists_rep k
   obtain ⟨β, rfl⟩ := hyperreal_exists_rep b
-  refine ⟨fun n => {a | a ∈ range ((↑) : ℕ → ℝ) ∧ ∀ z : ℝ, |z - β n| < 1 / a → z ∈ A n}, ?_⟩
-  ext x
-  obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
-  rw [hyperreal_ofSeq_mem_internalSet]
-  simp only [mem_ofPred_eq, almostAll_and]
-  refine and_congr hyperreal_ofSeq_mem_starSet (hyperreal_forall_iff fun s => ?_)
   have e1 : |Hyperreal.ofSeq s - Hyperreal.ofSeq β| = Hyperreal.ofSeq fun n => |s n - β n| :=
     abs_ofSeq _
   have e2 : (1 : ℝ*) / Hyperreal.ofSeq r = Hyperreal.ofSeq fun n => 1 / r n := rfl
-  rw [e1, e2, ofSeq_lt_ofSeq_iff, hyperreal_ofSeq_mem_internalSet, almostAll_imp]
+  rw [e1, e2, ofSeq_lt_ofSeq_iff]
+  exact hyperreal_internalRelN_vec₃
+
+/-- **Theorem 11.9.1, the definable set.** For an internal set $`X` and a hyperreal $`b`,
+the set of hypernaturals $`k` such that the interval $`(b - \tfrac1k, b + \tfrac1k)` is
+included in $`X` is internal, by the internal set definition principle: it is defined by the
+formula $`x \in \mathbb N \wedge \forall z\,(|z - y| < \tfrac1x \to z \in A)` with the
+parameter $`b` for $`y` and the internal set $`X` for $`A`. -/
+theorem IsInternal.isInternal_setOf_ball_subset {X : Set ℝ*} (hX : IsInternal X) (b : ℝ*) :
+    IsInternal {k : ℝ* | k ∈ ℕ* ∧ ∀ z : ℝ*, |z - b| < 1 / k → z ∈ X} := by
+  obtain ⟨A, rfl⟩ := hX
+  refine IFormula.isInternalSet_of_forall_iff (α := ℝ)
+    ((IFormula.mem 0 fun _ => range ((↑) : ℕ → ℝ)).and
+      (IFormula.all ((IFormula.rel fun _ v => |v 0 - v 2| < 1 / v 1).imp (IFormula.mem 0 A))))
+    ![b] fun x => ?_
+  simp only [IFormula.starRealize_all, IFormula.starRealize_imp, IFormula.starRealize_and,
+    IFormula.starRealize_mem, internalSet_const_range_natCast, mem_ofPred_eq]
+  refine and_congr Iff.rfl (forall_congr' fun z => imp_congr ?_ Iff.rfl)
+  exact (starRealize_abs_sub_lt_one_div z x b).symm
 
 /-- **Theorem 11.9.1** (permanence for halos). If an internal set $`X` contains every point
 infinitely close to the hyperreal $`b`, then there is a positive real $`\varepsilon` such

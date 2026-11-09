@@ -88,10 +88,18 @@ number.
 * The internal set definition principle is proved in full for a small deeply embedded
   first-order language over internal relations, {name}`Goldblatt.IFormula`
   ({name}`Goldblatt.IFormula.starRealize_ofSeq` and
-  {name}`Goldblatt.IFormula.isInternalSet_setOf_starRealize`). In the applications a
-  definable set is computed directly, by moving quantifiers inside "for almost all $`n`"
-  with {name}`Goldblatt.forall_star_iff` and {name}`Goldblatt.exists_star_iff`; binary
-  internal relations with their closure properties are {name}`Goldblatt.internalRel`.
+  {name}`Goldblatt.IFormula.isInternalSet_setOf_starRealize`). The definable sets needed in
+  the proofs of underflow, of permanence for halos and of the closedness of shadows, and the
+  sets of Exercise 11.7.1, are obtained from it by writing down the defining formula
+  ({name}`Goldblatt.IFormula.isInternalSet_of_forall_iff`). A definable set can also be
+  computed directly, by moving quantifiers inside "for almost all $`n`" with
+  {name}`Goldblatt.forall_star_iff` and {name}`Goldblatt.exists_star_iff`; binary internal
+  relations with their closure properties are {name}`Goldblatt.internalRel`.
+* The transfer principle for sentences with a set symbol (the statement marked with a dagger
+  in Section 11.7) is {name}`Goldblatt.SFormula.starRealize_of_forall_realize`, for a
+  language {name}`Goldblatt.SFormula` with set symbols; as an example the internal least
+  number principle is derived from it
+  ({name}`Goldblatt.IsInternal.exists_isLeast_of_transfer`).
 * Two exercises ask for the equivalence of two true statements about internal sets. To give
   such an equivalence content it is proved for an arbitrary class of sets with the one
   closure property the argument uses
@@ -104,5 +112,9 @@ number.
   formalization proves the statement for increasing unions and for decreasing intersections
   and records the correction.
 * The topologies of Section 10.5 that Section 11.14 refers to are restated in the namespace
-  {lit}`Goldblatt.HyperTopology`, because this chapter does not depend on Chapter 10.
+  {lit}`Goldblatt.HyperTopology`, because this chapter does not depend on Chapter 10. They
+  are to be identified with the definitions of the Chapter 10 page once that page exists.
+* A few general facts about the predicates of Chapter 5 (positive unlimited numbers and
+  integer parts) are proved here where they are first needed, for instance
+  {name}`Goldblatt.PosUnlimited.hfloor`; they involve no internal sets.
 -/

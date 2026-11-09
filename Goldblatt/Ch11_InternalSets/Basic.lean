@@ -1329,8 +1329,9 @@ theorem IsInternal.exists_unlimited_mem_of_limitedSet_subset {X : Set ℝ*} (hX 
   obtain ⟨b, hb, hsub⟩ := hX.exists_posUnlimited_Icc_subset h
   exact ⟨b, hsub ⟨by linarith [hb.pos], le_rfl⟩, hb.unlimited⟩
 
-/-- **Section 11.6, infinitesimals.** The least upper bound of a nonempty internal set of
-infinitesimals is infinitesimal. -/
+/-- **Section 11.6, infinitesimals.** If a nonempty set of infinitesimals has a least upper
+bound, then that bound is infinitesimal. No internality is assumed; for an internal set the
+bound exists by Theorem 11.5.1 ({name}`Goldblatt.IsInternal.exists_isLUB`). -/
 theorem infinitesimal_of_isLUB {X : Set ℝ*} (h : ∀ x ∈ X, Infinitesimal x) (hne : X.Nonempty)
     {b : ℝ*} (hb : IsLUB X b) : Infinitesimal b := by
   rw [infinitesimal_iff_abs_lt]
@@ -1342,8 +1343,10 @@ theorem infinitesimal_of_isLUB {X : Set ℝ*} (h : ∀ x ∈ X, Infinitesimal x)
   have h3 : ((r / 2 : ℝ) : ℝ*) < (r : ℝ*) := Hyperreal.coe_lt_coe.2 (by linarith)
   exact abs_lt.2 ⟨lt_of_lt_of_le h1.1 (hb.1 hx₀), lt_of_le_of_lt h2 h3⟩
 
-/-- **Section 11.6, infinitesimals.** The greatest lower bound of a nonempty internal set of
-infinitesimals is infinitesimal. -/
+/-- **Section 11.6, infinitesimals.** If a nonempty set of infinitesimals has a greatest
+lower bound, then that bound is infinitesimal. No internality is assumed; for an internal set
+the bound exists by the lower half of Theorem 11.5.1
+({name}`Goldblatt.IsInternal.exists_isGLB`). -/
 theorem infinitesimal_of_isGLB {X : Set ℝ*} (h : ∀ x ∈ X, Infinitesimal x) (hne : X.Nonempty)
     {a : ℝ*} (ha : IsGLB X a) : Infinitesimal a := by
   rw [infinitesimal_iff_abs_lt]
