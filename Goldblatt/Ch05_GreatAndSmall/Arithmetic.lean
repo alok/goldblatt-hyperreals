@@ -195,9 +195,11 @@ theorem limited_or_unlimited (b : ℝ*) : Limited b ∨ Unlimited b := by
   rw [← not_limited_iff_unlimited]
   exact em _
 
+/-- An unlimited hyperreal is not limited. -/
 theorem Unlimited.not_limited (h : Unlimited b) : ¬ Limited b :=
   not_limited_iff_unlimited.2 h
 
+/-- A limited hyperreal is not unlimited. -/
 theorem Limited.not_unlimited (h : Limited b) : ¬ Unlimited b :=
   not_unlimited_iff_limited.2 h
 
@@ -252,19 +254,25 @@ theorem limited_one : Limited 1 := by
 theorem appreciable_one : Appreciable 1 := by
   simpa using appreciable_coe (one_ne_zero (α := ℝ))
 
+/-- An appreciable hyperreal is limited. -/
 theorem Appreciable.limited (h : Appreciable b) : Limited b := h.1
 
+/-- An appreciable hyperreal is not infinitesimal. -/
 theorem Appreciable.not_infinitesimal (h : Appreciable b) : ¬ Infinitesimal b := h.2
 
+/-- An appreciable hyperreal is nonzero. -/
 theorem Appreciable.ne_zero (h : Appreciable b) : b ≠ 0 := fun h0 =>
   h.2 (h0 ▸ infinitesimal_zero)
 
+/-- An unlimited hyperreal is not infinitesimal. -/
 theorem Unlimited.not_infinitesimal (h : Unlimited b) : ¬ Infinitesimal b := fun hi =>
   h.not_limited hi.limited
 
+/-- An unlimited hyperreal is nonzero. -/
 theorem Unlimited.ne_zero (h : Unlimited b) : b ≠ 0 := fun h0 =>
   h.not_infinitesimal (h0 ▸ infinitesimal_zero)
 
+/-- An infinitesimal is not unlimited. -/
 theorem Infinitesimal.not_unlimited (h : Infinitesimal b) : ¬ Unlimited b :=
   h.limited.not_unlimited
 
@@ -385,12 +393,16 @@ theorem negUnlimited_iff : NegUnlimited b ↔ Unlimited b ∧ b < 0 := by
     rw [abs_of_neg h0, Hyperreal.coe_neg] at this
     linarith
 
+/-- A positive unlimited hyperreal is unlimited. -/
 theorem PosUnlimited.unlimited (h : PosUnlimited b) : Unlimited b := Or.inl h
 
+/-- A negative unlimited hyperreal is unlimited. -/
 theorem NegUnlimited.unlimited (h : NegUnlimited b) : Unlimited b := Or.inr h
 
+/-- A positive unlimited hyperreal is positive. -/
 theorem PosUnlimited.pos (h : PosUnlimited b) : 0 < b := (posUnlimited_iff.1 h).2
 
+/-- A negative unlimited hyperreal is negative. -/
 theorem NegUnlimited.neg (h : NegUnlimited b) : b < 0 := (negUnlimited_iff.1 h).2
 
 /-- **Section 5.1, non-vacuity.** The hyperreal $`\varepsilon` of Chapter 3 is a nonzero
@@ -457,8 +469,10 @@ def infinitesimalSet : Set ℝ* := {b | Infinitesimal b}
 @[inherit_doc] scoped notation "𝕃" => limitedSet
 @[inherit_doc] scoped notation "𝕀" => infinitesimalSet
 
+/-- Membership in $`\mathbb L` is the predicate {name}`Limited`. -/
 @[simp] theorem mem_limitedSet : b ∈ 𝕃 ↔ Limited b := Iff.rfl
 
+/-- Membership in $`\mathbb I` is the predicate {name}`Infinitesimal`. -/
 @[simp] theorem mem_infinitesimalSet : b ∈ 𝕀 ↔ Infinitesimal b := Iff.rfl
 
 /-- **Section 5.1.** For a set $`X` of hyperreals, $`X_\infty` is the set of its unlimited
@@ -549,15 +563,19 @@ theorem Limited.neg (hb : Limited b) : Limited (-b) := by
   rw [limited_iff_abs_lt] at *
   simpa using hb
 
+/-- $`-\varepsilon` is infinitesimal exactly when $`\varepsilon` is. -/
 @[simp] theorem infinitesimal_neg_iff : Infinitesimal (-e) ↔ Infinitesimal e :=
   ⟨fun h => by simpa using h.neg, Infinitesimal.neg⟩
 
+/-- $`-b` is limited exactly when $`b` is. -/
 @[simp] theorem limited_neg_iff : Limited (-b) ↔ Limited b :=
   ⟨fun h => by simpa using h.neg, Limited.neg⟩
 
+/-- $`-H` is unlimited exactly when $`H` is. -/
 @[simp] theorem unlimited_neg_iff : Unlimited (-H) ↔ Unlimited H := by
   rw [← not_limited_iff_unlimited, ← not_limited_iff_unlimited, limited_neg_iff]
 
+/-- $`-b` is appreciable exactly when $`b` is. -/
 @[simp] theorem appreciable_neg_iff : Appreciable (-b) ↔ Appreciable b := by
   rw [Appreciable, Appreciable, limited_neg_iff, infinitesimal_neg_iff]
 
@@ -689,6 +707,7 @@ theorem unlimited_iff_inv_infinitesimal (h0 : H ≠ 0) : Unlimited H ↔ Infinit
   ⟨Unlimited.inv_infinitesimal, fun h => by
     simpa using h.inv_unlimited (inv_ne_zero h0)⟩
 
+/-- $`1/b` is appreciable exactly when $`b` is. -/
 @[simp] theorem appreciable_inv_iff : Appreciable b⁻¹ ↔ Appreciable b :=
   ⟨fun h => by simpa using h.inv, Appreciable.inv⟩
 
@@ -1002,8 +1021,10 @@ def limitedSubring : Subring ℝ* where
   mul_mem' := Limited.mul
   neg_mem' := Limited.neg
 
+/-- Membership in the ring of limited numbers is the predicate {name}`Limited`. -/
 @[simp] theorem mem_limitedSubring {b : ℝ*} : b ∈ limitedSubring ↔ Limited b := Iff.rfl
 
+/-- The underlying set of the ring of limited numbers is $`\mathbb L`. -/
 @[simp] theorem coe_limitedSubring : (limitedSubring : Set ℝ*) = 𝕃 := rfl
 
 /-- Every member of the ring of limited numbers is limited. -/
@@ -1020,6 +1041,7 @@ def infinitesimalNonUnitalSubring : NonUnitalSubring ℝ* where
   mul_mem' := Infinitesimal.mul
   neg_mem' := Infinitesimal.neg
 
+/-- Membership in the ring of infinitesimals is the predicate {name}`Infinitesimal`. -/
 @[simp] theorem mem_infinitesimalNonUnitalSubring {b : ℝ*} :
     b ∈ infinitesimalNonUnitalSubring ↔ Infinitesimal b := Iff.rfl
 
@@ -1032,6 +1054,7 @@ def infinitesimalIdeal : Ideal limitedSubring where
   add_mem' := fun ha hb => Infinitesimal.add ha hb
   smul_mem' := fun c _ hx => c.2.mul_infinitesimal hx
 
+/-- A limited number belongs to the ideal of infinitesimals exactly when it is infinitesimal. -/
 @[simp] theorem mem_infinitesimalIdeal {x : limitedSubring} :
     x ∈ infinitesimalIdeal ↔ Infinitesimal (x : ℝ*) := Iff.rfl
 

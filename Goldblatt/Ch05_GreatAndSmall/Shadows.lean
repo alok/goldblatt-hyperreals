@@ -55,12 +55,16 @@ def hal (b : ℝ*) : Set ℝ* := {c | b ≊ c}
 $`b`. -/
 def gal (b : ℝ*) : Set ℝ* := {c | b ∼ c}
 
+/-- The halo of $`b` consists of the numbers infinitely close to $`b`. -/
 @[simp] theorem mem_hal : c ∈ hal b ↔ b ≊ c := Iff.rfl
 
+/-- The galaxy of $`b` consists of the numbers at limited distance from $`b`. -/
 @[simp] theorem mem_gal : c ∈ gal b ↔ b ∼ c := Iff.rfl
 
+/-- Infinite closeness unfolded: $`b \simeq c` means that $`b - c` is infinitesimal. -/
 theorem infClose_iff : b ≊ c ↔ Infinitesimal (b - c) := Iff.rfl
 
+/-- Limited distance unfolded: $`b \sim c` means that $`b - c` is limited. -/
 theorem limClose_iff : b ∼ c ↔ Limited (b - c) := Iff.rfl
 
 /-- $`b \simeq c` if and only if $`|b - c| < r` for every positive real $`r`. -/
@@ -92,8 +96,10 @@ theorem InfClose.trans (h₁ : b ≊ c) (h₂ : c ≊ d) : b ≊ d := by
   rw [infClose_iff] at *
   simpa using h₁.add h₂
 
+/-- Chains of infinite closeness can be written as {lit}`calc` blocks. -/
 instance : Trans InfClose InfClose InfClose := ⟨InfClose.trans⟩
 
+/-- Infinite closeness is symmetric, as an equivalence. -/
 theorem infClose_comm : b ≊ c ↔ c ≊ b := ⟨InfClose.symm, InfClose.symm⟩
 
 /-- **Exercise 5.5(1).** Infinite closeness is an equivalence relation on the hyperreals. -/
@@ -117,8 +123,10 @@ theorem LimClose.trans (h₁ : b ∼ c) (h₂ : c ∼ d) : b ∼ d := by
   rw [limClose_iff] at *
   simpa using h₁.add h₂
 
+/-- Chains of limited distance can be written as {lit}`calc` blocks. -/
 instance : Trans LimClose LimClose LimClose := ⟨LimClose.trans⟩
 
+/-- Limited distance is symmetric, as an equivalence. -/
 theorem limClose_comm : b ∼ c ↔ c ∼ b := ⟨LimClose.symm, LimClose.symm⟩
 
 /-- **Exercise 5.5(1).** Limited distance is an equivalence relation on the hyperreals. -/
@@ -492,13 +500,17 @@ theorem Limited.sh_eq_iff (hb : Limited b) {c : ℝ} : sh b = c ↔ b ≊ c :=
 @[simp]
 theorem sh_coe (r : ℝ) : sh (r : ℝ*) = r := sh_eq_of_infClose (InfClose.refl _)
 
+/-- The shadow of $`0` is $`0`. -/
 @[simp] theorem sh_zero : sh 0 = 0 := sh_coe 0
 
+/-- The shadow of $`1` is $`1`. -/
 @[simp] theorem sh_one : sh 1 = 1 := by
   simpa using sh_coe 1
 
+/-- The shadow of a natural number is that number. -/
 @[simp] theorem sh_natCast (n : ℕ) : sh (n : ℝ*) = n := sh_coe n
 
+/-- The shadow of an integer is that integer. -/
 @[simp] theorem sh_intCast (n : ℤ) : sh (n : ℝ*) = n := sh_coe n
 
 /-- The shadow of an infinitesimal is $`0`. -/
@@ -680,8 +692,33 @@ theorem hsqrt_sq (hx : 0 ≤ x) : hsqrt x ^ 2 = x := by
   rw [ofSeq_eq_ofSeq_iff]
   exact hx'.mono fun n hn => Real.sq_sqrt hn
 
-/-- **Theorem 5.6.2(6), square roots.** $`\operatorname{sh}(\sqrt b) =
-\sqrt{\operatorname{sh}(b)}` for limited $`b \ge 0`. -/
+/-- **Theorem 5.6.2(6), roots.** For a limited $`b \ge 0` and a natural number $`n \ge 1`,
+$$`\operatorname{sh}\bigl(\sqrt[n]{b}\bigr) = \sqrt[n]{\operatorname{sh}(b)}.`
+The $`n`-th root is {name}`hroot` on the hyperreal side and the real power with exponent
+$`1/n` on the real side. The proof is algebraic: the shadow of the root is a nonnegative real
+whose $`n`-th power is $`\operatorname{sh}(b)`, by part (4). -/
+theorem sh_hroot (hb : Limited b) (h0 : 0 ≤ b) {n : ℕ} (hn : n ≠ 0) :
+    sh (hroot n b) = sh b ^ ((n : ℝ)⁻¹) := by
+  have hp := hroot_pow hn h0
+  have hl : Limited (hroot n b) :=
+    not_unlimited_iff_limited.1 fun hu => (hu.pow hn).not_limited (by rwa [hp])
+  have h1 : 0 ≤ sh (hroot n b) := sh_nonneg hl (hroot_nonneg n h0)
+  have h2 : sh (hroot n b) ^ n = sh b := by rw [← sh_pow hl, hp]
+  rw [← h2, ← Real.rpow_natCast, ← Real.rpow_mul h1, mul_inv_cancel₀ (by exact_mod_cast hn),
+    Real.rpow_one]
+
+/-- The hyperreal square root is the hyperreal root of order $`2`. -/
+theorem hsqrt_eq_hroot_two (x : ℝ*) : hsqrt x = hroot 2 x := by
+  obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
+  rw [hsqrt_ofSeq, hroot_ofSeq]
+  congr 1
+  funext k
+  rw [Real.sqrt_eq_rpow]
+  norm_num
+
+/-- **Theorem 5.6.2(6), the case $`n = 2`.** $`\operatorname{sh}(\sqrt b) =
+\sqrt{\operatorname{sh}(b)}` for limited $`b \ge 0`, with the square root functions
+{name}`hsqrt` and {name}`Real.sqrt`. The general statement is {name}`sh_hroot`. -/
 theorem sh_hsqrt (hb : Limited b) (h0 : 0 ≤ b) : sh (hsqrt b) = √(sh b) := by
   have hsq := hsqrt_sq h0
   have hl : Limited (hsqrt b) :=
@@ -699,6 +736,7 @@ def shadowHom : limitedSubring →+* ℝ where
   map_add' x y := sh_add (limitedSubring.limited x) (limitedSubring.limited y)
   map_mul' x y := sh_mul (limitedSubring.limited x) (limitedSubring.limited y)
 
+/-- The shadow homomorphism takes a limited number to its shadow. -/
 @[simp] theorem shadowHom_apply (x : limitedSubring) : shadowHom x = sh (x : ℝ*) := rfl
 
 /-- **Section 5.6.** The shadow map is order-preserving on the limited numbers. -/
@@ -850,19 +888,25 @@ def hcos : ℝ* → ℝ* := ⋆Real.cos
 /-- **Exercise 5.7(2).** The extension of the tangent function to the hyperreals. -/
 def htan : ℝ* → ℝ* := ⋆Real.tan
 
+/-- The hyperreal sine of the class of a sequence is the class of the sines. -/
 theorem hsin_ofSeq (r : ℕ → ℝ) :
     hsin (Hyperreal.ofSeq r) = Hyperreal.ofSeq fun n => Real.sin (r n) := rfl
 
+/-- The hyperreal cosine of the class of a sequence is the class of the cosines. -/
 theorem hcos_ofSeq (r : ℕ → ℝ) :
     hcos (Hyperreal.ofSeq r) = Hyperreal.ofSeq fun n => Real.cos (r n) := rfl
 
+/-- The hyperreal tangent of the class of a sequence is the class of the tangents. -/
 theorem htan_ofSeq (r : ℕ → ℝ) :
     htan (Hyperreal.ofSeq r) = Hyperreal.ofSeq fun n => Real.tan (r n) := rfl
 
+/-- On real numbers the hyperreal sine is the real sine. -/
 @[simp] theorem hsin_coe (r : ℝ) : hsin (r : ℝ*) = ((Real.sin r : ℝ) : ℝ*) := rfl
 
+/-- On real numbers the hyperreal cosine is the real cosine. -/
 @[simp] theorem hcos_coe (r : ℝ) : hcos (r : ℝ*) = ((Real.cos r : ℝ) : ℝ*) := rfl
 
+/-- On real numbers the hyperreal tangent is the real tangent. -/
 @[simp] theorem htan_coe (r : ℝ) : htan (r : ℝ*) = ((Real.tan r : ℝ) : ℝ*) := rfl
 
 /-- **Exercise 5.7(2), transferred inequality.** $`|\sin x| \le |x|` for every hyperreal
@@ -987,6 +1031,7 @@ theorem exists_hyperRat_infClose (x : ℝ*) : ∃ q ∈ ℚ*, x ≊ q := by
 hyperrationals. -/
 def limitedHyperRat : Subring ℝ* := hyperRatSubfield.toSubring ⊓ limitedSubring
 
+/-- The limited hyperrationals are the hyperrationals that are limited. -/
 theorem mem_limitedHyperRat {x : ℝ*} : x ∈ limitedHyperRat ↔ x ∈ ℚ* ∧ Limited x := Iff.rfl
 
 /-- **Exercise 5.7(4).** The underlying set of the ring of limited hyperrationals is
@@ -1007,6 +1052,8 @@ def infinitesimalHyperRat : Ideal limitedHyperRat where
   add_mem' := fun ha hb => Infinitesimal.add ha hb
   smul_mem' := fun c _ hx => (limitedHyperRat.limited c).mul_infinitesimal hx
 
+/-- A limited hyperrational belongs to the ideal of infinitesimal hyperrationals exactly when it
+is infinitesimal. -/
 @[simp] theorem mem_infinitesimalHyperRat {x : limitedHyperRat} :
     x ∈ infinitesimalHyperRat ↔ Infinitesimal (x : ℝ*) := Iff.rfl
 
@@ -1077,9 +1124,17 @@ The ultrapower of $`F` over the index ultrafilter is again an ordered field cont
 and the _shadow property_ of $`F` is the assertion that every element of this ultrapower lying
 between two elements of $`F` is infinitely close to an element of $`F`. Theorem 5.8.1 then
 says: an ordered field with the shadow property is Cauchy complete. The proof is the book's
-nonstandard argument, word for word; the value of the extended sequence at the unlimited
-hypernatural represented by the identity sequence is simply the class of the sequence itself.
-For the field of real numbers the statement specializes to the book's.
+nonstandard argument in outline, with two differences. The book takes an arbitrary unlimited
+hypernatural $`N` and the value $`s_N` of the extended sequence of Section 3.13; here $`N` is
+fixed to be the class of the identity sequence, so that $`s_N` is simply the class of the
+sequence $`s` itself and no extended sequence is needed. And where the book compares shadows
+at the end (the distance from $`s_m` to the limit is at most $`e` plus an infinitesimal), the
+final estimate here uses $`e/2` twice. For the field of real numbers the statement specializes
+to the book's.
+
+The shadow property is a strong hypothesis: it forces the field to be Archimedean
+({lit}`archimedean_of_shadowProperty`), which is what makes the next section work without
+further assumptions.
 -/
 
 section Completeness
@@ -1159,6 +1214,34 @@ theorem cauSeq_isComplete_of_shadowProperty (h : ShadowProperty F) :
     obtain ⟨L, hL⟩ := cauchy_converges_of_shadowProperty h s.2
     exact ⟨L, hL⟩⟩
 
+/-- **Sections 5.8 and 5.9, a preliminary.** An ordered field with the shadow property is
+Archimedean. If some $`x` exceeded every natural number, the class of the sequence
+$`0, 1, 2, \dots` would lie between $`-1` and $`x + 1`, so it would be within $`1/2` of some
+$`c` in the field for almost all indices; two such indices $`n` and $`m \ge n + 2` give a
+contradiction. The book works with the reals, where the Archimedean property is available
+from the start; for a general field it has to be derived, and this is how. -/
+theorem archimedean_of_shadowProperty (h : ShadowProperty F) : Archimedean F := by
+  rw [archimedean_iff_nat_lt]
+  by_contra hna
+  push Not at hna
+  obtain ⟨x, hx⟩ := hna
+  have hlim : ∃ r t : F, (r : Ultrapower F) < ((fun n : ℕ => (n : F)) : Ultrapower F) ∧
+      ((fun n : ℕ => (n : F)) : Ultrapower F) < (t : Ultrapower F) := by
+    refine ⟨-1, x + 1, Ultrapower.const_lt_coe.2 (Eventually.of_forall fun n => ?_),
+      Ultrapower.coe_lt_const.2 (Eventually.of_forall fun n => ?_)⟩
+    · have : (0 : F) ≤ n := Nat.cast_nonneg n
+      linarith
+    · have := hx n
+      linarith
+  obtain ⟨c, hc⟩ := h _ hlim
+  have h1 := Ultrapower.abs_coe_sub_const_lt.1 (hc (1 / 2) (by norm_num))
+  obtain ⟨n, hn⟩ := h1.exists
+  obtain ⟨m, hm, hmn⟩ := (h1.and
+    (eventually_hyperfilter_of_eventually_atTop (eventually_ge_atTop (n + 2)))).exists
+  have h3 : ((n : F) + 2) ≤ m := by exact_mod_cast hmn
+  rw [abs_lt] at hn hm
+  linarith [hn.1, hn.2, hm.1, hm.2]
+
 /-- **Theorem 5.6.1, for an ordered field.** The book's proof of the existence of shadows
 uses only the least upper bound property, so it shows that every Dedekind complete ordered
 field has the shadow property. -/
@@ -1218,10 +1301,16 @@ end Completeness
 The exercise replaces Cauchy sequences by a direct proof of the least upper bound property
 from the shadow property. Given a nonempty set $`A` that is bounded above, let $`s_n` be the
 least integer $`k` such that $`k/n` is an upper bound of $`A`; then the shadow of
-$`s_N / N` for an unlimited $`N` is the least upper bound of $`A`. The existence of $`s_n`
-uses the Archimedean property, which holds for the reals and is assumed of the field here.
-Together with the previous section this shows that for an Archimedean ordered field the shadow
-property is equivalent to Dedekind completeness.
+$`s_N / N` for an unlimited $`N` is the least upper bound of $`A`. As in Section 5.8, $`N` is
+the class of the sequence of positive integers, so $`s_N / N` is the class of the sequence
+$`s_n / n`; the sequence is indexed from $`0` with denominator $`n + 1`.
+
+The existence of $`s_n` in part (a) uses the Archimedean property. For the reals it is known;
+for a general ordered field it follows from the shadow property
+({lit}`archimedean_of_shadowProperty`), so the main theorem
+{lit}`exists_isLUB_of_shadowProperty` needs no hypothesis beyond the shadow property.
+Together with the previous section this shows that for an ordered field the shadow property is
+equivalent to Dedekind completeness.
 -/
 
 section Dedekind
@@ -1230,7 +1319,8 @@ variable {F : Type*} [Field F] [LinearOrder F] [IsStrictOrderedRing F]
 
 /-- **Exercise 5.9(a).** In an Archimedean ordered field, if $`A` is nonempty and bounded
 above then for each positive natural $`n` there is a least integer $`k` such that $`k/n` is an
-upper bound of $`A`. -/
+upper bound of $`A`. The book's field is the reals; the Archimedean property is exactly what
+this part needs, and a field with the shadow property has it. -/
 theorem exists_least_int_div_mem_upperBounds [Archimedean F] {A : Set F} (hne : A.Nonempty)
     (hbdd : BddAbove A) {n : ℕ} (hn : 0 < n) :
     ∃ k : ℤ, (k : F) / n ∈ upperBounds A ∧ ∀ j : ℤ, (j : F) / n ∈ upperBounds A → k ≤ j := by
@@ -1248,54 +1338,66 @@ theorem exists_least_int_div_mem_upperBounds [Archimedean F] {A : Set F} (hne : 
     rw [le_div_iff₀ hn']
     exact (mul_le_mul_of_nonneg_right (hu hx) hn'.le).trans hk
 
-/-- **Exercise 5.9(b), (c).** An Archimedean ordered field with the shadow property has the
-least upper bound property: every nonempty subset that is bounded above has a least upper
-bound. With $`s_n` the least integer such that $`s_n/n` bounds $`A` above, the class of the
-sequence $`s_n/n` is limited, and the element of the field infinitely close to it is the least
-upper bound. -/
-theorem exists_isLUB_of_shadowProperty [Archimedean F] (h : ShadowProperty F) {A : Set F}
+omit [IsStrictOrderedRing F] in
+/-- **Exercise 5.9, the minimality of $`s_n`.** If $`s` is the least integer such that $`s/d`
+is an upper bound of $`A`, then $`(s - 1)/d` is not an upper bound: some member of $`A` lies
+strictly above it. -/
+theorem exists_mem_lt_of_least_int_div {A : Set F} {d : F} {s : ℤ}
+    (hmin : ∀ j : ℤ, (j : F) / d ∈ upperBounds A → s ≤ j) :
+    ∃ a ∈ A, ((s : F) - 1) / d < a := by
+  by_contra hcon
+  push Not at hcon
+  have hub : (((s - 1 : ℤ) : F)) / d ∈ upperBounds A := fun a ha => by
+    have := hcon a ha
+    rw [Int.cast_sub, Int.cast_one]
+    exact this
+  have := hmin _ hub
+  omega
+
+/-- **Exercise 5.9(b).** Let $`A` be nonempty and bounded above and let $`s_n` be the least
+integer such that $`s_n / (n + 1)` is an upper bound of $`A`. Then the class of the sequence
+$`s_n / (n + 1)`, which is the book's $`s_N / N` for the unlimited hypernatural
+$`N = [1, 2, 3, \dots]`, is limited: it lies between two elements of the field. Explicitly,
+it is above $`a - 1` for any $`a \in A` and below $`u + 1` for any upper bound $`u`. -/
+theorem limited_least_int_div {A : Set F} (hne : A.Nonempty) (hbdd : BddAbove A) {s : ℕ → ℤ}
+    (hs : ∀ n : ℕ, (s n : F) / ((n + 1 : ℕ) : F) ∈ upperBounds A)
+    (hmin : ∀ n : ℕ, ∀ j : ℤ, (j : F) / ((n + 1 : ℕ) : F) ∈ upperBounds A → s n ≤ j) :
+    ∃ r t : F,
+      (r : Ultrapower F) < ((fun n : ℕ => (s n : F) / ((n + 1 : ℕ) : F)) : Ultrapower F) ∧
+      ((fun n : ℕ => (s n : F) / ((n + 1 : ℕ) : F)) : Ultrapower F) < (t : Ultrapower F) := by
+  obtain ⟨a, ha⟩ := hne
+  obtain ⟨u, hu⟩ := hbdd
+  refine ⟨a - 1, u + 1, Ultrapower.const_lt_coe.2 (Eventually.of_forall fun n => ?_),
+    Ultrapower.coe_lt_const.2 (Eventually.of_forall fun n => ?_)⟩
+  · have : a ≤ (s n : F) / ((n + 1 : ℕ) : F) := hs n ha
+    linarith
+  · have hpos : (0 : F) < ((n + 1 : ℕ) : F) := by exact_mod_cast n.succ_pos
+    obtain ⟨a', ha', hlt⟩ := exists_mem_lt_of_least_int_div (hmin n)
+    have h1 : ((s n : F) - 1) / ((n + 1 : ℕ) : F) < u := hlt.trans_le (hu ha')
+    have h2 : 1 / ((n + 1 : ℕ) : F) ≤ 1 := by
+      rw [div_le_one hpos]
+      exact_mod_cast n.succ_pos
+    have h3 : (s n : F) / ((n + 1 : ℕ) : F) =
+        ((s n : F) - 1) / ((n + 1 : ℕ) : F) + 1 / ((n + 1 : ℕ) : F) := by ring
+    linarith
+
+/-- **Exercise 5.9(c).** An ordered field with the shadow property has the least upper bound
+property: every nonempty subset that is bounded above has a least upper bound. With $`s_n`
+the least integer such that $`s_n/(n+1)` bounds $`A` above (part (a), available because the
+field is Archimedean by {name}`archimedean_of_shadowProperty`), the class of the sequence
+$`s_n/(n+1)` is limited (part (b), {name}`limited_least_int_div`), and the element $`L` of the
+field infinitely close to it is the least upper bound. -/
+theorem exists_isLUB_of_shadowProperty (h : ShadowProperty F) {A : Set F}
     (hne : A.Nonempty) (hbdd : BddAbove A) : ∃ c, IsLUB A c := by
-  -- the sequence `s`, indexed so that the `n`-th term uses the denominator `n + 1`
+  have : Archimedean F := archimedean_of_shadowProperty h
+  -- (a) the sequence `s`, indexed so that the `n`-th term uses the denominator `n + 1`
   have hex : ∀ n : ℕ, ∃ k : ℤ, (k : F) / ((n + 1 : ℕ) : F) ∈ upperBounds A ∧
       ∀ j : ℤ, (j : F) / ((n + 1 : ℕ) : F) ∈ upperBounds A → k ≤ j :=
     fun n => exists_least_int_div_mem_upperBounds hne hbdd n.succ_pos
   choose s hs hmin using hex
-  have hpos : ∀ n : ℕ, (0 : F) < ((n + 1 : ℕ) : F) := fun n => by exact_mod_cast n.succ_pos
-  -- `(s n - 1) / (n + 1)` is not an upper bound, so it lies below some member of `A`
-  have hbelow : ∀ n : ℕ, ∃ a ∈ A, ((s n : F) - 1) / ((n + 1 : ℕ) : F) < a := by
-    intro n
-    by_contra hcon
-    push Not at hcon
-    have hub : (((s n - 1 : ℤ) : F)) / ((n + 1 : ℕ) : F) ∈ upperBounds A := fun a ha => by
-      have := hcon a ha
-      rw [Int.cast_sub, Int.cast_one]
-      exact this
-    have := hmin n _ hub
-    omega
-  obtain ⟨a, ha⟩ := hne
-  obtain ⟨u, hu⟩ := hbdd
   let x : ℕ → F := fun n => (s n : F) / ((n + 1 : ℕ) : F)
-  have hxlt : ∀ n, x n - 1 / ((n + 1 : ℕ) : F) < u := fun n => by
-    obtain ⟨a', ha', hlt⟩ := hbelow n
-    have : x n - 1 / ((n + 1 : ℕ) : F) = ((s n : F) - 1) / ((n + 1 : ℕ) : F) := by
-      simp only [x]
-      ring
-    rw [this]
-    exact hlt.trans_le (hu ha')
-  have hone : ∀ n : ℕ, 1 / ((n + 1 : ℕ) : F) ≤ 1 := fun n => by
-    rw [div_le_one (hpos n)]
-    exact_mod_cast n.succ_pos
-  -- (b) the class of `x` is limited
-  have hlim : ∃ r t : F, (r : Ultrapower F) < (x : Ultrapower F) ∧
-      (x : Ultrapower F) < (t : Ultrapower F) := by
-    refine ⟨a - 1, u + 1, Ultrapower.const_lt_coe.2 (Eventually.of_forall fun n => ?_),
-      Ultrapower.coe_lt_const.2 (Eventually.of_forall fun n => ?_)⟩
-    · have : a ≤ x n := hs n ha
-      linarith
-    · have := hxlt n
-      have := hone n
-      linarith
-  obtain ⟨L, hL⟩ := h _ hlim
+  -- (b) the class of `x` is limited, so it has a shadow `L`
+  obtain ⟨L, hL⟩ := h (x : Ultrapower F) (limited_least_int_div hne hbdd hs hmin)
   -- (c) `L` is the least upper bound
   refine ⟨L, fun a' ha' => ?_, fun u' hu' => ?_⟩
   · by_contra hlt
@@ -1320,7 +1422,7 @@ theorem exists_isLUB_of_shadowProperty [Archimedean F] (h : ShadowProperty F) {A
       have : (N : F) ≤ n := by exact_mod_cast hn2
       linarith
     have h4 : x n - 1 / ((n + 1 : ℕ) : F) < u' := by
-      obtain ⟨a', ha', hlt'⟩ := hbelow n
+      obtain ⟨a', ha', hlt'⟩ := exists_mem_lt_of_least_int_div (hmin n)
       have : x n - 1 / ((n + 1 : ℕ) : F) = ((s n : F) - 1) / ((n + 1 : ℕ) : F) := by
         simp only [x]
         ring
@@ -1329,9 +1431,9 @@ theorem exists_isLUB_of_shadowProperty [Archimedean F] (h : ShadowProperty F) {A
     have h5 := (abs_lt.1 hn1).1
     linarith
 
-/-- **Sections 5.8 and 5.9, summary.** For an Archimedean ordered field, the shadow property
-is equivalent to Dedekind completeness. -/
-theorem shadowProperty_iff_exists_isLUB [Archimedean F] :
+/-- **Sections 5.8 and 5.9, summary.** For an ordered field, the shadow property is equivalent
+to Dedekind completeness. No Archimedean hypothesis is needed: each side implies it. -/
+theorem shadowProperty_iff_exists_isLUB :
     ShadowProperty F ↔ ∀ A : Set F, A.Nonempty → BddAbove A → ∃ c, IsLUB A c :=
   ⟨fun h _ hne hbdd => exists_isLUB_of_shadowProperty h hne hbdd,
     shadowProperty_of_exists_isLUB⟩

@@ -100,5 +100,7 @@ number.
 * Section 5.8 asks for a theorem of the form "the existence of shadows implies completeness".
   For Lean's real numbers this would be vacuous, so the theorem is proved for an arbitrary
   ordered field, with the hypothesis {name}`Goldblatt.ShadowProperty` about its ultrapower;
-  the statements for the reals are then special cases.
+  the statements for the reals are then special cases. The hypothesis implies that the field
+  is Archimedean ({name}`Goldblatt.archimedean_of_shadowProperty`), so no such assumption is
+  made.
 -/

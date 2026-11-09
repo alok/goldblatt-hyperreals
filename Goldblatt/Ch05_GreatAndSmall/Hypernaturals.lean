@@ -41,8 +41,10 @@ def hnat (k : ℕ → ℕ) : ℝ* := Hyperreal.ofSeq fun n => (k n : ℝ)
 /-- The hyperinteger represented by a sequence of integers. -/
 def hint (z : ℕ → ℤ) : ℝ* := Hyperreal.ofSeq fun n => (z n : ℝ)
 
+/-- The class of a sequence of natural numbers is a hypernatural. -/
 theorem hnat_mem_hyperNat (k : ℕ → ℕ) : hnat k ∈ ℕ* := mem_hyperNat_iff.2 ⟨k, rfl⟩
 
+/-- The class of a sequence of integers is a hyperinteger. -/
 theorem hint_mem_hyperInt (z : ℕ → ℤ) : hint z ∈ ℤ* := mem_hyperInt_iff.2 ⟨z, rfl⟩
 
 /-- Every hypernatural is represented by a sequence of natural numbers. -/
@@ -51,54 +53,70 @@ theorem exists_hnat_eq (hK : K ∈ ℕ*) : ∃ k : ℕ → ℕ, K = hnat k := me
 /-- Every hyperinteger is represented by a sequence of integers. -/
 theorem exists_hint_eq (hK : K ∈ ℤ*) : ∃ z : ℕ → ℤ, K = hint z := mem_hyperInt_iff.1 hK
 
+/-- Two sequences of natural numbers represent the same hypernatural exactly when they agree
+almost everywhere. -/
 theorem hnat_eq_hnat_iff {k l : ℕ → ℕ} :
     hnat k = hnat l ↔ ∀ᶠ n in hyperfilter ℕ, k n = l n := by
   rw [hnat, hnat, ofSeq_eq_ofSeq_iff]
   simp only [Nat.cast_inj]
 
+/-- Strict order between classes of sequences of natural numbers is strict order of almost all
+terms. -/
 theorem hnat_lt_hnat_iff {k l : ℕ → ℕ} :
     hnat k < hnat l ↔ ∀ᶠ n in hyperfilter ℕ, k n < l n := by
   rw [hnat, hnat, ofSeq_lt_ofSeq_iff]
   simp only [Nat.cast_lt]
 
+/-- Order between classes of sequences of natural numbers is order of almost all terms. -/
 theorem hnat_le_hnat_iff {k l : ℕ → ℕ} :
     hnat k ≤ hnat l ↔ ∀ᶠ n in hyperfilter ℕ, k n ≤ l n := by
   rw [hnat, hnat, ofSeq_le_ofSeq_iff]
   simp only [Nat.cast_le]
 
+/-- Two sequences of integers represent the same hyperinteger exactly when they agree almost
+everywhere. -/
 theorem hint_eq_hint_iff {z w : ℕ → ℤ} :
     hint z = hint w ↔ ∀ᶠ n in hyperfilter ℕ, z n = w n := by
   rw [hint, hint, ofSeq_eq_ofSeq_iff]
   simp only [Int.cast_inj]
 
+/-- Order between classes of sequences of integers is order of almost all terms. -/
 theorem hint_le_hint_iff {z w : ℕ → ℤ} :
     hint z ≤ hint w ↔ ∀ᶠ n in hyperfilter ℕ, z n ≤ w n := by
   rw [hint, hint, ofSeq_le_ofSeq_iff]
   simp only [Int.cast_le]
 
+/-- Classes of sequences of natural numbers are added termwise. -/
 theorem hnat_add (k l : ℕ → ℕ) : hnat k + hnat l = hnat fun n => k n + l n := by
   change Hyperreal.ofSeq (fun n => (k n : ℝ) + (l n : ℝ)) = _
   rw [hnat, ofSeq_eq_ofSeq_iff]
   exact Eventually.of_forall fun n => by push_cast; rfl
 
+/-- Classes of sequences of natural numbers are multiplied termwise. -/
 theorem hnat_mul (k l : ℕ → ℕ) : hnat k * hnat l = hnat fun n => k n * l n := by
   change Hyperreal.ofSeq (fun n => (k n : ℝ) * (l n : ℝ)) = _
   rw [hnat, ofSeq_eq_ofSeq_iff]
   exact Eventually.of_forall fun n => by push_cast; rfl
 
+/-- A natural number, as a hyperreal, is the class of the constant sequence. -/
 theorem natCast_eq_hnat (m : ℕ) : (m : ℝ*) = hnat fun _ => m := rfl
 
+/-- An integer, as a hyperreal, is the class of the constant sequence. -/
 theorem intCast_eq_hint (m : ℤ) : (m : ℝ*) = hint fun _ => m := rfl
 
+/-- The class of the constant sequence $`0` of natural numbers is $`0`. -/
 @[simp] theorem hnat_const_zero : hnat (fun _ => 0) = 0 := by
   rw [← natCast_eq_hnat, Nat.cast_zero]
 
+/-- The class of the constant sequence $`1` of natural numbers is $`1`. -/
 @[simp] theorem hnat_const_one : hnat (fun _ => 1) = 1 := by
   rw [← natCast_eq_hnat, Nat.cast_one]
 
+/-- The class of the constant sequence $`0` of integers is $`0`. -/
 @[simp] theorem hint_const_zero : hint (fun _ => 0) = 0 := by
   rw [← intCast_eq_hint, Int.cast_zero]
 
+/-- A sequence of natural numbers, read as a sequence of integers, has the same class. -/
 theorem hint_natCast (k : ℕ → ℕ) : hint (fun n => (k n : ℤ)) = hnat k := by
   rw [hint, hnat, ofSeq_eq_ofSeq_iff]
   exact Eventually.of_forall fun n => by push_cast; rfl
@@ -189,6 +207,8 @@ theorem unlimitedHyperNat_eq : unlimitedHyperNat = unlimitedPart ℕ* := by
     rintro ⟨n, rfl⟩
     exact hU.not_limited (limited_natCast n)
 
+/-- The members of the set of unlimited hypernaturals are the hypernaturals that are unlimited.
+-/
 theorem mem_unlimitedHyperNat : K ∈ unlimitedHyperNat ↔ K ∈ ℕ* ∧ Unlimited K := by
   rw [unlimitedHyperNat_eq]
   rfl
@@ -292,6 +312,8 @@ def natGalaxyOrderIso (hK : K ∈ ℕ*) (hU : Unlimited K) : ℤ ≃o natGalaxy 
       obtain ⟨n, rfl⟩ := hH'
       exact ⟨n, rfl⟩)
 
+/-- The order isomorphism between the integers and the galaxy of an unlimited hypernatural $`K`
+sends $`n` to $`K + n`. -/
 @[simp]
 theorem natGalaxyOrderIso_apply (hK : K ∈ ℕ*) (hU : Unlimited K) (n : ℤ) :
     (natGalaxyOrderIso hK hU n : ℝ*) = K + n := rfl
@@ -324,6 +346,8 @@ $`\operatorname{gal}(c)` when $`b < c` and $`b \not\sim c`, that is, when $`c - 
 unlimited. For hypernaturals this is the book's $`\gamma(K) < \gamma(H)`. -/
 def GalLT (b c : ℝ*) : Prop := b < c ∧ ¬ b ∼ c
 
+/-- The galaxy of $`b` lies below the galaxy of $`c` exactly when $`c - b` is positive
+unlimited. -/
 theorem galLT_iff_posUnlimited_sub {b c : ℝ*} : GalLT b c ↔ PosUnlimited (c - b) := by
   rw [GalLT, posUnlimited_iff, limClose_iff, not_limited_iff_unlimited, sub_pos, and_comm,
     ← unlimited_neg_iff, neg_sub]
@@ -559,6 +583,8 @@ def intGalaxyOrderIso (hK : K ∈ ℤ*) : ℤ ≃o intGalaxy K :=
       obtain ⟨n, rfl⟩ := hH'
       exact ⟨n, rfl⟩)
 
+/-- The order isomorphism between the integers and the galaxy of a hyperinteger $`K` sends $`n`
+to $`K + n`. -/
 @[simp]
 theorem intGalaxyOrderIso_apply (hK : K ∈ ℤ*) (n : ℤ) :
     (intGalaxyOrderIso hK n : ℝ*) = K + n := rfl
@@ -660,9 +686,11 @@ divisibility. -/
 theorem natCast_hdvd_natCast_iff {m n : ℕ} : (m : ℝ*) ∣ₕ (n : ℝ*) ↔ m ∣ n := by
   rw [natCast_eq_hnat n, natCast_hdvd_hnat_iff, almostAll_const]
 
+/-- Hypernatural divisibility is reflexive: the quotient is $`1`. -/
 theorem hdvd_refl (a : ℝ*) : a ∣ₕ a :=
   ⟨1, by simpa using natCast_mem_hyperNat 1, by ring⟩
 
+/-- The numbers divisible by $`1` in the hypernatural sense are exactly the hypernaturals. -/
 theorem one_hdvd (a : ℝ*) : 1 ∣ₕ a ↔ a ∈ ℕ* := by
   constructor
   · rintro ⟨q, hq, rfl⟩
@@ -670,6 +698,7 @@ theorem one_hdvd (a : ℝ*) : 1 ∣ₕ a ↔ a ∈ ℕ* := by
   · intro h
     exact ⟨a, h, by ring⟩
 
+/-- Hypernatural divisibility is transitive. -/
 theorem HDvd.trans (h₁ : a ∣ₕ b) (h₂ : b ∣ₕ d) : a ∣ₕ d := by
   obtain ⟨q, hq, rfl⟩ := h₁
   obtain ⟨r, hr, rfl⟩ := h₂
