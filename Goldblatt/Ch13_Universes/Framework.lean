@@ -923,6 +923,39 @@ theorem star_eq_star_of_standard_mem (hA : IsSetOf F.U A) (hB : IsSetOf F.U B)
     exact h _ ⟨x, hx, rfl⟩
   rw [this]
 
+/-- **Section 13.8/13.9.** A finite set of individuals is its own transform. -/
+theorem star_eq_self_of_finite_subset_base (hAX : A ⊆ F.X)
+    (hfin : (A : Set ZFSet.{u}).Finite) : F.star A = A := by
+  rw [F.star_eq_im_of_finite (F.hU.isSetOf_of_subset F.isUniverseOver.base_isSetOf hAX) hfin,
+    F.im_eq_of_subset_base hAX]
+
+end NonstandardFramework
+
+/-- **Section 13.8, consistency of the axioms.** Every universe over $`X` carries a
+nonstandard framework, the trivial one in which the transfer map is the identity. It has no
+nonstandard entities; frameworks that do are constructed in Chapter 14. -/
+def NonstandardFramework.trivial {U X : ZFSet.{u}} (h : IsUniverseOver U X) :
+    NonstandardFramework.{u} where
+  U := U
+  X := X
+  U' := U
+  star := id
+  isUniverseOver := h
+  isUniverse' := h.toIsUniverse
+  star_mem := fun _ ha => ha
+  star_individual := fun _ _ => rfl
+  star_empty := rfl
+  transfer := fun φ _ => by rw [Formula.star_id]
+
+/-- **Section 13.8.** Nonstandard frameworks exist. -/
+instance : Nonempty NonstandardFramework.{u} :=
+  let ⟨_, _, _, h⟩ := exists_isUniverseOver PEmpty.{u + 1}
+  ⟨NonstandardFramework.trivial h⟩
+
+namespace NonstandardFramework
+
+variable (F : NonstandardFramework.{u})
+
 end NonstandardFramework
 
 end Goldblatt
