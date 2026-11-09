@@ -695,6 +695,121 @@ theorem star_powerset_eq_of_finite (hA : IsSetOf F.U A) (hfin : (A : Set ZFSet.{
   rw [this]
   exact (F.star_mem_star_iff hA₀.1 (F.hU.isSetOf_powerset hA).1).2 (mem_powerset.2 sep_subset)
 
+/-!
+## 13.16 Internal Function Definition Principle
+
+A function between internal sets whose values are given by a term with internal constants is
+an internal function, because its graph is cut out of the internal product of domain and
+codomain by a formula with internal constants. As for sets, the term is the transform of a
+term of the language of $`\mathbb U` with internal entities assigned to its parameters.
+-/
+
+/-- **Section 13.16, internal function definition principle.** Let $`f : A \to B` be a
+function between internal sets, and let $`\tau(x)` be a term (the transform of a term $`t` of
+the language of $`\mathbb U`, with internal entities assigned to its variables other than
+$`x`) such that $`f(a) = \tau(a)` for all $`a \in A`. Then $`f` is internal. -/
+theorem internal_of_term (t : Term.{u}) (ys : List ℕ) (x : ℕ)
+    (ht : t.Admissible F.U (insert x {y | y ∈ ys})) (v : ℕ → ZFSet.{u})
+    (hv : ∀ y ∈ ys, F.Internal (v y)) (hA : F.Internal A) (hAset : IsSetOf F.U' A)
+    (hB : F.Internal B) (hBset : IsSetOf F.U' B) (hf : IsFunc A B f)
+    (hval : ∀ a ∈ A, (t.star F.star).Defined F.U' (Function.update v x a) ∧
+      app f a = (t.star F.star).val (Function.update v x a)) : F.Internal f := by
+  obtain ⟨N, hxN, hysN⟩ := exists_fresh_var ys x
+  have h0 : x ≠ N := by omega
+  have h1 : x ≠ N + 1 := by omega
+  have h2 : x ≠ N + 2 := by omega
+  have h3 : x ≠ N + 3 := by omega
+  let ψ : Formula.{u} := .ex x (.var (N + 1)) (.ex (N + 3) (.var (N + 2))
+    (.conj (.equal (.var N) (.opair (.var x) (.var (N + 3)))) (.equal (.var (N + 3)) t)))
+  let v' : ℕ → ZFSet.{u} := Function.update (Function.update v (N + 1) A) (N + 2) B
+  let env : ZFSet.{u} → ZFSet.{u} → ZFSet.{u} → ℕ → ZFSet.{u} := fun c a b =>
+    Function.update (Function.update (Function.update v' N c) x a) (N + 3) b
+  have hP := F.internal_prod hA hAset hB hBset
+  have hPset : IsSetOf F.U' (prod A B) := isSetOf_of_subset hP.mem_U' fun p hp => by
+    obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 hp
+    exact (F.isUniverse'.isSetOf_opair (F.isUniverse'.subset hAset ha)
+      (F.isUniverse'.subset hBset hb)).1
+  have hadm : ψ.Admissible F.U (insert N {y | y ∈ (N + 1) :: (N + 2) :: ys}) := by
+    simp only [ψ, Formula.Admissible, Term.Admissible, Term.admissible_opair]
+    refine ⟨?_, ?_, ⟨?_, ?_, ?_⟩, ?_, ht.mono ?_⟩
+    · simp [h1.symm]
+    · simp
+    · simp
+    · simp
+    · simp
+    · simp
+    · intro y hy
+      rcases hy with rfl | hy
+      · simp
+      · have : y ∈ ys := hy
+        simp [this]
+  have hv' : ∀ y ∈ (N + 1) :: (N + 2) :: ys, F.Internal (v' y) := by
+    intro y hy
+    rcases List.mem_cons.1 hy with rfl | hy
+    · simpa [v', Function.update_apply] using hA
+    · rcases List.mem_cons.1 hy with rfl | hy
+      · simpa [v', Function.update_apply] using hB
+      · have := hysN y hy
+        have e : v' y = v y := by
+          simp [v', Function.update_of_ne (show y ≠ N + 2 by omega),
+            Function.update_of_ne (show y ≠ N + 1 by omega)]
+        rw [e]
+        exact hv y hy
+  have := F.internal_sep ψ ((N + 1) :: (N + 2) :: ys) N hadm v' hv' hP hPset
+  have e1 : ∀ c, Function.update v' N c (N + 1) = A := fun c => by
+    simp [v']
+  have e2 : ∀ c a, Function.update (Function.update v' N c) x a (N + 2) = B := fun c a => by
+    simp [v', h2.symm]
+  have e3 : ∀ c a b, env c a b N = c := fun c a b => by
+    simp [env, h0.symm]
+  have e4 : ∀ c a b, env c a b x = a := fun c a b => by
+    simp [env, h3]
+  have e5 : ∀ c a b, env c a b (N + 3) = b := fun c a b => by
+    simp [env]
+  have hagree : ∀ c a b, ∀ y ∈ insert x {y | y ∈ ys}, env c a b y = Function.update v x a y := by
+    intro c a b y hy
+    have hyN : y < N := by
+      rcases hy with rfl | hy
+      · exact hxN
+      · exact hysN y hy
+    simp only [env, v']
+    by_cases hyx : y = x
+    · subst hyx
+      simp [Function.update_of_ne h3]
+    · simp [Function.update_of_ne hyx, Function.update_of_ne (show y ≠ N + 3 by omega),
+        Function.update_of_ne (show y ≠ N by omega),
+        Function.update_of_ne (show y ≠ N + 2 by omega),
+        Function.update_of_ne (show y ≠ N + 1 by omega)]
+  have ht' : (t.star F.star).Admissible F.U' (insert x {y | y ∈ ys}) := ht.star F.star_mem
+  have key : ∀ c, Sat F.U' (Function.update v' N c) (ψ.star F.star) ↔
+      ∃ a ∈ F.U', a ∈ A ∧ ∃ b ∈ F.U', b ∈ B ∧ c = pair a b ∧
+        (t.star F.star).Defined F.U' (Function.update v x a) ∧
+        b = (t.star F.star).val (Function.update v x a) := by
+    intro c
+    simp only [ψ, Formula.star, Term.star, Sat, Term.Defined, Term.val, Term.val_opair,
+      Term.defined_opair, Term.star_opair, true_and, e1, e2]
+    refine exists_congr fun a => and_congr_right fun _ => and_congr_right fun _ =>
+      exists_congr fun b => and_congr_right fun _ => and_congr_right fun _ => ?_
+    change (env c a b N = pair (env c a b x) (env c a b (N + 3))) ∧
+      ((t.star F.star).Defined F.U' (env c a b) ∧
+        env c a b (N + 3) = (t.star F.star).val (env c a b)) ↔ _
+    rw [e3, e4, e5, Term.defined_congr ht' (hagree c a b), Term.val_congr ht' (hagree c a b)]
+  have e : f = (prod A B).sep fun c => Sat F.U' (Function.update v' N c) (ψ.star F.star) := by
+    ext c
+    rw [mem_sep, key]
+    constructor
+    · intro hc
+      obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 (hf.1 hc)
+      have hab := hf.isFunction.app_eq hc
+      refine ⟨hf.1 hc, a, F.isUniverse'.subset hAset ha, ha, b, F.isUniverse'.subset hBset hb,
+        hb, rfl, (hval a ha).1, ?_⟩
+      rw [← (hval a ha).2, hab]
+    · rintro ⟨-, a, -, ha, b, -, -, rfl, -, hb⟩
+      rw [hb, ← (hval a ha).2]
+      exact hf.isFunction.pair_app_mem (hf.dom_eq ▸ ha)
+  rw [e]
+  exact this
+
 end NonstandardFramework
 
 end Goldblatt
