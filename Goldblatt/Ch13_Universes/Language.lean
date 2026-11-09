@@ -514,6 +514,299 @@ theorem star_exs (s : ZFSet.{u} → ZFSet.{u}) (l : List (ℕ × ZFSet.{u})) (φ
 
 end Formula
 
+/-!
+### Replacing constants by variables
+
+The proof of the internal set definition principle in Section 13.15 begins by replacing each
+constant of a formula by a new variable. The operation and its properties are recorded here.
+-/
+
+namespace Term
+
+/-- Replace each constant $`c` of a term by the variable with index $`e(c)`. -/
+def abs (e : ZFSet.{u} → ℕ) : Term.{u} → Term.{u}
+  | var n => var n
+  | const c => var (e c)
+  | tuple m ts => tuple m fun i => (ts i).abs e
+  | app f x => app (f.abs e) (x.abs e)
+
+/-- All variables of the term have index below $`N` and all its constants satisfy $`K`. -/
+def Below (N : ℕ) (K : ZFSet.{u} → Prop) : Term.{u} → Prop
+  | var n => n < N
+  | const c => K c
+  | tuple _ ts => ∀ i, (ts i).Below N K
+  | app f x => f.Below N K ∧ x.Below N K
+
+variable {N N' : ℕ} {K K' : ZFSet.{u} → Prop} {e : ZFSet.{u} → ℕ} {t : Term.{u}}
+  {U U' : ZFSet.{u}} {b : Set ℕ} {w : ℕ → ZFSet.{u}}
+
+theorem Below.mono (h : t.Below N K) (hN : N ≤ N') (hK : ∀ c, K c → K' c) : t.Below N' K' := by
+  induction t with
+  | var n => exact lt_of_lt_of_le h hN
+  | const c => exact hK c h
+  | tuple m ts ih => exact fun i => ih i (h i)
+  | app f x ihf ihx => exact ⟨ihf h.1, ihx h.2⟩
+
+theorem exists_below {P : ZFSet.{u} → Prop} (h : t.Below N P) :
+    ∃ N', ∃ L : List ZFSet.{u}, (∀ c ∈ L, P c) ∧ t.Below N' (· ∈ L) := by
+  induction t with
+  | var n => exact ⟨n + 1, [], by simp, Nat.lt_succ_self n⟩
+  | const c =>
+    exact ⟨0, [c], fun d hd => by rw [List.mem_singleton.1 hd]; exact h,
+      List.mem_singleton.2 rfl⟩
+  | tuple m ts ih =>
+    choose Nf Lf hP hB using fun i => ih i (h i)
+    refine ⟨Finset.univ.sup Nf, (List.ofFn Lf).flatten, fun c hc => ?_, fun i =>
+      (hB i).mono (Finset.le_sup (Finset.mem_univ i)) fun c hc =>
+        List.mem_flatten.2 ⟨Lf i, by rw [List.mem_ofFn]; exact ⟨i, rfl⟩, hc⟩⟩
+    obtain ⟨l, hl, hcl⟩ := List.mem_flatten.1 hc
+    rw [List.mem_ofFn] at hl
+    obtain ⟨i, rfl⟩ := hl
+    exact hP i c hcl
+  | app f x ihf ihx =>
+    obtain ⟨N1, L1, hP1, h1⟩ := ihf h.1
+    obtain ⟨N2, L2, hP2, h2⟩ := ihx h.2
+    refine ⟨max N1 N2, L1 ++ L2, fun c hc => ?_,
+      h1.mono (le_max_left _ _) fun c hc => List.mem_append_left _ hc,
+      h2.mono (le_max_right _ _) fun c hc => List.mem_append_right _ hc⟩
+    rcases List.mem_append.1 hc with hc | hc
+    · exact hP1 c hc
+    · exact hP2 c hc
+
+theorem val_abs (h : t.Below N K) (hw : ∀ c, K c → w (e c) = c) :
+    (t.abs e).val w = t.val w := by
+  induction t with
+  | var n => rfl
+  | const c => exact hw c h
+  | tuple m ts ih =>
+    simp only [abs, val]
+    congr 1
+    funext i
+    exact ih i (h i)
+  | app f x ihf ihx => simp only [abs, val, ihf h.1, ihx h.2]
+
+theorem defined_abs (h : t.Below N K) (hw : ∀ c, K c → w (e c) = c) :
+    (t.abs e).Defined U w ↔ t.Defined U w := by
+  induction t with
+  | var n => rfl
+  | const c => simp [abs]
+  | tuple m ts ih =>
+    simp only [abs, Defined]
+    exact forall_congr' fun i => ih i (h i)
+  | app f x ihf ihx =>
+    simp only [abs, Defined, ihf h.1, ihx h.2, val_abs h.1 hw, val_abs h.2 hw]
+
+theorem star_abs (s : ZFSet.{u} → ZFSet.{u}) (t : Term.{u}) : (t.abs e).star s = t.abs e := by
+  induction t with
+  | var n => rfl
+  | const c => rfl
+  | tuple m ts ih => simp only [abs, star, ih]
+  | app f x ihf ihx => simp only [abs, star, ihf, ihx]
+
+theorem admissible_abs (h : t.Admissible U' b) (hB : t.Below N K) :
+    (t.abs e).Admissible U (b ∪ {n | ∃ c, K c ∧ e c = n}) := by
+  induction t with
+  | var n => exact Or.inl h
+  | const c => exact Or.inr ⟨c, hB, rfl⟩
+  | tuple m ts ih => exact fun i => ih i (h i) (hB i)
+  | app f x ihf ihx => exact ⟨ihf h.1 hB.1, ihx h.2 hB.2⟩
+
+end Term
+
+namespace Formula
+
+/-- Replace each constant $`c` of a formula by the variable with index $`e(c)`. -/
+def abs (e : ZFSet.{u} → ℕ) : Formula.{u} → Formula.{u}
+  | equal s t => equal (s.abs e) (t.abs e)
+  | elem s t => elem (s.abs e) (t.abs e)
+  | conj φ ψ => conj (φ.abs e) (ψ.abs e)
+  | disj φ ψ => disj (φ.abs e) (ψ.abs e)
+  | neg φ => neg (φ.abs e)
+  | imp φ ψ => imp (φ.abs e) (ψ.abs e)
+  | biimp φ ψ => biimp (φ.abs e) (ψ.abs e)
+  | all x τ φ => all x (τ.abs e) (φ.abs e)
+  | ex x τ φ => ex x (τ.abs e) (φ.abs e)
+
+/-- All variables of the formula, free or bound, have index below $`N`, and all its constants
+satisfy $`K`. -/
+def Below (N : ℕ) (K : ZFSet.{u} → Prop) : Formula.{u} → Prop
+  | equal s t => s.Below N K ∧ t.Below N K
+  | elem s t => s.Below N K ∧ t.Below N K
+  | conj φ ψ => φ.Below N K ∧ ψ.Below N K
+  | disj φ ψ => φ.Below N K ∧ ψ.Below N K
+  | neg φ => φ.Below N K
+  | imp φ ψ => φ.Below N K ∧ ψ.Below N K
+  | biimp φ ψ => φ.Below N K ∧ ψ.Below N K
+  | all x τ φ => x < N ∧ τ.Below N K ∧ φ.Below N K
+  | ex x τ φ => x < N ∧ τ.Below N K ∧ φ.Below N K
+
+/-- **Section 13.15.** Every constant of the formula satisfies $`P`; for instance, every
+constant is internal. (A bound on the indices of the variables always exists.) -/
+def ConstsSat (P : ZFSet.{u} → Prop) (φ : Formula.{u}) : Prop := ∃ N, φ.Below N P
+
+variable {N N' : ℕ} {K K' : ZFSet.{u} → Prop} {e : ZFSet.{u} → ℕ} {φ : Formula.{u}}
+  {U U' : ZFSet.{u}} {b : Set ℕ} {w : ℕ → ZFSet.{u}}
+
+theorem Below.mono (h : φ.Below N K) (hN : N ≤ N') (hK : ∀ c, K c → K' c) : φ.Below N' K' := by
+  induction φ with
+  | equal s t => exact ⟨h.1.mono hN hK, h.2.mono hN hK⟩
+  | elem s t => exact ⟨h.1.mono hN hK, h.2.mono hN hK⟩
+  | conj φ ψ ihφ ihψ => exact ⟨ihφ h.1, ihψ h.2⟩
+  | disj φ ψ ihφ ihψ => exact ⟨ihφ h.1, ihψ h.2⟩
+  | neg φ ih => exact ih h
+  | imp φ ψ ihφ ihψ => exact ⟨ihφ h.1, ihψ h.2⟩
+  | biimp φ ψ ihφ ihψ => exact ⟨ihφ h.1, ihψ h.2⟩
+  | all x τ φ ih => exact ⟨lt_of_lt_of_le h.1 hN, h.2.1.mono hN hK, ih h.2.2⟩
+  | ex x τ φ ih => exact ⟨lt_of_lt_of_le h.1 hN, h.2.1.mono hN hK, ih h.2.2⟩
+
+theorem exists_below {P : ZFSet.{u} → Prop} (h : φ.Below N P) :
+    ∃ N', ∃ L : List ZFSet.{u}, (∀ c ∈ L, P c) ∧ φ.Below N' (· ∈ L) := by
+  have two : ∀ {N1 N2 : ℕ} {L1 L2 : List ZFSet.{u}}, (∀ c ∈ L1, P c) → (∀ c ∈ L2, P c) →
+      ∀ c ∈ L1 ++ L2, P c := fun h1 h2 c hc => by
+    rcases List.mem_append.1 hc with hc | hc
+    · exact h1 c hc
+    · exact h2 c hc
+  induction φ with
+  | equal s t =>
+    obtain ⟨N1, L1, hP1, h1⟩ := Term.exists_below h.1
+    obtain ⟨N2, L2, hP2, h2⟩ := Term.exists_below h.2
+    exact ⟨max N1 N2, L1 ++ L2, two (N1 := N1) (N2 := N2) hP1 hP2,
+      h1.mono (le_max_left _ _) fun c hc => List.mem_append_left _ hc,
+      h2.mono (le_max_right _ _) fun c hc => List.mem_append_right _ hc⟩
+  | elem s t =>
+    obtain ⟨N1, L1, hP1, h1⟩ := Term.exists_below h.1
+    obtain ⟨N2, L2, hP2, h2⟩ := Term.exists_below h.2
+    exact ⟨max N1 N2, L1 ++ L2, two (N1 := N1) (N2 := N2) hP1 hP2,
+      h1.mono (le_max_left _ _) fun c hc => List.mem_append_left _ hc,
+      h2.mono (le_max_right _ _) fun c hc => List.mem_append_right _ hc⟩
+  | conj φ ψ ihφ ihψ =>
+    obtain ⟨N1, L1, hP1, h1⟩ := ihφ h.1
+    obtain ⟨N2, L2, hP2, h2⟩ := ihψ h.2
+    exact ⟨max N1 N2, L1 ++ L2, two (N1 := N1) (N2 := N2) hP1 hP2,
+      h1.mono (le_max_left _ _) fun c hc => List.mem_append_left _ hc,
+      h2.mono (le_max_right _ _) fun c hc => List.mem_append_right _ hc⟩
+  | disj φ ψ ihφ ihψ =>
+    obtain ⟨N1, L1, hP1, h1⟩ := ihφ h.1
+    obtain ⟨N2, L2, hP2, h2⟩ := ihψ h.2
+    exact ⟨max N1 N2, L1 ++ L2, two (N1 := N1) (N2 := N2) hP1 hP2,
+      h1.mono (le_max_left _ _) fun c hc => List.mem_append_left _ hc,
+      h2.mono (le_max_right _ _) fun c hc => List.mem_append_right _ hc⟩
+  | neg φ ih => exact ih h
+  | imp φ ψ ihφ ihψ =>
+    obtain ⟨N1, L1, hP1, h1⟩ := ihφ h.1
+    obtain ⟨N2, L2, hP2, h2⟩ := ihψ h.2
+    exact ⟨max N1 N2, L1 ++ L2, two (N1 := N1) (N2 := N2) hP1 hP2,
+      h1.mono (le_max_left _ _) fun c hc => List.mem_append_left _ hc,
+      h2.mono (le_max_right _ _) fun c hc => List.mem_append_right _ hc⟩
+  | biimp φ ψ ihφ ihψ =>
+    obtain ⟨N1, L1, hP1, h1⟩ := ihφ h.1
+    obtain ⟨N2, L2, hP2, h2⟩ := ihψ h.2
+    exact ⟨max N1 N2, L1 ++ L2, two (N1 := N1) (N2 := N2) hP1 hP2,
+      h1.mono (le_max_left _ _) fun c hc => List.mem_append_left _ hc,
+      h2.mono (le_max_right _ _) fun c hc => List.mem_append_right _ hc⟩
+  | all x τ φ ih =>
+    obtain ⟨N1, L1, hP1, h1⟩ := Term.exists_below h.2.1
+    obtain ⟨N2, L2, hP2, h2⟩ := ih h.2.2
+    exact ⟨max (max N1 N2) (x + 1), L1 ++ L2, two (N1 := N1) (N2 := N2) hP1 hP2,
+      lt_of_lt_of_le (Nat.lt_succ_self x) (le_max_right _ _),
+      h1.mono (le_trans (le_max_left _ _) (le_max_left _ _)) fun c hc =>
+        List.mem_append_left _ hc,
+      h2.mono (le_trans (le_max_right _ _) (le_max_left _ _)) fun c hc =>
+        List.mem_append_right _ hc⟩
+  | ex x τ φ ih =>
+    obtain ⟨N1, L1, hP1, h1⟩ := Term.exists_below h.2.1
+    obtain ⟨N2, L2, hP2, h2⟩ := ih h.2.2
+    exact ⟨max (max N1 N2) (x + 1), L1 ++ L2, two (N1 := N1) (N2 := N2) hP1 hP2,
+      lt_of_lt_of_le (Nat.lt_succ_self x) (le_max_right _ _),
+      h1.mono (le_trans (le_max_left _ _) (le_max_left _ _)) fun c hc =>
+        List.mem_append_left _ hc,
+      h2.mono (le_trans (le_max_right _ _) (le_max_left _ _)) fun c hc =>
+        List.mem_append_right _ hc⟩
+
+/-- Replacing constants by variables that are assigned those constants, and that are not
+among the variables of the formula, does not change its truth. -/
+theorem sat_abs (h : φ.Below N K) (hw : ∀ c, K c → N ≤ e c ∧ w (e c) = c) :
+    Sat U w (φ.abs e) ↔ Sat U w φ := by
+  induction φ generalizing w with
+  | equal s t =>
+    have hw' : ∀ c, K c → w (e c) = c := fun c hc => (hw c hc).2
+    simp only [abs, Sat, Term.val_abs h.1 hw', Term.val_abs h.2 hw', Term.defined_abs h.1 hw',
+      Term.defined_abs h.2 hw']
+  | elem s t =>
+    have hw' : ∀ c, K c → w (e c) = c := fun c hc => (hw c hc).2
+    simp only [abs, Sat, Term.val_abs h.1 hw', Term.val_abs h.2 hw', Term.defined_abs h.1 hw',
+      Term.defined_abs h.2 hw']
+  | conj φ ψ ihφ ihψ => simp only [abs, Sat, ihφ h.1 hw, ihψ h.2 hw]
+  | disj φ ψ ihφ ihψ => simp only [abs, Sat, ihφ h.1 hw, ihψ h.2 hw]
+  | neg φ ih => simp only [abs, Sat, ih h hw]
+  | imp φ ψ ihφ ihψ => simp only [abs, Sat, ihφ h.1 hw, ihψ h.2 hw]
+  | biimp φ ψ ihφ ihψ => simp only [abs, Sat, ihφ h.1 hw, ihψ h.2 hw]
+  | all x τ φ ih =>
+    have hw' : ∀ c, K c → w (e c) = c := fun c hc => (hw c hc).2
+    have key : ∀ a, Sat U (Function.update w x a) (φ.abs e) ↔ Sat U (Function.update w x a) φ :=
+      fun a => ih h.2.2 fun c hc => ⟨(hw c hc).1, by
+        have h1 := (hw c hc).1
+        have h2 := h.1
+        rw [Function.update_of_ne (by omega)]
+        exact (hw c hc).2⟩
+    simp only [abs, Sat, Term.val_abs h.2.1 hw', Term.defined_abs h.2.1 hw', key]
+  | ex x τ φ ih =>
+    have hw' : ∀ c, K c → w (e c) = c := fun c hc => (hw c hc).2
+    have key : ∀ a, Sat U (Function.update w x a) (φ.abs e) ↔ Sat U (Function.update w x a) φ :=
+      fun a => ih h.2.2 fun c hc => ⟨(hw c hc).1, by
+        have h1 := (hw c hc).1
+        have h2 := h.1
+        rw [Function.update_of_ne (by omega)]
+        exact (hw c hc).2⟩
+    simp only [abs, Sat, Term.val_abs h.2.1 hw', Term.defined_abs h.2.1 hw', key]
+
+/-- A formula without constants is its own transform. -/
+theorem star_abs (s : ZFSet.{u} → ZFSet.{u}) (φ : Formula.{u}) :
+    (φ.abs e).star s = φ.abs e := by
+  induction φ with
+  | equal s t => simp only [abs, star, Term.star_abs]
+  | elem s t => simp only [abs, star, Term.star_abs]
+  | conj φ ψ ihφ ihψ => simp only [abs, star, ihφ, ihψ]
+  | disj φ ψ ihφ ihψ => simp only [abs, star, ihφ, ihψ]
+  | neg φ ih => simp only [abs, star, ih]
+  | imp φ ψ ihφ ihψ => simp only [abs, star, ihφ, ihψ]
+  | biimp φ ψ ihφ ihψ => simp only [abs, star, ihφ, ihψ]
+  | all x τ φ ih => simp only [abs, star, Term.star_abs, ih]
+  | ex x τ φ ih => simp only [abs, star, Term.star_abs, ih]
+
+theorem admissible_abs (h : φ.Admissible U' b) (hB : φ.Below N K) (he : ∀ c, K c → N ≤ e c) :
+    (φ.abs e).Admissible U (b ∪ {n | ∃ c, K c ∧ e c = n}) := by
+  have hq : ∀ {x : ℕ} {b : Set ℕ}, x < N →
+      (b \ {x} ∪ {n | ∃ c, K c ∧ e c = n}) ⊆ (b ∪ {n | ∃ c, K c ∧ e c = n}) \ {x} ∧
+      (insert x b ∪ {n | ∃ c, K c ∧ e c = n}) ⊆ insert x (b ∪ {n | ∃ c, K c ∧ e c = n}) := by
+    intro x b hx
+    constructor
+    · rintro n (hn | ⟨c, hc, rfl⟩)
+      · exact ⟨Or.inl hn.1, hn.2⟩
+      · refine ⟨Or.inr ⟨c, hc, rfl⟩, fun hx' => ?_⟩
+        have h1 := he c hc
+        have h2 : e c = x := hx'
+        omega
+    · rintro n (hn | hn)
+      · rcases hn with rfl | hn
+        · exact Or.inl rfl
+        · exact Or.inr (Or.inl hn)
+      · exact Or.inr (Or.inr hn)
+  induction φ generalizing b with
+  | equal s t => exact ⟨Term.admissible_abs h.1 hB.1, Term.admissible_abs h.2 hB.2⟩
+  | elem s t => exact ⟨Term.admissible_abs h.1 hB.1, Term.admissible_abs h.2 hB.2⟩
+  | conj φ ψ ihφ ihψ => exact ⟨ihφ h.1 hB.1, ihψ h.2 hB.2⟩
+  | disj φ ψ ihφ ihψ => exact ⟨ihφ h.1 hB.1, ihψ h.2 hB.2⟩
+  | neg φ ih => exact ih h hB
+  | imp φ ψ ihφ ihψ => exact ⟨ihφ h.1 hB.1, ihψ h.2 hB.2⟩
+  | biimp φ ψ ihφ ihψ => exact ⟨ihφ h.1 hB.1, ihψ h.2 hB.2⟩
+  | all x τ φ ih =>
+    exact ⟨(Term.admissible_abs h.1 hB.2.1).mono (hq hB.1).1, (ih h.2 hB.2.2).mono (hq hB.1).2⟩
+  | ex x τ φ ih =>
+    exact ⟨(Term.admissible_abs h.1 hB.2.1).mono (hq hB.1).1, (ih h.2 hB.2.2).mono (hq hB.1).2⟩
+
+end Formula
+
 attribute [simp] Sat
 
 /-- Unfold the truth definition of an explicitly written formula: evaluates satisfaction,

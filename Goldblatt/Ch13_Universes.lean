@@ -121,7 +121,20 @@ the second half of the proof of Theorem 13.17.1. The formal proofs transfer the 
 the clause "$`x` is empty or has a member" added. The theorems themselves are unchanged.
 
 *Internal definition principles.* The internal set and function definition principles are
-proved for a formula or term that is the transform of one from the language of
-$`\mathbb U`, with internal entities assigned to its free variables as parameters. The
-book's proof starts by turning the internal constants of a formula into such parameters.
+proved in two forms. In the parameter form the formula or term is the transform of one from
+the language of $`\mathbb U`, with internal entities assigned to its free variables
+({name}`Goldblatt.NonstandardFramework.internal_sep`,
+{name}`Goldblatt.NonstandardFramework.internal_of_term`); this is the form used in
+applications. The book's form, for a formula or term of the language of $`\mathbb U'` whose
+constants are internal, follows by replacing the constants by variables, which is how the
+book's proof begins ({name}`Goldblatt.NonstandardFramework.internal_sep_of_internal_consts`,
+{name}`Goldblatt.NonstandardFramework.internal_of_term_of_internal_consts`).
+
+*What is not formalized.* The book defines the sum of an internal function over a
+hyperfinite set as the sum of the set of its values, which is the intended sum only for
+injective functions. The sum of a hyperfinite set of hyperreals is defined here
+({name}`Goldblatt.RealFramework.hsum`), but the sum of a function and the exercises of
+Section 13.20 about it are not. Also not formalized: Exercise 13.13 (2), Exercise 13.18 (4),
+and the examples of Sections 13.8 and 13.9 about sets and intervals of real numbers,
+including Exercise 13.9.1.
 -/

@@ -255,6 +255,55 @@ theorem internal_sep (ψ : Formula.{u}) (ys : List ℕ) (x : ℕ)
   rw [this]
   exact ⟨powerset T, hPT, hZ⟩
 
+/-- **Section 13.15, internal set definition principle.** If $`\varphi(x)` is an internal
+formula of the language of $`\mathbb U'` (all of its constants are internal) with $`x` the
+only free variable, then for any internal set $`A` the set
+$$`\{a \in A : \varphi(a) \text{ is true}\}`
+is internal. As in the book, the proof replaces the constants of $`\varphi` by new variables
+and applies the parameter form of the principle. -/
+theorem internal_sep_of_internal_consts (φ : Formula.{u}) (x : ℕ)
+    (hφ : φ.Admissible F.U' {x}) (hconsts : φ.ConstsSat F.Internal) (v : ℕ → ZFSet.{u})
+    (hA : F.Internal A) (hAset : IsSetOf F.U' A) :
+    F.Internal (A.sep fun a => Sat F.U' (Function.update v x a) φ) := by
+  classical
+  obtain ⟨N₀, hN₀⟩ := hconsts
+  obtain ⟨N₁, L, hL, hB₁⟩ := Formula.exists_below hN₀
+  set N := max N₁ (x + 1) with hN
+  have hxN : x < N := lt_of_lt_of_le (Nat.lt_succ_self x) (le_max_right _ _)
+  have hB : φ.Below N (· ∈ L) := hB₁.mono (le_max_left _ _) fun _ h => h
+  let e : ZFSet.{u} → ℕ := fun c => N + L.idxOf c
+  let w : ℕ → ZFSet.{u} := fun n => if n < N then v n else L.getD (n - N) ∅
+  have hwe : ∀ c ∈ L, w (e c) = c := by
+    intro c hc
+    have h1 : ¬ N + L.idxOf c < N := by omega
+    simp only [w, e, h1, ite_false, Nat.add_sub_cancel_left]
+    rw [List.getD_eq_getElem _ _ (List.idxOf_lt_length_of_mem hc), List.getElem_idxOf]
+  have he : ∀ c ∈ L, N ≤ e c := fun c _ => Nat.le_add_right _ _
+  have hwx : ∀ a, ∀ c ∈ L, N ≤ e c ∧ Function.update w x a (e c) = c := fun a c hc =>
+    ⟨he c hc, by
+      have := he c hc
+      rw [Function.update_of_ne (by omega)]
+      exact hwe c hc⟩
+  have hadm : (φ.abs e).Admissible F.U (insert x {y | y ∈ L.map e}) :=
+    (Formula.admissible_abs hφ hB he).mono fun n hn => by
+      rcases hn with hn | ⟨c, hc, rfl⟩
+      · exact Or.inl hn
+      · exact Or.inr (List.mem_map.2 ⟨c, hc, rfl⟩)
+  have hv : ∀ y ∈ L.map e, F.Internal (w y) := by
+    intro y hy
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.1 hy
+    rw [hwe c hc]
+    exact hL c hc
+  have := F.internal_sep (φ.abs e) (L.map e) x hadm w hv hA hAset
+  rw [Formula.star_abs] at this
+  have hsat : ∀ a, Sat F.U' (Function.update w x a) (φ.abs e) ↔
+      Sat F.U' (Function.update v x a) φ := fun a => by
+    rw [Formula.sat_abs hB (hwx a)]
+    exact Formula.sat_congr hφ fun y hy => by
+      rw [Set.mem_singleton_iff.1 hy]
+      simp
+  simpa only [hsat] using this
+
 /-!
 ## 13.11 Closure Properties of Internal Sets
 
@@ -700,8 +749,9 @@ theorem star_powerset_eq_of_finite (hA : IsSetOf F.U A) (hfin : (A : Set ZFSet.{
 
 A function between internal sets whose values are given by a term with internal constants is
 an internal function, because its graph is cut out of the internal product of domain and
-codomain by a formula with internal constants. As for sets, the term is the transform of a
-term of the language of $`\mathbb U` with internal entities assigned to its parameters.
+codomain by a formula with internal constants. As for sets, the principle is proved first
+for the transform of a term of the language of $`\mathbb U` with internal entities assigned
+to its parameters, and then for a term with internal constants.
 -/
 
 /-- **Section 13.16, internal function definition principle.** Let $`f : A \to B` be a
@@ -809,6 +859,53 @@ theorem internal_of_term (t : Term.{u}) (ys : List ℕ) (x : ℕ)
       exact hf.isFunction.pair_app_mem (hf.dom_eq ▸ ha)
   rw [e]
   exact this
+
+/-- **Section 13.16, internal function definition principle.** Let $`f : A \to B` be a
+function between internal sets $`A` and $`B`. Suppose that there is an internal term
+$`\tau(x)` of the language of $`\mathbb U'` (all of its constants are internal) with sole
+variable $`x` such that $`f(a) = \tau(a)` for all $`a \in A`. Then $`f` is an internal
+function. -/
+theorem internal_of_term_of_internal_consts (t : Term.{u}) (x : ℕ)
+    (ht : t.Admissible F.U' {x}) (hconsts : ∃ N, t.Below N F.Internal) (v : ℕ → ZFSet.{u})
+    (hA : F.Internal A) (hAset : IsSetOf F.U' A) (hB : F.Internal B) (hBset : IsSetOf F.U' B)
+    (hf : IsFunc A B f)
+    (hval : ∀ a ∈ A, t.Defined F.U' (Function.update v x a) ∧
+      app f a = t.val (Function.update v x a)) : F.Internal f := by
+  classical
+  obtain ⟨N₀, hN₀⟩ := hconsts
+  obtain ⟨N₁, L, hL, hB₁⟩ := Term.exists_below hN₀
+  set N := max N₁ (x + 1) with hN
+  have hxN : x < N := lt_of_lt_of_le (Nat.lt_succ_self x) (le_max_right _ _)
+  have hBel : t.Below N (· ∈ L) := hB₁.mono (le_max_left _ _) fun _ h => h
+  let e : ZFSet.{u} → ℕ := fun c => N + L.idxOf c
+  let w : ℕ → ZFSet.{u} := fun n => if n < N then v n else L.getD (n - N) ∅
+  have hwe : ∀ c ∈ L, w (e c) = c := by
+    intro c hc
+    have h1 : ¬ N + L.idxOf c < N := by omega
+    simp only [w, e, h1, ite_false, Nat.add_sub_cancel_left]
+    rw [List.getD_eq_getElem _ _ (List.idxOf_lt_length_of_mem hc), List.getElem_idxOf]
+  have hwx : ∀ a, ∀ c ∈ L, Function.update w x a (e c) = c := fun a c hc => by
+    have : N ≤ e c := Nat.le_add_right _ _
+    rw [Function.update_of_ne (by omega)]
+    exact hwe c hc
+  have hadm : (t.abs e).Admissible F.U (insert x {y | y ∈ L.map e}) :=
+    (Term.admissible_abs ht hBel).mono fun n hn => by
+      rcases hn with hn | ⟨c, hc, rfl⟩
+      · exact Or.inl hn
+      · exact Or.inr (List.mem_map.2 ⟨c, hc, rfl⟩)
+  have hv : ∀ y ∈ L.map e, F.Internal (w y) := by
+    intro y hy
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.1 hy
+    rw [hwe c hc]
+    exact hL c hc
+  have hagree : ∀ a, ∀ y ∈ ({x} : Set ℕ), Function.update w x a y = Function.update v x a y :=
+    fun a y hy => by
+      rw [Set.mem_singleton_iff.1 hy]
+      simp
+  refine F.internal_of_term (t.abs e) (L.map e) x hadm w hv hA hAset hB hBset hf fun a ha => ?_
+  rw [Term.star_abs, Term.defined_abs hBel (hwx a), Term.val_abs hBel (hwx a),
+    Term.defined_congr ht (hagree a), Term.val_congr ht (hagree a)]
+  exact hval a ha
 
 end NonstandardFramework
 
