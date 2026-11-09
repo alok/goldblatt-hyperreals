@@ -767,7 +767,8 @@ theorem bijSpec_iff {W N' Le' one V Z n f : ZFSet.{u}} (hV : V ⊆ W) (hZ : Z �
 /-- Unfold the truth definition of a formula built from {lit}`bijFormula`. -/
 macro "bij_simp" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| simp only [Formula.Holds, Formula.star, Term.star, star_bijFormula, Sat,
-    sat_bijFormula, Term.Defined, Term.val, forall_true_left, true_and, and_true,
+    sat_bijFormula, Term.Defined, Term.val, Term.val_opair, Term.defined_opair,
+    Term.star_opair, forall_true_left, true_and, and_true, and_self,
     Function.update_self, Function.update_of_ne, ne_eq, not_false_eq_true, zero_ne_one,
     one_ne_zero, OfNat.ofNat_ne_zero, OfNat.zero_ne_ofNat, OfNat.ofNat_ne_one,
     OfNat.one_ne_ofNat, Nat.reduceEqDiff] $[$loc]?)
@@ -1067,7 +1068,7 @@ namespace RealFramework
 
 open Formula Term NonstandardFramework
 
-variable (F : RealFramework.{u}) {A B C D f a b c n x : ZFSet.{u}}
+variable (F : RealFramework.{u}) {A B C D T f a b c n x : ZFSet.{u}}
 
 /-- **Section 13.17, cardinality of finite sets.** The function $`\mathcal P_F(A) \to
 \mathbb N` assigning to each finite subset of $`A` its number of elements, as a set of pairs
@@ -1108,6 +1109,204 @@ theorem icard_star {Z : ZFSet.{u}} (hA : IsSetOf F.U A) (hZ : Z ∈ finPow A) :
   have : app (F.cardFn A) Z = F.nat (Nat.card (Z : Set ZFSet.{u})) :=
     app_graph (finPow A) F.N _ (fun _ => F.mem_N.2 ⟨_, rfl⟩) ⟨Z, hZ⟩
   rw [this, F.star_nat]
+
+/-- In the standard universe, a set in bijection with $`\{1, \dots, m\}` has $`m`
+elements. -/
+theorem card_eq_of_bijection {m : ℕ} {Z g : ZFSet.{u}}
+    (hfunc : IsFunc (F.N.sep fun x => pair (F.nat 1) x ∈ F.Le ∧ pair x (F.nat m) ∈ F.Le) Z g)
+    (hinj : IsInjective g) (hran : ran g = Z) : Nat.card (Z : Set ZFSet.{u}) = m := by
+  have hV : ∀ i : Fin m, F.nat (i + 1) ∈
+      (F.N.sep fun x => pair (F.nat 1) x ∈ F.Le ∧ pair x (F.nat m) ∈ F.Le) := fun i =>
+    F.mem_sep_seg_iff.2 ⟨i + 1, by omega, by omega, rfl⟩
+  have hpair : ∀ i : Fin m, pair (F.nat (i + 1)) (app g (F.nat (i + 1))) ∈ g := fun i =>
+    hfunc.isFunction.pair_app_mem (hfunc.dom_eq ▸ hV i)
+  let φ : Fin m → (Z : Set ZFSet.{u}) := fun i =>
+    ⟨app g (F.nat (i + 1)), (pair_mem_prod.1 (hfunc.1 (hpair i))).2⟩
+  have hφ : Function.Bijective φ := by
+    constructor
+    · intro i j hij
+      have h1 : app g (F.nat (i + 1)) = app g (F.nat (j + 1)) := congrArg Subtype.val hij
+      have h2 := hpair j
+      rw [← h1] at h2
+      exact Fin.ext (by simpa using F.nat_injective (hinj _ _ _ (hpair i) h2))
+    · rintro ⟨z, hz⟩
+      have hz' : z ∈ ran g := by
+        rw [hran]
+        exact hz
+      obtain ⟨x, hxz⟩ := mem_ran.1 hz'
+      obtain ⟨k, hk1, hk2, rfl⟩ := F.mem_sep_seg_iff.1 (pair_mem_prod.1 (hfunc.1 hxz)).1
+      refine ⟨⟨k - 1, by omega⟩, Subtype.ext ?_⟩
+      have hk : k - 1 + 1 = k := by omega
+      show app g (F.nat (k - 1 + 1)) = z
+      rw [hk]
+      exact hfunc.isFunction.app_eq hxz
+  simpa using (Nat.card_eq_of_bijective φ hφ).symm
+
+/-- **Section 13.17.** The number $`n` in Theorem 13.17.1 is the internal cardinality of
+$`B`: if there is an internal bijection from $`\{1, \dots, n\}` onto a hyperfinite subset
+$`B` of $`{}^*A`, then $`|B| = n`. -/
+theorem icard_eq_of_bijection (hA : IsSetOf F.U A) (hB : B ∈ F.star (finPow A))
+    (hn : n ∈ F.star F.N) (hf : F.Internal f) (hfunc : IsFunc (F.seg n) B f)
+    (hinj : IsInjective f) (hran : ran f = B) : F.icard A B = n := by
+  have hPN := F.hU.isSetOf_powerset F.isSetOf_N
+  have hNU' := F.star_subset_U' F.isSetOf_N
+  have hFP := F.hU.isSetOf_finPow hA
+  have hNA := F.hU.isSetOf_prod F.isSetOf_N hA
+  have hPNA := F.hU.isSetOf_powerset hNA
+  have hC := F.hU.isSetOf_of_isFunc hFP F.isSetOf_N (F.isFunc_cardFn A)
+  have hBsub := (F.internal_subset_of_mem_star_finPow hA hB).1
+  have hBU : B ⊆ F.U' := fun y hy => F.star_subset_U' hA (hBsub hy)
+  have hfsub : f ⊆ prod (F.star F.N) (F.star A) := fun p hp => by
+    obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 (hfunc.1 hp)
+    exact pair_mem_prod.2 ⟨(mem_sep.1 ha).1, hBsub hb⟩
+  have hfmem : f ∈ F.star (powerset (prod F.N A)) :=
+    (F.mem_star_powerset_iff hNA).2 ⟨by rw [F.star_prod F.isSetOf_N hA]; exact hfsub, hf⟩
+  have hfU' : f ⊆ F.U' := fun p hp => by
+    have := hfsub hp
+    rw [← F.star_prod F.isSetOf_N hA] at this
+    exact F.star_subset_U' hNA this
+  have hsent : (Formula.all 0 (.const (finPow A)) (.all 1 (.const F.N)
+      (.all 2 (.const (powerset (prod F.N A))) (.imp
+        (bijFormula (powerset F.N) F.N F.Le (F.nat 1))
+        (.elem (.opair (.var 0) (.var 1)) (.const (F.cardFn A))))))).IsSentence F.U :=
+    ⟨hFP.1, F.isSetOf_N.1, hPNA.1,
+      admissible_bijFormula hPN.1 F.isSetOf_N.1 F.isSetOf_Le.1 (F.nat_mem_U 1),
+      by simp [hC.1]⟩
+  have h := F.transfer _ hsent
+  bij_simp at h
+  rw [F.star_nat] at h
+  have h' := h.1 (by
+    rintro Z - hZ m' - hm' g - hg ⟨V, -, hV, hspec⟩
+    obtain ⟨m, rfl⟩ := F.mem_N.1 hm'
+    rw [mem_powerset] at hg hV
+    have hZU : Z ⊆ F.U := fun y hy => F.hU.subset hA ((mem_finPow.1 hZ).1 hy)
+    obtain ⟨rfl, hfunc', hinj', hran'⟩ := (bijSpec_iff
+      (fun x hx => F.hU.subset F.isSetOf_N (hV hx)) hZU (F.hU.subset F.isSetOf_N)
+      (fun p hp => F.hU.subset hNA (hg hp))).1 hspec
+    refine mem_range.2 ⟨⟨Z, hZ⟩, ?_⟩
+    show pair Z (F.nat (Nat.card (Z : Set ZFSet.{u}))) = pair Z (F.nat m)
+    rw [F.card_eq_of_bijection hfunc' hinj' hran'])
+  have hmem := h' B (F.star_subset_U' hFP hB) hB n (hNU' hn) hn f hf.mem_U' hfmem
+    ⟨F.seg n, (F.internal_seg hn).mem_U', F.seg_mem_star_powerset hn,
+      (bijSpec_iff (fun x hx => hNU' (mem_sep.1 hx).1) hBU hNU' hfU').2
+        ⟨rfl, hfunc, hinj, hran⟩⟩
+  exact (F.isFunc_star_cardFn hA).1.isFunction.app_eq hmem
+
+/-- **Exercise 13.18 (2), second part.** If $`B \subseteq A` are hyperfinite subsets of
+$`{}^*T`, then $`|B| \le |A|`. -/
+theorem icard_le_of_subset (hT : IsSetOf F.U T) (hA : A ∈ F.star (finPow T))
+    (hB : B ∈ F.star (finPow T)) (hBA : B ⊆ A) :
+    pair (F.icard T B) (F.icard T A) ∈ F.star F.Le := by
+  have hFP := F.hU.isSetOf_finPow hT
+  have hC := F.hU.isSetOf_of_isFunc hFP F.isSetOf_N (F.isFunc_cardFn T)
+  have h := F.transfer
+    (.all 0 (.const (finPow T)) (.all 1 (.const (finPow T)) (.imp
+      (.all 2 (.var 1) (.elem (.var 2) (.var 0)))
+      (.ex 3 (.const F.N) (.ex 4 (.const F.N) (.conj
+        (.elem (.opair (.var 1) (.var 3)) (.const (F.cardFn T)))
+        (.conj (.elem (.opair (.var 0) (.var 4)) (.const (F.cardFn T)))
+          (.elem (.opair (.var 3) (.var 4)) (.const F.Le)))))))))
+    (by simp [IsSentence, hFP.1, hC.1, F.isSetOf_N.1, F.isSetOf_Le.1])
+  sat_simp at h
+  obtain ⟨c, -, -, d, -, -, hc, hd, hcd⟩ := h.1 (by
+    intro x _ hx y _ hy hyx
+    have hxT := mem_finPow.1 hx
+    have hsub : (y : Set ZFSet.{u}) ⊆ x := fun z hz =>
+      hyx z (F.hU.subset hT ((mem_finPow.1 hy).1 hz)) hz
+    exact ⟨_, F.nat_mem_U _, F.mem_N.2 ⟨_, rfl⟩, _, F.nat_mem_U _, F.mem_N.2 ⟨_, rfl⟩,
+      mem_range.2 ⟨⟨y, hy⟩, rfl⟩, mem_range.2 ⟨⟨x, hx⟩, rfl⟩,
+      F.pair_nat_mem_Le.2 (Nat.card_mono hxT.2 hsub)⟩)
+    A (F.star_subset_U' hFP hA) hA B (F.star_subset_U' hFP hB) hB fun z _ hz => hBA hz
+  have hfun := (F.isFunc_star_cardFn hT).1.isFunction
+  rw [icard, icard, hfun.app_eq hc, hfun.app_eq hd]
+  exact hcd
+
+/-- The identity function on a set, as a set of pairs. -/
+def _root_.Goldblatt.idOn (S : ZFSet.{u}) : ZFSet.{u} :=
+  (prod S S).sep fun p => ∃ a, p = pair a a
+
+theorem _root_.Goldblatt.pair_mem_idOn {S : ZFSet.{u}} : pair a b ∈ idOn S ↔ a ∈ S ∧ a = b := by
+  rw [idOn, mem_sep, pair_mem_prod]
+  constructor
+  · rintro ⟨⟨ha, -⟩, c, hc⟩
+    obtain ⟨rfl, rfl⟩ := pair_inj.1 hc
+    exact ⟨ha, rfl⟩
+  · rintro ⟨ha, rfl⟩
+    exact ⟨⟨ha, ha⟩, a, rfl⟩
+
+theorem _root_.Goldblatt.isFunc_idOn (S : ZFSet.{u}) :
+    IsFunc S S (idOn S) ∧ IsInjective (idOn S) ∧ ran (idOn S) = S := by
+  refine ⟨⟨sep_subset, fun z hz => ⟨z, pair_mem_idOn.2 ⟨hz, rfl⟩, fun w hw =>
+    (pair_mem_idOn.1 hw).2.symm⟩⟩, fun a a' b h h' => ?_, ?_⟩
+  · rw [(pair_mem_idOn.1 h).2, (pair_mem_idOn.1 h').2]
+  · ext b
+    rw [mem_ran]
+    exact ⟨fun ⟨a, h⟩ => (pair_mem_idOn.1 h).2 ▸ (pair_mem_idOn.1 h).1,
+      fun hb => ⟨b, pair_mem_idOn.2 ⟨hb, rfl⟩⟩⟩
+
+/-- The identity function on an internal set is internal. -/
+theorem internal_idOn {S : ZFSet.{u}} (hS : F.Internal S) (hSset : IsSetOf F.U' S) :
+    F.Internal (idOn S) := by
+  have hP := F.internal_prod hS hSset hS hSset
+  have hSU := F.isUniverse'.subset hSset
+  have hPset : IsSetOf F.U' (prod S S) := isSetOf_of_subset hP.mem_U' fun p hp => by
+    obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 hp
+    exact (F.isUniverse'.isSetOf_opair (hSU ha) (hSU hb)).1
+  have := F.internal_sep (.ex 1 (.var 2) (.equal (.var 0) (.opair (.var 1) (.var 1)))) [2] 0
+    (by simp) (fun _ => S) (by simp [hS]) hP hPset
+  sat_simp at this
+  have e : idOn S = (prod S S).sep fun p => ∃ a ∈ F.U', a ∈ S ∧ p = pair a a := by
+    ext p
+    rw [idOn, mem_sep, mem_sep]
+    constructor
+    · rintro ⟨hp, a, rfl⟩
+      have ha := (pair_mem_prod.1 hp).1
+      exact ⟨hp, a, hSU ha, ha, rfl⟩
+    · rintro ⟨hp, a, -, -, rfl⟩
+      exact ⟨hp, a, rfl⟩
+  rw [e]
+  exact this
+
+/-- **Section 13.17.** The internal cardinality of the initial segment
+$`\{1, \dots, n\}` is $`n`. -/
+theorem icard_seg (hn : n ∈ F.star F.N) : F.icard F.N (F.seg n) = n := by
+  have hseg := F.hyperfinite_seg hn
+  obtain ⟨h1, h2, h3⟩ := isFunc_idOn (F.seg n)
+  exact F.icard_eq_of_bijection F.isSetOf_N (hseg.mem_star_finPow F.isSetOf_N sep_subset) hn
+    (F.internal_idOn hseg.internal hseg.isSetOf) h1 h2 h3
+
+/-- **Exercise 13.18 (1), first part.** If there is an internal injection
+$`\{1, \dots, n\} \to \{1, \dots, m\}`, then $`n \le m`. -/
+theorem le_of_internal_injection {m : ZFSet.{u}} (hn : n ∈ F.star F.N) (hm : m ∈ F.star F.N)
+    (hf : F.Internal f) (hrel : RelIn F.U' f) (hfunc : IsFunc (F.seg n) (F.seg m) f)
+    (hinj : IsInjective f) : pair n m ∈ F.star F.Le := by
+  have hfU' : f ⊆ F.U' := fun p hp => by
+    obtain ⟨a, ha, b, hb, rfl⟩ := hrel p hp
+    exact (F.isUniverse'.isSetOf_opair ha hb).1
+  have hfset : IsSetOf F.U' f := isSetOf_of_subset hf.mem_U' hfU'
+  have hran := F.internal_ran hf hfset hrel
+  have hsub : ran f ⊆ F.seg m := hfunc.ran_subset
+  have hsegm := F.hyperfinite_seg hm
+  have hB := (hsegm.of_internal_subset hran hsub).mem_star_finPow F.isSetOf_N
+    fun y hy => (mem_sep.1 (hsub hy)).1
+  have hfunc' : IsFunc (F.seg n) (ran f) f := by
+    refine ⟨fun p hp => ?_, hfunc.2⟩
+    obtain ⟨a, ha, b, -, rfl⟩ := mem_prod.1 (hfunc.1 hp)
+    exact pair_mem_prod.2 ⟨ha, mem_ran.2 ⟨a, hp⟩⟩
+  have h1 := F.icard_eq_of_bijection F.isSetOf_N hB hn hf hfunc' hinj rfl
+  have h2 := F.icard_seg hm
+  have := F.icard_le_of_subset F.isSetOf_N (hsegm.mem_star_finPow F.isSetOf_N sep_subset) hB hsub
+  rwa [h1, h2] at this
+
+/-- **Exercise 13.18 (1), second part.** If there is an internal bijection
+$`\{1, \dots, n\} \to \{1, \dots, m\}`, then $`n = m`. Hence the number $`n` in Theorem
+13.17.1 is uniquely determined by the hyperfinite set. -/
+theorem eq_of_internal_bijection {m : ZFSet.{u}} (hn : n ∈ F.star F.N) (hm : m ∈ F.star F.N)
+    (hf : F.Internal f) (hfunc : IsFunc (F.seg n) (F.seg m) f) (hinj : IsInjective f)
+    (hran : ran f = F.seg m) : n = m := by
+  have hsegm := F.hyperfinite_seg hm
+  rw [← F.icard_eq_of_bijection F.isSetOf_N (hsegm.mem_star_finPow F.isSetOf_N sep_subset) hn hf
+    hfunc hinj hran, F.icard_seg hm]
 
 /-!
 ## 13.19 Hyperfinite Summation
