@@ -1,0 +1,267 @@
+import Mathlib
+
+/-!
+# 1. What Are the Hyperreals?
+
+The first chapter of Goldblatt's book is an invitation rather than a development: it says
+what an infinitesimal is supposed to be, recalls how such quantities were used long before
+anyone could say what they were, and asks what a real number is, so that the same question
+can later be asked about hyperreal numbers.  It contains no numbered theorems or exercises.
+
+This page plays the same role for the formalization.  A _hyperreal_ is an element of an
+ordered field $`{}^*\mathbb{R}` that extends the real field $`\mathbb{R}` and contains
+numbers that are positive yet smaller than every positive real, together with their
+reciprocals, which exceed every real.  Parts I to III of the project work in one concrete
+such field, Mathlib's {name}`Hyperreal`, the ultrapower of $`\mathbb{R}` over a
+nonprincipal ultrafilter on $`\mathbb{N}`; this is the construction of the book's Chapter 3.
+The later chapters build on it the transfer principle, the calculus of limited, unlimited
+and infinitesimal numbers, nonstandard treatments of convergence, continuity,
+differentiation, integration and topology, internal sets and functions, and then the
+general theory of enlargements with its applications.
+
+The few Lean statements below are previews, proved directly from Mathlib, of phenomena that
+the following chapters establish systematically.  Everything on this page lives in the
+namespace {lit}`Goldblatt.Intro`, so that the official definitions of later chapters are
+free to use the natural names.
+
+## 1.1 Infinitely Small and Large
+
+Section 1.1 fixes the vocabulary.  A number $`\varepsilon` is _infinitely small_ when
+$`|\varepsilon| < 1/n` for every positive integer $`n`, and a number $`\omega` is
+_infinitely large_ when $`|\omega| > n` for every positive integer $`n`.  The two notions
+are exchanged by taking reciprocals, the real field has no nonzero number of the first kind
+and no number of the second kind, and the point of the subject is that a larger ordered
+field has both.
+-/
+
+namespace Goldblatt.Intro
+
+open Hyperreal
+open scoped ConditionallyCompleteLinearOrderedField
+
+section OrderedField
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+
+/-- **Section 1.1, definition** (infinitely small).  An element $`x` of an ordered field is
+infinitely small when $`|x| < 1/n` for every positive integer $`n`.  Zero is allowed here;
+the book's _infinitesimals_ of Section 1.1 are the nonzero such elements. -/
+def InfinitelySmall (x : K) : Prop :=
+  ∀ n : ℕ, 0 < n → |x| < 1 / (n : K)
+
+/-- **Section 1.1, definition** (infinitely large).  An element $`w` of an ordered field is
+infinitely large when $`|w| > n` for every positive integer $`n`. -/
+def InfinitelyLarge (w : K) : Prop :=
+  ∀ n : ℕ, 0 < n → (n : K) < |w|
+
+/-- **Section 1.1** (reciprocal of an infinitesimal).  If $`\varepsilon \ne 0` is infinitely
+small then $`1/\varepsilon` is infinitely large. -/
+theorem InfinitelySmall.infinitelyLarge_inv {x : K} (hx : InfinitelySmall x) (h0 : x ≠ 0) :
+    InfinitelyLarge x⁻¹ := by
+  intro n hn
+  have hn' : (0 : K) < n := Nat.cast_pos.mpr hn
+  have hpos : 0 < |x| := abs_pos.mpr h0
+  rw [abs_inv, lt_inv_comm₀ hn' hpos, ← one_div]
+  exact hx n hn
+
+/-- **Section 1.1** (reciprocal of an infinite number).  If $`\omega` is infinitely large
+then $`1/\omega` is a nonzero infinitely small number. -/
+theorem InfinitelyLarge.infinitelySmall_inv {w : K} (hw : InfinitelyLarge w) :
+    w⁻¹ ≠ 0 ∧ InfinitelySmall w⁻¹ := by
+  have h1 : (1 : K) < |w| := by simpa using hw 1 one_pos
+  have hpos : 0 < |w| := zero_lt_one.trans h1
+  refine ⟨inv_ne_zero (abs_pos.mp hpos), fun n hn => ?_⟩
+  have hn' : (0 : K) < n := Nat.cast_pos.mpr hn
+  rw [abs_inv, one_div, inv_lt_inv₀ hpos hn']
+  exact hw n hn
+
+/-- **Section 1.1** (an Archimedean field has no nonzero infinitesimals).  In an Archimedean
+ordered field, in particular in $`\mathbb{R}`, the only infinitely small element is
+$`0`. -/
+theorem InfinitelySmall.eq_zero [Archimedean K] {x : K} (hx : InfinitelySmall x) : x = 0 := by
+  by_contra h0
+  obtain ⟨n, hn⟩ := exists_nat_gt |x⁻¹|
+  have hn0 : 0 < n := by
+    have : (0 : K) < n := (abs_nonneg _).trans_lt hn
+    exact_mod_cast this
+  exact lt_asymm hn (hx.infinitelyLarge_inv h0 n hn0)
+
+/-- **Section 1.1** (an Archimedean field has no infinite elements).  In an Archimedean
+ordered field, in particular in $`\mathbb{R}`, no element is infinitely large. -/
+theorem not_infinitelyLarge [Archimedean K] (w : K) : ¬ InfinitelyLarge w := fun hw =>
+  hw.infinitelySmall_inv.1 hw.infinitelySmall_inv.2.eq_zero
+
+end OrderedField
+
+/-- The real number $`n`, embedded in the hyperreals, is the hyperreal natural number
+$`n`. -/
+theorem coe_natCast (n : ℕ) : ((n : ℝ) : ℝ*) = n := rfl
+
+/-- **Section 1.1** (the hyperreals contain a nonzero infinitesimal).  The hyperreal
+$`\varepsilon`, the class of the sequence $`(1/n)`, is nonzero and infinitely small. -/
+theorem epsilon_infinitelySmall : (ε : ℝ*) ≠ 0 ∧ InfinitelySmall (ε : ℝ*) := by
+  refine ⟨epsilon_ne_zero, fun n hn => ?_⟩
+  rw [abs_of_pos epsilon_pos]
+  have h : (0 : ℝ) < 1 / n := by positivity
+  have h' : (ε : ℝ*) < ((1 / n : ℝ) : ℝ*) := epsilon_lt_of_pos h
+  rwa [coe_div, coe_one, coe_natCast] at h'
+
+/-- **Section 1.1** (the hyperreals contain an infinite number).  The hyperreal $`\omega`,
+the class of the sequence $`(n)`, is infinitely large. -/
+theorem omega_infinitelyLarge : InfinitelyLarge (ω : ℝ*) := by
+  intro n _
+  rw [abs_omega, ← coe_natCast]
+  exact coe_lt_omega n
+
+/-- **Section 1.1** (existence of a positive infinitesimal).  There is a hyperreal that is
+positive and smaller than every positive real number. -/
+theorem exists_pos_infinitesimal : ∃ e : ℝ*, 0 < e ∧ ∀ r : ℝ, 0 < r → e < r :=
+  ⟨ε, epsilon_pos, fun _ => epsilon_lt_of_pos⟩
+
+/-- **Section 1.1** (existence of an unlimited number).  There is a hyperreal that is larger
+than every real number. -/
+theorem exists_unlimited : ∃ w : ℝ*, ∀ r : ℝ, (r : ℝ*) < w :=
+  ⟨ω, coe_lt_omega⟩
+
+/-- **Section 1.1** (the reals are an ordered subfield of the hyperreals).  The canonical map
+$`\mathbb{R} \to {}^*\mathbb{R}`, which {name}`Hyperreal.coeRingHom` packages as a
+homomorphism of ordered rings, is strictly increasing and hence injective. -/
+theorem coe_strictMono : StrictMono ((↑) : ℝ → ℝ*) := fun _ _ => coe_lt_coe.mpr
+
+/-- **Section 1.1** (the extension is proper).  Some hyperreal is not a real number: the
+embedding of $`\mathbb{R}` in $`{}^*\mathbb{R}` is not surjective. -/
+theorem coe_not_surjective : ¬ Function.Surjective ((↑) : ℝ → ℝ*) := fun h => by
+  obtain ⟨r, hr⟩ := h ω
+  exact lt_irrefl _ (hr ▸ coe_lt_omega r)
+
+/-!
+## 1.2 Historical Background
+
+Section 1.2 is a historical essay, and nothing in it is a theorem.  In outline: the Greek
+geometers, Archimedes above all, found areas and volumes by imagining figures as made of
+indivisible slices, but proved their results by the method of exhaustion, which avoids the
+infinite.  In the seventeenth century Newton and Leibniz turned such heuristics into a
+calculus; Leibniz in particular computed with differentials, treating a curve as a polygon
+with infinitely many infinitely short sides and discarding higher-order infinitesimals at
+the end of a calculation.  Euler manipulated infinitely large and small numbers with great
+freedom and success.  Cauchy still spoke of infinitely small variable quantities when he
+defined continuity, but the nineteenth-century programme that followed, culminating with
+Weierstrass, replaced them by the static epsilon-delta definition of limit.  In 1960
+Abraham Robinson showed, using tools from mathematical logic, that the older language can
+be made fully rigorous: there are ordered fields extending the reals in which infinitesimals
+exist and to which the true statements about the reals transfer.
+
+The one computation worth recording is the Leibnizian derivative.  To differentiate
+$`x^2` one forms the quotient of the increments for an infinitesimal increment
+$`\varepsilon` and observes that it differs from $`2x` only by $`\varepsilon`.  In the
+hyperreals this is an honest algebraic identity, and "neglecting" the leftover infinitesimal
+becomes the operation of taking the standard part, which is studied in Chapters 5 and 8.
+-/
+
+/-- **Section 1.2** (the Leibnizian derivative of the square).  For a real $`x` and the
+infinitesimal $`\varepsilon`,
+$$`\frac{(x+\varepsilon)^2 - x^2}{\varepsilon} = 2x + \varepsilon ,`
+so the increment quotient is infinitely close to $`2x`. -/
+theorem sq_increment_quotient (x : ℝ) :
+    (((x : ℝ*) + ε) ^ 2 - (x : ℝ*) ^ 2) / ε = 2 * x + ε := by
+  have h : (ε : ℝ*) ≠ 0 := epsilon_ne_zero
+  field_simp
+  ring
+
+/-- **Section 1.2** (the neglected term is infinitesimal).  The increment quotient of the
+square at $`x` differs from the real number $`2x` by an infinitely small amount. -/
+theorem sq_increment_quotient_sub_infinitelySmall (x : ℝ) :
+    InfinitelySmall ((((x : ℝ*) + ε) ^ 2 - (x : ℝ*) ^ 2) / ε - 2 * x) := by
+  rw [sq_increment_quotient, add_sub_cancel_left]
+  exact epsilon_infinitelySmall.2
+
+/-!
+## 1.3 What Is a Real Number?
+
+Section 1.3 lists the usual answers to its title question: an infinite decimal, an element
+of a complete ordered field, a Dedekind cut of rationals, an equivalence class of rational
+Cauchy sequences.  The second answer is the axiomatic one, and it is legitimate because the
+axioms are categorical: any two complete ordered fields are isomorphic.  The third and
+fourth are constructions, which show that the axioms are consistent.  The hyperreals will
+be obtained in Chapter 3 by a construction modelled on the fourth answer, with real
+sequences in place of rational Cauchy sequences.
+
+The section closes with the Eudoxus–Archimedes principle, that of two magnitudes the
+smaller can be multiplied to exceed the larger.  It holds in $`\mathbb{R}` and is exactly
+what excludes infinite and infinitesimal reals.  The hyperreal line is an ordered field in
+which the principle fails, and consequently one that is not Dedekind complete.
+-/
+
+/-- **Section 1.3, answer (2)** (Dedekind completeness of the reals).  Every nonempty set of
+real numbers that is bounded above has a least upper bound. -/
+theorem real_exists_isLUB {S : Set ℝ} (hne : S.Nonempty) (hbdd : BddAbove S) :
+    ∃ s : ℝ, IsLUB S s :=
+  Real.exists_isLUB hne hbdd
+
+/-- **Section 1.3, answer (2)** (complete ordered fields are isomorphic).  Any two complete
+ordered fields are isomorphic as ordered fields.  A complete ordered field is rendered as a
+field with a {name}`ConditionallyCompleteLinearOrder` that is a strict ordered ring; the
+isomorphism is Mathlib's {name}`ConditionallyCompleteLinearOrderedField.inducedOrderRingIso`. -/
+theorem completeOrderedField_iso (F G : Type*)
+    [Field F] [ConditionallyCompleteLinearOrder F] [IsStrictOrderedRing F]
+    [Field G] [ConditionallyCompleteLinearOrder G] [IsStrictOrderedRing G] :
+    Nonempty (F ≃+*o G) :=
+  ⟨ConditionallyCompleteLinearOrderedField.inducedOrderRingIso F G⟩
+
+/-- **Section 1.3, answer (2)** (the isomorphism is unique).  Between two complete ordered
+fields there is exactly one isomorphism of ordered fields, so a complete ordered field has
+no symmetries and the identification with $`\mathbb{R}` is canonical. -/
+theorem completeOrderedField_iso_unique (F G : Type*)
+    [Field F] [ConditionallyCompleteLinearOrder F] [IsStrictOrderedRing F]
+    [Field G] [ConditionallyCompleteLinearOrder G] [IsStrictOrderedRing G]
+    (e₁ e₂ : F ≃+*o G) : e₁ = e₂ :=
+  Subsingleton.elim e₁ e₂
+
+/-- **Section 1.3** (the Eudoxus–Archimedes principle in the reals).  For positive reals
+$`a` and $`b` some integer multiple of $`a` exceeds $`b`. -/
+theorem real_eudoxus_archimedes {a b : ℝ} (ha : 0 < a) : ∃ n : ℕ, b < n * a := by
+  obtain ⟨n, hn⟩ := exists_nat_gt (b / a)
+  exact ⟨n, (div_lt_iff₀ ha).mp hn⟩
+
+/-- **Section 1.3** (every real is exceeded by an integer).  The consequence of the
+Eudoxus–Archimedes principle singled out in the text. -/
+theorem real_exists_nat_gt (r : ℝ) : ∃ n : ℕ, r < n :=
+  exists_nat_gt r
+
+/-- **Section 1.3** (the principle fails for the hyperreal line).  No integer multiple of the
+positive hyperreal $`1` exceeds $`\omega`: for every natural number $`n`,
+$`n \cdot 1 < \omega`. -/
+theorem hyperreal_eudoxus_archimedes_fails : ∀ n : ℕ, (n : ℝ*) * 1 < ω := by
+  intro n
+  rw [mul_one, ← coe_natCast]
+  exact coe_lt_omega n
+
+/-- **Section 1.3** (the hyperreals are not Archimedean). -/
+theorem hyperreal_not_archimedean : ¬ Archimedean ℝ* := fun _ =>
+  not_infinitelyLarge (ω : ℝ*) omega_infinitelyLarge
+
+/-- **Section 1.3** (the hyperreals are not Dedekind complete).  The set of real numbers,
+viewed inside $`{}^*\mathbb{R}`, is nonempty and bounded above by $`\omega`, but it has no
+least upper bound: if $`s` were one, then $`s - 1` would not be an upper bound, so
+$`s - 1 < r` for some real $`r`, and then the real $`r + 1` would exceed $`s`. -/
+theorem hyperreal_not_dedekind_complete :
+    (Set.range ((↑) : ℝ → ℝ*)).Nonempty ∧ BddAbove (Set.range ((↑) : ℝ → ℝ*)) ∧
+      ¬ ∃ s : ℝ*, IsLUB (Set.range ((↑) : ℝ → ℝ*)) s := by
+  refine ⟨⟨_, 0, rfl⟩, ⟨ω, ?_⟩, ?_⟩
+  · rintro _ ⟨r, rfl⟩
+    exact (coe_lt_omega r).le
+  · rintro ⟨s, hs⟩
+    have hlt : s - 1 < s := sub_one_lt s
+    obtain ⟨_, ⟨r, rfl⟩, hr⟩ := (lt_isLUB_iff hs).mp hlt
+    have hle : ((r + 1 : ℝ) : ℝ*) ≤ s := hs.1 ⟨r + 1, rfl⟩
+    rw [coe_add, coe_one] at hle
+    linarith
+
+/-!
+## 1.4 Historical References
+
+Section 1.4 is a reading list on the history sketched in Section 1.2 and has no mathematical
+content to formalize.
+-/
+
+end Goldblatt.Intro
