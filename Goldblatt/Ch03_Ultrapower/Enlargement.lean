@@ -71,9 +71,10 @@ $`[r], [s]` when $`P(r_n, s_n)` for almost all $`n`. Written {lit}`⋆P`. -/
 def starRel₂ (P : α → β → Prop) : αS → βS → Prop :=
   fun x y => Germ.LiftRel P (StarType.equiv x) (StarType.equiv y)
 
-/-- **Sections 3.9, 3.11 and 3.14, notation.** The book's prefix star. Applied to a set it is the enlargement {lit}`starSet`; applied to a
-function of one argument it is the extension {lit}`starMap`; applied to a function of two
-arguments it is {lit}`starMap₂`; applied to a binary relation it is {lit}`starRel₂`. -/
+/-- **Sections 3.9, 3.11 and 3.14, notation.** The book's prefix star. Applied to a set it is
+the enlargement {lit}`starSet`; applied to a function of one argument it is the extension
+{lit}`starMap`; applied to a function of two arguments it is {lit}`starMap₂`; applied to a
+binary relation it is {lit}`starRel₂`. -/
 scoped syntax:max "⋆" term:max : term
 
 open Lean Elab Term Meta in

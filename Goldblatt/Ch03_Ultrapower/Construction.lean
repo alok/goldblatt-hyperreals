@@ -405,8 +405,8 @@ standard element inside the star type. For a real number this is the coercion in
 hyperreals. -/
 def of (a : α) : αS := StarType.equiv.symm (Germ.const a)
 
-/-- **Section 3.6.** The identification of the star type with the ultrapower sends the class of a sequence to
-its germ. -/
+/-- **Section 3.6.** The identification of the star type with the ultrapower sends the class of
+a sequence to its germ. -/
 theorem equiv_ofSeq (r : ℕ → α) : StarType.equiv (ofSeq r : αS) = Germ.ofFun r :=
   Equiv.apply_symm_apply _ _
 

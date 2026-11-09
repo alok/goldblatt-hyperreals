@@ -244,9 +244,10 @@ theorem starMap₂_max (x y : ℝ*) : ⋆(fun a b : ℝ => max a b) x y = max x 
 
 /-- **Exercise 3.12(5), tuples.** The class of a tuple of sequences: a finite tuple of elements
 of the ultrapower is turned into a single element of the ultrapower of the type of tuples, by
-choosing a representing sequence for each coordinate. For a finite index type the result does
-not depend on the choice ({lit}`Ultrapower.tuple_ofSeq`). -/
-noncomputable def Ultrapower.tuple {ι : Type*} (x : ι → αS) : Ultrapower (ι → α) :=
+choosing a representing sequence for each coordinate. The index type is required to be finite,
+as every arity in the book is: then the result does not depend on the choice
+({lit}`Ultrapower.tuple_ofSeq`), whereas for an infinite index type it would. -/
+noncomputable def Ultrapower.tuple {ι : Type*} [Finite ι] (x : ι → αS) : Ultrapower (ι → α) :=
   Germ.ofFun fun n i => Quotient.out (StarType.equiv (x i)) n
 
 /-- **Exercise 3.12(5), tuples.** For a finite index type, the tuple of the classes of
@@ -292,9 +293,10 @@ noncomputable def Ultrapower.tupleEquiv {ι : Type*} [Finite ι] :
     exact Ultrapower.tuple_ofSeq fun i n => s n i
 
 /-- **Exercise 3.12(5).** The extension of a function of several arguments, the arguments being
-indexed by a type $`\iota`: apply the function termwise to the tuple of representing
-sequences. -/
-noncomputable def starMapN {ι : Type*} (f : (ι → α) → β) (x : ι → αS) : βS :=
+indexed by a finite type $`\iota`: apply the function termwise to the tuple of representing
+sequences. Finiteness of the index type is a hypothesis of the definition, because only then is
+the value independent of the representing sequences ({lit}`Goldblatt.starMapN_ofSeq`). -/
+noncomputable def starMapN {ι : Type*} [Finite ι] (f : (ι → α) → β) (x : ι → αS) : βS :=
   ⋆f (Ultrapower.tuple x)
 
 /-- **Exercise 3.12(5).** For finitely many arguments,
@@ -629,9 +631,11 @@ theorem relSet_mem_hyperfilter_of_seqEquiv {ι : Type*} [Finite ι] {P : Set (ι
     (iInter_agreementSet_inter_relSet_subset P r s)
 
 /-- **Section 3.14.** The enlargement $`{}^*P` of a $`k`-ary relation $`P`, a set of tuples
-indexed by $`\iota`: a tuple of elements of the ultrapower belongs to it when the corresponding
-class of tuples belongs to the enlargement of $`P` as a set. -/
-def starRel {ι : Type*} (P : Set (ι → α)) : Set (ι → αS) :=
+indexed by a finite type $`\iota`: a tuple of elements of the ultrapower belongs to it when the
+corresponding class of tuples belongs to the enlargement of $`P` as a set. Finiteness of the
+index type is a hypothesis of the definition, because only then is membership independent of
+the representing sequences ({lit}`Goldblatt.starRel_ofSeq`). -/
+def starRel {ι : Type*} [Finite ι] (P : Set (ι → α)) : Set (ι → αS) :=
   {x | Ultrapower.tuple x ∈ (⋆P : Set (Ultrapower (ι → α)))}
 
 /-- **Section 3.14, almost-all criterion for relations.** For a relation of finite arity,
@@ -679,7 +683,7 @@ arguments is the graph of its extension, with the arguments packed into a single
 ultrapower of tuples and the graph treated as a binary relation between a tuple and a value.
 This is the unary statement in disguise; the statement about the enlargement of the graph as a
 relation of arity $`m + 1` is {lit}`Goldblatt.starRel_graph`. -/
-theorem starRel₂_graph_starMapN {ι : Type*} (f : (ι → α) → β) {x : ι → αS}
+theorem starRel₂_graph_starMapN {ι : Type*} [Finite ι] (f : (ι → α) → β) {x : ι → αS}
     {y : βS} : ⋆(fun a b => f a = b) (Ultrapower.tuple x) y ↔ starMapN f x = y :=
   starRel₂_graph f
 
@@ -741,7 +745,7 @@ theorem starRel₂_prod (A : Set α) (B : Set β) {x : αS} {y : βS} :
 /-- **Exercise 3.15(1).** $`{}^*(\mathbb R^k) = ({}^*\mathbb R)^k`: the enlargement of the set
 of all $`k`-tuples is the set of all $`k`-tuples of elements of the ultrapower. (The underlying
 identification of tuples is {lit}`Ultrapower.tupleEquiv`.) -/
-theorem starRel_univ {ι : Type*} : (starRel (univ : Set (ι → α)) : Set (ι → αS)) = univ := by
+theorem starRel_univ {ι : Type*} [Finite ι] : (starRel (univ : Set (ι → α)) : Set (ι → αS)) = univ := by
   ext x
   simp [starRel, starSet_univ]
 
@@ -790,7 +794,7 @@ tuples: the packed tuple lies in the enlargement of the domain if and only if th
 binary relation relates it to something. This reduces to the binary case by unfolding; the
 statement about a relation of arity $`k + 1` enlarged as in Section 3.14 is
 {name}`Goldblatt.starRel_dom_snoc`. -/
-theorem starRel_dom {ι : Type*} (P : (ι → α) → β → Prop) :
+theorem starRel_dom {ι : Type*} [Finite ι] (P : (ι → α) → β → Prop) :
     (starRel {a | ∃ b, P a b} : Set (ι → αS)) = {x | ∃ y : βS, ⋆P (Ultrapower.tuple x) y} := by
   ext x
   rw [starRel, mem_ofPred_eq, starSet_dom]
@@ -808,13 +812,92 @@ theorem starSet_dom_partial {A : Set α} (f : A → β) :
 /-- **Exercise 3.15(3), tuple-packed form.** For a partial function of several arguments with
 domain $`A`, a set of tuples, the domain of the extension is the enlargement of $`A` as a
 relation. The graph is again treated as a binary relation between a packed tuple and a
-value. -/
-theorem starRel_dom_partial {ι : Type*} {A : Set (ι → α)} (f : A → β) :
+value, so this is the unary statement unfolded; the statement in which the graph is a relation
+of arity $`m + 1` enlarged as in Section 3.14 is {lit}`Goldblatt.starRel_dom_partial_snoc`. -/
+theorem starRel_dom_partial {ι : Type*} [Finite ι] {A : Set (ι → α)} (f : A → β) :
     (starRel A : Set (ι → αS)) =
       {x | ∃ y : βS, ⋆(fun a b => ∃ h : a ∈ A, f ⟨a, h⟩ = b) (Ultrapower.tuple x) y} := by
   ext x
   rw [starRel, mem_ofPred_eq, starSet_dom_partial f]
   rfl
+
+/-- **Exercise 3.15(3), partial functions of several arguments.** The extension of a partial
+function $`f` of several arguments whose domain is the relation $`A`: it is defined on the
+tuples of elements of the ultrapower that lie in the enlargement $`{}^*A` of Section 3.14, and
+is the extension of Section 3.13 applied to the packed tuple. -/
+noncomputable def starMapOnN {ι : Type*} [Finite ι] (A : Set (ι → α)) (f : A → β)
+    (x : (starRel A : Set (ι → αS))) : βS :=
+  starMapOn A f ⟨Ultrapower.tuple (x : ι → αS), x.2⟩
+
+/-- **Exercise 3.15(3), partial functions of several arguments.** The almost-all criterion for
+the extension of a partial function of several arguments:
+$`{}^*f([r^1], \dots, [r^k]) = [s]` if and only if, for almost all $`n`, the tuple
+$`(r^1_n, \dots, r^k_n)` lies in the domain and $`f` sends it to $`s_n`. -/
+theorem starMapOnN_ofSeq_eq_ofSeq {ι : Type*} [Finite ι] {A : Set (ι → α)} {f : A → β}
+    {r : ι → ℕ → α} {s : ℕ → β} (h : (fun i => (ofSeq (r i) : αS)) ∈ starRel A) :
+    starMapOnN A f ⟨fun i => (ofSeq (r i) : αS), h⟩ = (ofSeq s : βS) ↔
+      ∀ᶠ n in hyperfilter ℕ, ∃ hn : (fun i => r i n) ∈ A, f ⟨fun i => r i n, hn⟩ = s n := by
+  have h' : (ofSeq fun n i => r i n : Ultrapower (ι → α)) ∈ ⋆A := by
+    rw [← Ultrapower.tuple_ofSeq (αS := αS)]
+    exact h
+  have key : starMapOnN A f ⟨fun i => (ofSeq (r i) : αS), h⟩ =
+      (starMapOn A f ⟨ofSeq fun n i => r i n, h'⟩ : βS) := by
+    unfold starMapOnN
+    congr 2
+    exact Ultrapower.tuple_ofSeq r
+  rw [key, starMapOn_ofSeq_eq_ofSeq]
+
+/-- **Exercise 3.15(3), partial functions of several arguments.** The extension of a partial
+function of several arguments agrees with the function on standard tuples of its domain. -/
+theorem starMapOnN_of {ι : Type*} [Finite ι] {A : Set (ι → α)} (f : A → β) {a : ι → α}
+    (ha : a ∈ A) :
+    starMapOnN A f ⟨fun i => (of (a i) : αS), starRel_of.2 ha⟩ = (of (f ⟨a, ha⟩) : βS) :=
+  (starMapOnN_ofSeq_eq_ofSeq (r := fun i _ => a i) (s := fun _ => f ⟨a, ha⟩)
+    (starRel_of.2 ha)).2 (Eventually.of_forall fun _ => ⟨ha, rfl⟩)
+
+/-- **Section 3.14 and Exercise 3.15(3), partial functions of several arguments.** The
+enlargement of the graph of a partial function of $`m` arguments with domain $`A`, the graph
+being a relation of arity $`m + 1` enlarged as such, is the graph of the extension:
+$`{}^*(\operatorname{Graph} f)(x_1, \dots, x_m, y)` if and only if $`(x_1, \dots, x_m)` lies
+in $`{}^*A` and $`{}^*f(x_1, \dots, x_m) = y`. -/
+theorem starRel_graph_partial {m : ℕ} {A : Set (Fin m → α)} (f : A → α) {x : Fin m → αS}
+    {y : αS} :
+    Fin.snoc (α := fun _ => αS) x y ∈ starRel
+        {a : Fin (m + 1) → α | ∃ h : Fin.init a ∈ A, f ⟨Fin.init a, h⟩ = a (Fin.last m)} ↔
+      ∃ h : x ∈ starRel A, starMapOnN A f ⟨x, h⟩ = y := by
+  obtain ⟨r, rfl⟩ := Ultrapower.exists_rep_tuple (α := α) x
+  obtain ⟨s, rfl⟩ := ofSeq_surjective (α := α) y
+  rw [Ultrapower.snoc_ofSeq, starRel_ofSeq]
+  have hcongr : (∀ᶠ n in hyperfilter ℕ, (fun i => Fin.snoc (α := fun _ => ℕ → α) r s i n) ∈
+        {a : Fin (m + 1) → α | ∃ h : Fin.init a ∈ A, f ⟨Fin.init a, h⟩ = a (Fin.last m)}) ↔
+      ∀ᶠ n in hyperfilter ℕ, ∃ hn : (fun i => r i n) ∈ A, f ⟨fun i => r i n, hn⟩ = s n := by
+    refine eventually_congr (Eventually.of_forall fun n => ?_)
+    simp [Ultrapower.snoc_apply_apply]
+  rw [hcongr]
+  constructor
+  · intro H
+    have h : (fun i => (ofSeq (r i) : αS)) ∈ starRel A :=
+      starRel_ofSeq.2 (H.mono fun _ hn => hn.1)
+    exact ⟨h, (starMapOnN_ofSeq_eq_ofSeq h).2 H⟩
+  · rintro ⟨h, H⟩
+    exact (starMapOnN_ofSeq_eq_ofSeq h).1 H
+
+/-- **Exercise 3.15(3), partial functions of several arguments.** For a partial function $`f`
+of $`m` arguments with domain $`A`, the domain of the extension is the enlargement of the
+domain, $`\operatorname{dom} {}^*f = {}^*(\operatorname{dom} f)`, all enlargements being those
+of Section 3.14: an $`m`-tuple of elements of the ultrapower lies in $`{}^*A` if and only if
+some further element extends it to a member of the enlargement of the graph of $`f`, the graph
+being a relation of arity $`m + 1`. By {name}`Goldblatt.starRel_graph_partial` that element is
+the value of the extension {name}`Goldblatt.starMapOnN` at the tuple. -/
+theorem starRel_dom_partial_snoc {m : ℕ} {A : Set (Fin m → α)} (f : A → α) :
+    (starRel A : Set (Fin m → αS)) =
+      {x | ∃ y : αS, Fin.snoc (α := fun _ => αS) x y ∈ starRel
+        {a : Fin (m + 1) → α | ∃ h : Fin.init a ∈ A, f ⟨Fin.init a, h⟩ = a (Fin.last m)}} := by
+  rw [← starRel_dom_snoc]
+  congr 1
+  ext a
+  simp only [Fin.init_snoc, Fin.snoc_last, mem_ofPred_eq]
+  exact ⟨fun h => ⟨f ⟨a, h⟩, h, rfl⟩, fun ⟨_, h, _⟩ => h⟩
 
 end Relations
 
