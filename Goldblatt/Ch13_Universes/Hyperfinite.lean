@@ -364,4 +364,348 @@ theorem im_mem_powerset_star_sdiff (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
 
 end RealFramework
 
+/-!
+## 13.17 Hyperfiniteness
+
+For a set $`A` of the universe, $`\mathcal P_F(A)` is the set of its finite subsets. The
+members of $`{}^*\mathcal P_F(A)` are the hyperfinite subsets of $`{}^*A`; each is an internal
+subset of $`{}^*A`, but in general not a finite one. Theorem 13.17.1 characterizes the
+hyperfinite sets as those in internal bijection with an initial segment
+$`\{1, \dots, n\}` of the hypernaturals.
+-/
+
+/-- **Section 13.17.** The set $`\mathcal P_F(A) = \{B \subseteq A : B \text{ is finite}\}`
+of all finite subsets of $`A`. -/
+def finPow (A : ZFSet.{u}) : ZFSet.{u} :=
+  (powerset A).sep fun B => (B : Set ZFSet.{u}).Finite
+
+theorem mem_finPow {A B : ZFSet.{u}} : B ∈ finPow A ↔ B ⊆ A ∧ (B : Set ZFSet.{u}).Finite := by
+  rw [finPow, mem_sep, mem_powerset]
+
+/-- **Section 13.17.** If $`A \in \mathbb U` then $`\mathcal P_F(A) \in \mathbb U`. -/
+theorem IsUniverse.isSetOf_finPow {U A : ZFSet.{u}} (hU : IsUniverse U) (hA : IsSetOf U A) :
+    IsSetOf U (finPow A) :=
+  hU.isSetOf_sep (hU.isSetOf_powerset hA) _
+
+namespace NonstandardFramework
+
+variable (F : NonstandardFramework.{u}) {A B : ZFSet.{u}}
+
+/-- **Section 13.17, hyperfinite sets.** A set is hyperfinite when it belongs to
+$`{}^*\mathcal P_F(A)` for some set $`A \in \mathbb U`. -/
+def Hyperfinite (B : ZFSet.{u}) : Prop := ∃ A, IsSetOf F.U A ∧ B ∈ F.star (finPow A)
+
+/-- **Section 13.17.** $`{}^*\mathcal P_F(A) \subseteq {}^*\mathcal P(A) \subseteq
+\mathcal P({}^*A)`. -/
+theorem star_finPow_subset (hA : IsSetOf F.U A) :
+    F.star (finPow A) ⊆ F.star (powerset A) ∧ F.star (powerset A) ⊆ powerset (F.star A) :=
+  ⟨(F.star_subset_star_iff (F.hU.isSetOf_finPow hA) (F.hU.isSetOf_powerset hA)).2 sep_subset,
+    F.star_powerset_subset hA⟩
+
+/-- **Section 13.17.** Each member of $`{}^*\mathcal P_F(A)` is an internal subset of
+$`{}^*A`. -/
+theorem internal_subset_of_mem_star_finPow (hA : IsSetOf F.U A) (hB : B ∈ F.star (finPow A)) :
+    B ⊆ F.star A ∧ F.Internal B :=
+  (F.mem_star_powerset_iff hA).1 ((F.star_finPow_subset hA).1 hB)
+
+variable {F} in
+/-- A hyperfinite set is internal. -/
+theorem Hyperfinite.internal (h : F.Hyperfinite B) : F.Internal B :=
+  let ⟨_, hA, hB⟩ := h
+  (F.internal_subset_of_mem_star_finPow hA hB).2
+
+variable {F} in
+/-- A hyperfinite set is a set of $`\mathbb U'`. -/
+theorem Hyperfinite.isSetOf (h : F.Hyperfinite B) : IsSetOf F.U' B :=
+  let ⟨_, hA, hB⟩ := h
+  F.isSetOf_of_mem_star_powerset hA ((F.star_finPow_subset hA).1 hB)
+
+end NonstandardFramework
+
+/-- The statement, with all quantifiers bounded and ranging over a universe $`W`, that $`V` is
+the initial segment $`\{x \in N : 1 \le x \le n\}` and that $`f` is a bijection from $`V` onto
+$`Z`. Its seven clauses are the seven formulas in the book's proof of Theorem 13.17.1. -/
+def BijSpec (W N' Le' one V Z n f : ZFSet.{u}) : Prop :=
+  (∀ x ∈ W, x ∈ V → x ∈ N' ∧ pair one x ∈ Le' ∧ pair x n ∈ Le') ∧
+  (∀ x ∈ W, x ∈ N' → pair one x ∈ Le' ∧ pair x n ∈ Le' → x ∈ V) ∧
+  (∀ b ∈ W, b ∈ f → ∃ x ∈ W, x ∈ V ∧ ∃ y ∈ W, y ∈ Z ∧ b = pair x y) ∧
+  (∀ x ∈ W, x ∈ V → ∀ y ∈ W, y ∈ Z → ∀ z ∈ W, z ∈ Z →
+    pair x y ∈ f ∧ pair x z ∈ f → y = z) ∧
+  (∀ x ∈ W, x ∈ V → ∃ y ∈ W, y ∈ Z ∧ pair x y ∈ f) ∧
+  (∀ y ∈ W, y ∈ Z → ∃ x ∈ W, x ∈ V ∧ pair x y ∈ f) ∧
+  (∀ x ∈ W, x ∈ V → ∀ y ∈ W, y ∈ V → ∀ z ∈ W, z ∈ Z →
+    pair x z ∈ f ∧ pair y z ∈ f → x = y)
+
+/-- The formula $`\varphi(n, f, Z)` of the proof of Theorem 13.17.1: there is
+$`V \in \mathcal P(\mathbb N)` such that $`V = \{1, \dots, n\}` and $`f` is a bijection from
+$`V` onto $`Z`. The variables $`0, 1, 2` stand for $`Z, n, f`. -/
+def bijFormula (PN N' Le' one : ZFSet.{u}) : Formula.{u} :=
+  .ex 3 (.const PN) (.conj
+    (.all 4 (.var 3) (.conj (.elem (.var 4) (.const N'))
+      (.conj (.elem (.opair (.const one) (.var 4)) (.const Le'))
+        (.elem (.opair (.var 4) (.var 1)) (.const Le')))))
+    (.conj (.all 4 (.const N') (.imp
+        (.conj (.elem (.opair (.const one) (.var 4)) (.const Le'))
+          (.elem (.opair (.var 4) (.var 1)) (.const Le')))
+        (.elem (.var 4) (.var 3))))
+    (.conj (.all 4 (.var 2) (.ex 5 (.var 3) (.ex 6 (.var 0)
+        (.equal (.var 4) (.opair (.var 5) (.var 6))))))
+    (.conj (.all 4 (.var 3) (.all 5 (.var 0) (.all 6 (.var 0) (.imp
+        (.conj (.elem (.opair (.var 4) (.var 5)) (.var 2))
+          (.elem (.opair (.var 4) (.var 6)) (.var 2)))
+        (.equal (.var 5) (.var 6))))))
+    (.conj (.all 4 (.var 3) (.ex 5 (.var 0) (.elem (.opair (.var 4) (.var 5)) (.var 2))))
+    (.conj (.all 5 (.var 0) (.ex 4 (.var 3) (.elem (.opair (.var 4) (.var 5)) (.var 2))))
+      (.all 4 (.var 3) (.all 5 (.var 3) (.all 6 (.var 0) (.imp
+        (.conj (.elem (.opair (.var 4) (.var 6)) (.var 2))
+          (.elem (.opair (.var 5) (.var 6)) (.var 2)))
+        (.equal (.var 4) (.var 5))))))))))))
+
+theorem star_bijFormula (s : ZFSet.{u} → ZFSet.{u}) (PN N' Le' one : ZFSet.{u}) :
+    (bijFormula PN N' Le' one).star s = bijFormula (s PN) (s N') (s Le') (s one) := by
+  simp [bijFormula]
+
+theorem sat_bijFormula (W PN N' Le' one : ZFSet.{u}) (v : ℕ → ZFSet.{u}) :
+    Sat W v (bijFormula PN N' Le' one) ↔
+      ∃ V ∈ W, V ∈ PN ∧ BijSpec W N' Le' one V (v 0) (v 1) (v 2) := by
+  simp only [bijFormula, BijSpec]
+  sat_simp
+
+theorem admissible_bijFormula {U PN N' Le' one : ZFSet.{u}} (hPN : PN ∈ U) (hN : N' ∈ U)
+    (hLe : Le' ∈ U) (hone : one ∈ U) :
+    (bijFormula PN N' Le' one).Admissible U (insert 2 (insert 1 (insert 0 ∅))) := by
+  simp [bijFormula, hPN, hN, hLe, hone]
+
+/-- The bounded statement {lit}`BijSpec` says what it is meant to say. -/
+theorem bijSpec_iff {W N' Le' one V Z n f : ZFSet.{u}} (hV : V ⊆ W) (hZ : Z ⊆ W) (hN : N' ⊆ W)
+    (hf : f ⊆ W) :
+    BijSpec W N' Le' one V Z n f ↔
+      V = (N'.sep fun x => pair one x ∈ Le' ∧ pair x n ∈ Le') ∧ IsFunc V Z f ∧
+        IsInjective f ∧ ran f = Z := by
+  constructor
+  · rintro ⟨e1, e2, e3, e4, e5, e6, e7⟩
+    have hsub : f ⊆ prod V Z := fun b hb => by
+      obtain ⟨x, -, hx, y, -, hy, rfl⟩ := e3 b (hf hb) hb
+      exact pair_mem_prod.2 ⟨hx, hy⟩
+    refine ⟨?_, ⟨hsub, fun x hx => ?_⟩, fun a a' b hab hab' => ?_, ?_⟩
+    · ext x
+      rw [mem_sep]
+      exact ⟨fun hx => e1 x (hV hx) hx, fun hx => e2 x (hN hx.1) hx.1 hx.2⟩
+    · obtain ⟨y, -, hy, hxy⟩ := e5 x (hV hx) hx
+      refine ⟨y, hxy, fun w hw => ?_⟩
+      have hwZ := (pair_mem_prod.1 (hsub hw)).2
+      exact e4 x (hV hx) hx w (hZ hwZ) hwZ y (hZ hy) hy ⟨hw, hxy⟩
+    · have h1 := pair_mem_prod.1 (hsub hab)
+      have h2 := pair_mem_prod.1 (hsub hab')
+      exact e7 a (hV h1.1) h1.1 a' (hV h2.1) h2.1 b (hZ h1.2) h1.2 ⟨hab, hab'⟩
+    · ext y
+      rw [mem_ran]
+      constructor
+      · rintro ⟨x, hxy⟩
+        exact (pair_mem_prod.1 (hsub hxy)).2
+      · intro hy
+        obtain ⟨x, -, -, hxy⟩ := e6 y (hZ hy) hy
+        exact ⟨x, hxy⟩
+  · rintro ⟨rfl, hfunc, hinj, hran⟩
+    refine ⟨fun x _ hx => mem_sep.1 hx, fun x _ hx h => mem_sep.2 ⟨hx, h⟩, fun b _ hb => ?_,
+      fun x _ hx y _ _ z _ _ h => ?_, fun x _ hx => ?_, fun y _ hy => ?_,
+      fun x _ _ y _ _ z _ _ h => hinj x y z h.1 h.2⟩
+    · obtain ⟨x, hx, y, hy, rfl⟩ := mem_prod.1 (hfunc.1 hb)
+      exact ⟨x, hV hx, hx, y, hZ hy, hy, rfl⟩
+    · exact hfunc.isFunction.2 x y z h.1 h.2
+    · obtain ⟨y, hy, -⟩ := hfunc.2 x hx
+      have hyZ := (pair_mem_prod.1 (hfunc.1 hy)).2
+      exact ⟨y, hZ hyZ, hyZ, hy⟩
+    · rw [← hran, mem_ran] at hy
+      obtain ⟨x, hxy⟩ := hy
+      have hxV := (pair_mem_prod.1 (hfunc.1 hxy)).1
+      exact ⟨x, hV hxV, hxV, hxy⟩
+
+/-- Unfold the truth definition of a formula built from {lit}`bijFormula`. -/
+macro "bij_simp" loc:(Lean.Parser.Tactic.location)? : tactic =>
+  `(tactic| simp only [Formula.Holds, Formula.star, Term.star, star_bijFormula, Sat,
+    sat_bijFormula, Term.Defined, Term.val, forall_true_left, true_and, and_true,
+    Function.update_self, Function.update_of_ne, ne_eq, not_false_eq_true, zero_ne_one,
+    one_ne_zero, OfNat.ofNat_ne_zero, OfNat.zero_ne_ofNat, OfNat.ofNat_ne_one,
+    OfNat.one_ne_ofNat, Nat.reduceEqDiff] $[$loc]?)
+
+namespace RealFramework
+
+open Formula Term NonstandardFramework
+
+variable (F : RealFramework.{u}) {A B C D f a b c n x : ZFSet.{u}}
+
+/-- In the standard universe, the initial segment determined by the natural number $`m`
+consists of the numbers $`1, \dots, m`. -/
+theorem mem_sep_seg_iff {m : ℕ} :
+    x ∈ (F.N.sep fun x => pair (F.nat 1) x ∈ F.Le ∧ pair x (F.nat m) ∈ F.Le) ↔
+      ∃ k, 1 ≤ k ∧ k ≤ m ∧ x = F.nat k := by
+  rw [mem_sep, F.mem_N]
+  constructor
+  · rintro ⟨⟨k, rfl⟩, h1, h2⟩
+    exact ⟨k, F.pair_nat_mem_Le.1 h1, F.pair_nat_mem_Le.1 h2, rfl⟩
+  · rintro ⟨k, h1, h2, rfl⟩
+    exact ⟨⟨k, rfl⟩, F.pair_nat_mem_Le.2 h1, F.pair_nat_mem_Le.2 h2⟩
+
+/-- **Theorem 13.17.1.** A set $`B` is hyperfinite if and only if there is an internal
+bijection $`f : \{1, \dots, n\} \to B` for some $`n \in {}^*\mathbb N`. An internal function
+is an internal set of pairs of members of $`\mathbb U'`; in the second sentence transferred
+in the proof, the clause that $`Z` is a set is added to the book's hypothesis (it is
+automatic there because the book's $`\mathbb N` does not contain $`0`). -/
+theorem hyperfinite_iff :
+    F.Hyperfinite B ↔ ∃ n ∈ F.star F.N, ∃ f, F.Internal f ∧ RelIn F.U' f ∧
+      IsFunc (F.seg n) B f ∧ IsInjective f ∧ ran f = B := by
+  have hPN := F.hU.isSetOf_powerset F.isSetOf_N
+  have hNU' := F.star_subset_U' F.isSetOf_N
+  constructor
+  · rintro ⟨A, hA, hB⟩
+    have hFP := F.hU.isSetOf_finPow hA
+    have hNA := F.hU.isSetOf_prod F.isSetOf_N hA
+    have hPNA := F.hU.isSetOf_powerset hNA
+    have hsent : (Formula.all 0 (.const (finPow A)) (.ex 1 (.const F.N)
+        (.ex 2 (.const (powerset (prod F.N A)))
+          (bijFormula (powerset F.N) F.N F.Le (F.nat 1))))).IsSentence F.U :=
+      ⟨hFP.1, F.isSetOf_N.1, hPNA.1,
+        admissible_bijFormula hPN.1 F.isSetOf_N.1 F.isSetOf_Le.1 (F.nat_mem_U 1)⟩
+    have h := F.transfer _ hsent
+    bij_simp at h
+    rw [F.star_nat] at h
+    have hBsub := (F.internal_subset_of_mem_star_finPow hA hB).1
+    have hBU : B ⊆ F.U' := fun y hy => F.star_subset_U' hA (hBsub hy)
+    obtain ⟨n, -, hn, f, -, hf, V, -, hV, hspec⟩ := h.1 (by
+      intro Z _ hZ
+      obtain ⟨hZA, hZfin⟩ := mem_finPow.1 hZ
+      have := hZfin.to_subtype
+      let e := (Finite.equivFin (Z : Set ZFSet.{u})).symm
+      set m := Nat.card (Z : Set ZFSet.{u}) with hm
+      set V : ZFSet.{u} := F.N.sep fun x => pair (F.nat 1) x ∈ F.Le ∧ pair x (F.nat m) ∈ F.Le
+        with hVdef
+      set f : ZFSet.{u} := ZFSet.range fun i : Fin m => pair (F.nat (i + 1)) (e i : ZFSet.{u})
+        with hfdef
+      have hfmem : ∀ p, p ∈ f ↔ ∃ i : Fin m, p = pair (F.nat (i + 1)) (e i) := by
+        intro p
+        rw [hfdef, mem_range]
+        exact ⟨fun ⟨k, h⟩ => ⟨k, h.symm⟩, fun ⟨k, h⟩ => ⟨k, h.symm⟩⟩
+      have hVmem : ∀ x, x ∈ V ↔ ∃ i : Fin m, x = F.nat (i + 1) := by
+        intro x
+        rw [hVdef, F.mem_sep_seg_iff]
+        constructor
+        · rintro ⟨k, h1, h2, rfl⟩
+          exact ⟨⟨k - 1, by omega⟩, by congr 1; simp; omega⟩
+        · rintro ⟨i, rfl⟩
+          exact ⟨i + 1, by omega, by omega, rfl⟩
+      have heZ : ∀ i, (e i : ZFSet.{u}) ∈ Z := fun i => (e i).2
+      have hfunc : IsFunc V Z f := by
+        refine ⟨fun p hp => ?_, fun z hz => ?_⟩
+        · obtain ⟨i, rfl⟩ := (hfmem p).1 hp
+          exact pair_mem_prod.2 ⟨(hVmem _).2 ⟨i, rfl⟩, heZ i⟩
+        · obtain ⟨i, rfl⟩ := (hVmem z).1 hz
+          refine ⟨e i, (hfmem _).2 ⟨i, rfl⟩, fun w hw => ?_⟩
+          obtain ⟨j, hj⟩ := (hfmem _).1 hw
+          obtain ⟨h1, h2⟩ := pair_inj.1 hj
+          have : i = j := Fin.ext (by simpa using F.nat_injective h1)
+          rw [h2, this]
+      have hinj : IsInjective f := by
+        intro a a' b hab hab'
+        obtain ⟨i, hi⟩ := (hfmem _).1 hab
+        obtain ⟨j, hj⟩ := (hfmem _).1 hab'
+        obtain ⟨rfl, h2⟩ := pair_inj.1 hi
+        obtain ⟨rfl, h2'⟩ := pair_inj.1 hj
+        have : e i = e j := Subtype.ext (h2.symm.trans h2')
+        rw [e.injective this]
+      have hran : ran f = Z := by
+        ext z
+        rw [mem_ran]
+        constructor
+        · rintro ⟨x, hx⟩
+          exact (pair_mem_prod.1 (hfunc.1 hx)).2
+        · intro hz
+          refine ⟨F.nat ((e.symm ⟨z, hz⟩ : ℕ) + 1), (hfmem _).2 ⟨e.symm ⟨z, hz⟩, ?_⟩⟩
+          rw [Equiv.apply_symm_apply]
+      have hVN : V ⊆ F.N := sep_subset
+      have hZU : Z ⊆ F.U := fun y hy => F.hU.subset hA (hZA hy)
+      have hfNA : f ⊆ prod F.N A := fun p hp => by
+        obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 (hfunc.1 hp)
+        exact pair_mem_prod.2 ⟨hVN ha, hZA hb⟩
+      have hfU : f ⊆ F.U := fun p hp => F.hU.subset hNA (hfNA hp)
+      refine ⟨F.nat m, F.nat_mem_U m, F.mem_N.2 ⟨m, rfl⟩, f,
+        (F.hU.isSetOf_of_subset hNA hfNA).1, mem_powerset.2 hfNA, V,
+        (F.hU.isSetOf_of_subset F.isSetOf_N hVN).1, mem_powerset.2 hVN, ?_⟩
+      exact (bijSpec_iff (fun x hx => F.hU.subset F.isSetOf_N (hVN hx)) hZU
+        (F.hU.subset F.isSetOf_N) hfU).2 ⟨rfl, hfunc, hinj, hran⟩) B
+      (F.internal_subset_of_mem_star_finPow hA hB).2.mem_U' hB
+    have hVN := mem_powerset.1 (F.star_powerset_subset F.isSetOf_N hV)
+    have hfsub := mem_powerset.1 (F.star_powerset_subset hNA hf)
+    have hfU' : f ⊆ F.U' := fun p hp => F.star_subset_U' hNA (hfsub hp)
+    obtain ⟨rfl, hfunc, hinj, hran⟩ :=
+      (bijSpec_iff (fun x hx => hNU' (hVN hx)) hBU hNU' hfU').1 hspec
+    refine ⟨n, hn, f, F.internal_of_mem_star hPNA hf, fun p hp => ?_, hfunc, hinj, hran⟩
+    obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 (hfunc.1 hp)
+    exact ⟨a, hNU' (hVN ha), b, hBU hb, rfl⟩
+  · rintro ⟨n, hn, f, hfint, hfrel, hfunc, hinj, hran⟩
+    have hfU' : f ⊆ F.U' := fun p hp => by
+      obtain ⟨a, ha, b, hb, rfl⟩ := hfrel p hp
+      exact (F.isUniverse'.isSetOf_opair ha hb).1
+    have hfset : IsSetOf F.U' f := isSetOf_of_subset hfint.mem_U' hfU'
+    have hBint : F.Internal B := hran ▸ F.internal_ran hfint hfset hfrel
+    have hBU : B ⊆ F.U' := fun y hy => by
+      rw [← hran, mem_ran] at hy
+      obtain ⟨x, hxy⟩ := hy
+      obtain ⟨a, -, b, hb, h⟩ := hfrel _ hxy
+      rw [(pair_inj.1 h).2]
+      exact hb
+    obtain ⟨T, hT, hTt, hTt', hBT⟩ := F.exists_transitive_of_internal hBint
+    have hBsubT : B ⊆ F.star T := fun y hy => hTt' B hBT y hy (hBU hy)
+    have hNT := F.hU.isSetOf_prod F.isSetOf_N hT
+    have hPNT := F.hU.isSetOf_powerset hNT
+    have hFP := F.hU.isSetOf_finPow hT
+    have hfmem : f ∈ F.star (powerset (prod F.N T)) := by
+      refine (F.mem_star_powerset_iff hNT).2 ⟨fun p hp => ?_, hfint⟩
+      rw [F.star_prod F.isSetOf_N hT]
+      obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 (hfunc.1 hp)
+      exact pair_mem_prod.2 ⟨(mem_sep.1 ha).1, hBsubT hb⟩
+    have hS : (Formula.disj (.equal (.var 0) (.const ∅))
+        (.ex 1 (.var 0) (.equal (.var 1) (.var 1)))).Admissible F.U (insert 0 ∅) := by
+      simp [F.hU.empty_mem]
+    have hsent : (Formula.all 0 (.const T) (.imp (.conj
+          (.disj (.equal (.var 0) (.const ∅)) (.ex 1 (.var 0) (.equal (.var 1) (.var 1))))
+          (.ex 1 (.const F.N) (.ex 2 (.const (powerset (prod F.N T)))
+            (bijFormula (powerset F.N) F.N F.Le (F.nat 1)))))
+        (.elem (.var 0) (.const (finPow T))))).IsSentence F.U :=
+      ⟨hT.1, ⟨hS, F.isSetOf_N.1, hPNT.1,
+        admissible_bijFormula hPN.1 F.isSetOf_N.1 F.isSetOf_Le.1 (F.nat_mem_U 1)⟩,
+        Set.mem_insert _ _, hFP.1⟩
+    have h := F.transfer _ hsent
+    bij_simp at h
+    rw [F.star_empty, F.star_nat] at h
+    refine ⟨T, hT, h.1 ?_ B hBint.mem_U' hBT ⟨?_, n, hNU' hn, hn, f, hfint.mem_U', hfmem,
+      F.seg n, (F.internal_seg hn).mem_U', F.seg_mem_star_powerset hn, ?_⟩⟩
+    · rintro Z hZU hZT ⟨hZset, m', -, hm', f', -, hf', V', -, hV', hspec⟩
+      have hZs : IsSetOf F.U Z := ⟨hZU, fun hi => by
+        rcases hZset with rfl | ⟨y, hy, hyZ⟩
+        · exact hi.1 rfl
+        · exact hi.2 y hy hyZ⟩
+      have hZsubU := F.hU.subset hZs
+      have hZsubT : Z ⊆ T := fun y hy => hTt Z hZT y hy (hZsubU hy)
+      rw [mem_powerset] at hf' hV'
+      obtain ⟨rfl, hfunc', -, hran'⟩ := (bijSpec_iff
+        (fun x hx => F.hU.subset F.isSetOf_N (hV' hx)) hZsubU (F.hU.subset F.isSetOf_N)
+        (fun p hp => F.hU.subset hNT (hf' hp))).1 hspec
+      obtain ⟨m, rfl⟩ := F.mem_N.1 hm'
+      refine mem_finPow.2 ⟨hZsubT, ?_⟩
+      refine ((Set.finite_Iic m).image fun k => app f' (F.nat k)).subset fun z hz => ?_
+      have hz' : z ∈ ran f' := by
+        rw [hran']
+        exact hz
+      obtain ⟨x, hxz⟩ := mem_ran.1 hz'
+      obtain ⟨k, -, hk, rfl⟩ := F.mem_sep_seg_iff.1 (pair_mem_prod.1 (hfunc'.1 hxz)).1
+      exact ⟨k, hk, hfunc'.isFunction.app_eq hxz⟩
+    · rcases eq_empty_or_nonempty B with rfl | ⟨y, hy⟩
+      · exact Or.inl rfl
+      · exact Or.inr ⟨y, hBU hy, hy⟩
+    · exact (bijSpec_iff (fun x hx => hNU' (mem_sep.1 hx).1) hBU hNU' hfU').2
+        ⟨rfl, hfunc, hinj, hran⟩
+
+end RealFramework
+
 end Goldblatt
