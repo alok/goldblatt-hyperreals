@@ -41,8 +41,11 @@ record of the design decisions, and the index.
   internal entities and Theorem 13.10.1, the internal set definition principle, every closure
   property of internal sets, Theorem 13.12.1 and the internal function definition principle.
 * {lit}`Goldblatt.Ch13_Universes.Hyperfinite` covers what needs the real numbers among the
-  individuals: the internal least number principle and internal induction, Theorem 13.14.1
-  on external images, and hyperfinite sets with Theorem 13.17.1.
+  individuals: the examples of Section 13.9 (initial segments, intervals, Exercise 13.9.1),
+  the internal least number principle, internal induction and order-completeness, the
+  exercises of Section 13.13, Theorem 13.14.1 on external images, hyperfinite sets with
+  Theorem 13.17.1, internal cardinality, the exercises of Section 13.18, and the sum of a
+  hyperfinite set of hyperreals.
 
 ## The sections of the chapter
 
@@ -134,7 +137,8 @@ book's proof begins ({name}`Goldblatt.NonstandardFramework.internal_sep_of_inter
 hyperfinite set as the sum of the set of its values, which is the intended sum only for
 injective functions. The sum of a hyperfinite set of hyperreals is defined here
 ({name}`Goldblatt.RealFramework.hsum`), but the sum of a function and the exercises of
-Section 13.20 about it are not. Also not formalized: Exercise 13.13 (2), Exercise 13.18 (4),
-and the examples of Sections 13.8 and 13.9 about sets and intervals of real numbers,
-including Exercise 13.9.1.
+Section 13.20 about it are not formalized. The same holds for two illustrations: the
+example at the end of Section 13.8 of a function whose transform does not extend it, and the
+remark in Section 13.9 that an initial segment with unlimited end point is not a standard
+set.
 -/

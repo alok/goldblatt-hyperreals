@@ -367,6 +367,122 @@ theorem seg_mem_star_powerset (hn : n ∈ F.star F.N) : F.seg n ∈ F.star (powe
   (F.mem_star_powerset_iff F.isSetOf_N).2 ⟨sep_subset, F.internal_seg hn⟩
 
 /-!
+## 13.9 Intervals of hyperreals
+
+The set of open intervals of the real line is a member of the universe. Its transform
+consists exactly of the open intervals of the hyperreal line with hyperreal end points; the
+standard ones among them are those with real end points.
+-/
+
+/-- The open interval $`(a, b)` of a set $`S` of numbers ordered by the relation $`L`:
+$`\{x \in S : a < x < b\}`, where $`a < x` means $`a \le x` and $`x \ne a`. -/
+def _root_.Goldblatt.ooIn (S L a b : ZFSet.{u}) : ZFSet.{u} :=
+  S.sep fun x => (pair a x ∈ L ∧ x ≠ a) ∧ (pair x b ∈ L ∧ x ≠ b)
+
+/-- **Section 13.9.** The set $`\mathrm{Int}` of all open intervals $`(a, b)` of the real
+line with real end points. -/
+def Int : ZFSet.{u} :=
+  ZFSet.range fun p : ℝ × ℝ => ooIn F.R F.Le (F.real p.1) (F.real p.2)
+
+theorem mem_Int : A ∈ F.Int ↔ ∃ r s : ℝ, A = ooIn F.R F.Le (F.real r) (F.real s) := by
+  rw [Int, mem_range]
+  exact ⟨fun ⟨p, h⟩ => ⟨p.1, p.2, h.symm⟩, fun ⟨r, s, h⟩ => ⟨(r, s), h.symm⟩⟩
+
+theorem isSetOf_Int : IsSetOf F.U F.Int :=
+  F.hU.isSetOf_of_subset (F.hU.isSetOf_powerset F.isSetOf_R) fun A hA => by
+    obtain ⟨r, s, rfl⟩ := F.mem_Int.1 hA
+    exact mem_powerset.2 sep_subset
+
+/-- **Section 13.9.** The transform of the real interval $`(a, b)` is the hyperreal interval
+with the same end points: $`{}^*(a, b) = \{x \in {}^*\mathbb R : a < x < b\}`. So it has
+nonstandard elements as soon as $`{}^*\mathbb R` has elements infinitely close to a point of
+it. -/
+theorem star_ooIn (r s : ℝ) :
+    F.star (ooIn F.R F.Le (F.real r) (F.real s)) =
+      ooIn (F.star F.R) (F.star F.Le) (F.real r) (F.real s) := by
+  ext x
+  have := F.mem_star_sep F.isSetOf_R
+    (.conj (.conj (.elem (.opair (.const (F.real r)) (.var 0)) (.const F.Le))
+        (.neg (.equal (.var 0) (.const (F.real r)))))
+      (.conj (.elem (.opair (.var 0) (.const (F.real s))) (.const F.Le))
+        (.neg (.equal (.var 0) (.const (F.real s))))))
+    (by simp [F.real_mem_U, F.isSetOf_Le.1]) (C := ooIn F.R F.Le (F.real r) (F.real s))
+    (by intro a; sat_simp; rw [ooIn, mem_sep]) x
+  sat_simp at this
+  rw [F.star_real, F.star_real] at this
+  rw [this, ooIn, mem_sep]
+
+/-- **Section 13.9.** The standard set $`{}^*\mathrm{Int}` consists precisely of the
+hyperreal intervals $`(a, b) \subseteq {}^*\mathbb R` for all $`a, b \in {}^*\mathbb R`. -/
+theorem mem_star_Int :
+    A ∈ F.star F.Int ↔
+      ∃ a ∈ F.star F.R, ∃ b ∈ F.star F.R, A = ooIn (F.star F.R) (F.star F.Le) a b := by
+  have hI := F.isSetOf_Int
+  have hRU := F.star_subset_U' F.isSetOf_R
+  have h := F.transfer
+    (.conj
+      (.all 0 (.const F.Int) (.ex 1 (.const F.R) (.ex 2 (.const F.R) (.all 3 (.const F.R)
+        (.biimp (.elem (.var 3) (.var 0))
+          (.conj (.conj (.elem (.opair (.var 1) (.var 3)) (.const F.Le))
+              (.neg (.equal (.var 3) (.var 1))))
+            (.conj (.elem (.opair (.var 3) (.var 2)) (.const F.Le))
+              (.neg (.equal (.var 3) (.var 2))))))))))
+      (.all 1 (.const F.R) (.all 2 (.const F.R) (.ex 0 (.const F.Int) (.all 3 (.const F.R)
+        (.biimp (.elem (.var 3) (.var 0))
+          (.conj (.conj (.elem (.opair (.var 1) (.var 3)) (.const F.Le))
+              (.neg (.equal (.var 3) (.var 1))))
+            (.conj (.elem (.opair (.var 3) (.var 2)) (.const F.Le))
+              (.neg (.equal (.var 3) (.var 2)))))))))))
+    (by simp [IsSentence, hI.1, F.isSetOf_R.1, F.isSetOf_Le.1])
+  sat_simp at h
+  obtain ⟨h1, h2⟩ := h.1 ⟨fun A _ hA => by
+      obtain ⟨r, s, rfl⟩ := F.mem_Int.1 hA
+      refine ⟨F.real r, F.real_mem_U r, F.mem_R.2 ⟨r, rfl⟩, F.real s, F.real_mem_U s,
+        F.mem_R.2 ⟨s, rfl⟩, fun x _ hx => ?_⟩
+      rw [ooIn, mem_sep]
+      exact ⟨fun h => h.2, fun h => ⟨hx, h⟩⟩,
+    fun a _ ha b _ hb => by
+      obtain ⟨r, rfl⟩ := F.mem_R.1 ha
+      obtain ⟨s, rfl⟩ := F.mem_R.1 hb
+      refine ⟨ooIn F.R F.Le (F.real r) (F.real s),
+        F.hU.subset hI (F.mem_Int.2 ⟨r, s, rfl⟩), F.mem_Int.2 ⟨r, s, rfl⟩, fun x _ hx => ?_⟩
+      rw [ooIn, mem_sep]
+      exact ⟨fun h => h.2, fun h => ⟨hx, h⟩⟩⟩
+  have hsub : ∀ A, A ∈ F.star F.Int → A ⊆ F.star F.R := fun A hA =>
+    mem_powerset.1 (F.star_powerset_subset F.isSetOf_R
+      ((F.star_subset_star_iff hI (F.hU.isSetOf_powerset F.isSetOf_R)).2 (fun B hB => by
+        obtain ⟨r, s, rfl⟩ := F.mem_Int.1 hB
+        exact mem_powerset.2 sep_subset) hA))
+  have hext : ∀ A a b, A ⊆ F.star F.R → (∀ x ∈ F.U', x ∈ F.star F.R → (x ∈ A ↔
+      (pair a x ∈ F.star F.Le ∧ ¬x = a) ∧ pair x b ∈ F.star F.Le ∧ ¬x = b)) →
+      A = ooIn (F.star F.R) (F.star F.Le) a b := fun A a b hA hx => by
+    ext x
+    rw [ooIn, mem_sep]
+    exact ⟨fun h => ⟨hA h, (hx x (hRU (hA h)) (hA h)).1 h⟩, fun h => (hx x (hRU h.1) h.1).2 h.2⟩
+  constructor
+  · intro hA
+    obtain ⟨a, -, ha, b, -, hb, hx⟩ := h1 A (F.star_subset_U' hI hA) hA
+    exact ⟨a, ha, b, hb, hext A a b (hsub A hA) hx⟩
+  · rintro ⟨a, ha, b, hb, rfl⟩
+    obtain ⟨A, -, hA, hx⟩ := h2 a (hRU ha) ha b (hRU hb) hb
+    rw [← hext A a b (hsub A hA) hx]
+    exact hA
+
+/-- **Exercise 13.9.1.** The standard elements of $`{}^*\mathrm{Int}` are exactly the
+hyperreal intervals $`\{x \in {}^*\mathbb R : r < x < s\}` with real end points
+$`r, s`. -/
+theorem standard_mem_star_Int_iff :
+    (A ∈ F.star F.Int ∧ F.Standard A) ↔
+      ∃ r s : ℝ, A = ooIn (F.star F.R) (F.star F.Le) (F.real r) (F.real s) := by
+  rw [← F.mem_im_iff F.isSetOf_Int, mem_im]
+  constructor
+  · rintro ⟨B, hB, rfl⟩
+    obtain ⟨r, s, rfl⟩ := F.mem_Int.1 hB
+    exact ⟨r, s, F.star_ooIn r s⟩
+  · rintro ⟨r, s, rfl⟩
+    exact ⟨_, F.mem_Int.2 ⟨r, s, rfl⟩, (F.star_ooIn r s).symm⟩
+
+/-!
 ## 13.14 External Images Are External
 
 If there is a nonstandard hypernatural, then the image of every infinite set of the universe
@@ -611,6 +727,163 @@ theorem Hyperfinite.relImage {f : ZFSet.{u}} (hB : F.Hyperfinite B) (hf : F.Inte
     obtain ⟨a, ha, hab⟩ := mem_relImage.1 hb
     exact ⟨a, F.star_subset_U' hT (hBT ha), ha, hab⟩
 
+end NonstandardFramework
+
+/-!
+## 13.13 Exercises on Internal Sets and Functions: power sets and function spaces
+
+The second and third exercises of Section 13.13 describe the transforms of a power set and of
+a set of functions. Subsets of $`A` correspond to functions from $`A` to a two-element set,
+and under this correspondence the members of $`{}^*\mathcal P(A)` are the internal functions
+from $`{}^*A` to that set. More generally, the transform of the set of all functions from
+$`A` to $`B` is the set of all internal functions from $`{}^*A` to $`{}^*B`.
+-/
+
+/-- **Exercise 13.13 (2), the two-element set.** The set $`\{0, 1\}`, with the numerals
+$`0 = \emptyset` and $`1 = \{\emptyset\}`. -/
+def two : ZFSet.{u} := {num 0, num 1}
+
+/-- **Exercise 13.13 (2), characteristic functions.** The characteristic function of
+$`B` on $`A`: the set of pairs $`(a, 1)` with $`a \in B` and $`(a, 0)` with
+$`a \in A - B`. -/
+def chi (A B : ZFSet.{u}) : ZFSet.{u} := prod B {num 1} ∪ prod (A \ B) {num 0}
+
+theorem num_zero_ne_one : (num 0 : ZFSet.{u}) ≠ num 1 := fun h => by
+  have := num_injective h
+  omega
+
+theorem pair_mem_chi {A B a c : ZFSet.{u}} :
+    pair a c ∈ chi A B ↔ (a ∈ B ∧ c = num 1) ∨ (a ∈ A ∧ a ∉ B ∧ c = num 0) := by
+  simp [chi, and_assoc]
+
+theorem chi_subset {A B : ZFSet.{u}} (hBA : B ⊆ A) : chi A B ⊆ prod A two := by
+  intro p hp
+  rcases mem_union.1 hp with hp | hp
+  · obtain ⟨a, ha, c, hc, rfl⟩ := mem_prod.1 hp
+    exact pair_mem_prod.2 ⟨hBA ha, by rw [mem_singleton.1 hc]; simp [two]⟩
+  · obtain ⟨a, ha, c, hc, rfl⟩ := mem_prod.1 hp
+    exact pair_mem_prod.2 ⟨(mem_sdiff.1 ha).1, by rw [mem_singleton.1 hc]; simp [two]⟩
+
+/-- **Exercise 13.13 (2).** The characteristic function of a subset of $`A` is a function
+from $`A` to $`\{0, 1\}`. -/
+theorem isFunc_chi {A B : ZFSet.{u}} (hBA : B ⊆ A) : IsFunc A two (chi A B) := by
+  refine ⟨chi_subset hBA, fun z hz => ?_⟩
+  by_cases hzB : z ∈ B
+  · refine ⟨num 1, pair_mem_chi.2 (Or.inl ⟨hzB, rfl⟩), fun w hw => ?_⟩
+    rcases pair_mem_chi.1 hw with h | h
+    · exact h.2
+    · exact absurd hzB h.2.1
+  · refine ⟨num 0, pair_mem_chi.2 (Or.inr ⟨hz, hzB, rfl⟩), fun w hw => ?_⟩
+    rcases pair_mem_chi.1 hw with h | h
+    · exact absurd h.1 hzB
+    · exact h.2.2
+
+/-- **Exercise 13.13 (2).** A subset is recovered from its characteristic function as the
+inverse image of $`\{1\}`. -/
+theorem relPreimage_chi {A B : ZFSet.{u}} : relPreimage (chi A B) {num 1} = B := by
+  ext a
+  rw [mem_relPreimage]
+  constructor
+  · rintro ⟨c, hc, hac⟩
+    rw [mem_singleton.1 hc] at hac
+    rcases pair_mem_chi.1 hac with h | h
+    · exact h.1
+    · exact absurd h.2.2.symm num_zero_ne_one
+  · exact fun ha => ⟨num 1, mem_singleton.2 rfl, pair_mem_chi.2 (Or.inl ⟨ha, rfl⟩)⟩
+
+/-- **Exercise 13.13 (2).** Every function from $`A` to $`\{0, 1\}` is the characteristic
+function of the inverse image of $`\{1\}`. -/
+theorem chi_relPreimage {A g : ZFSet.{u}} (hg : IsFunc A two g) :
+    chi A (relPreimage g {num 1}) = g := by
+  have hpre : ∀ a, a ∈ relPreimage g {num 1} ↔ pair a (num 1) ∈ g := fun a => by
+    rw [mem_relPreimage]
+    exact ⟨fun ⟨c, hc, h⟩ => mem_singleton.1 hc ▸ h, fun h => ⟨_, mem_singleton.2 rfl, h⟩⟩
+  have htwo : ∀ w, w ∈ (two : ZFSet.{u}) → w = num 0 ∨ w = num 1 := fun w hw => by
+    simpa [two] using hw
+  ext p
+  constructor
+  · intro hp
+    obtain ⟨a, -, c, -, rfl⟩ := mem_prod.1 (chi_subset (A := A) (fun a ha => by
+      obtain ⟨c, -, hac⟩ := mem_relPreimage.1 ha
+      exact (pair_mem_prod.1 (hg.1 hac)).1) hp)
+    rcases pair_mem_chi.1 hp with ⟨ha, rfl⟩ | ⟨haA, ha, rfl⟩
+    · exact (hpre a).1 ha
+    · obtain ⟨w, hw, -⟩ := hg.2 a haA
+      rcases htwo w (pair_mem_prod.1 (hg.1 hw)).2 with rfl | rfl
+      · exact hw
+      · exact absurd ((hpre a).2 hw) ha
+  · intro hp
+    obtain ⟨a, haA, w, hw, rfl⟩ := mem_prod.1 (hg.1 hp)
+    rcases htwo w hw with rfl | rfl
+    · refine pair_mem_chi.2 (Or.inr ⟨haA, fun ha => ?_, rfl⟩)
+      exact num_zero_ne_one (hg.isFunction.2 a _ _ hp ((hpre a).1 ha))
+    · exact pair_mem_chi.2 (Or.inl ⟨(hpre a).2 hp, rfl⟩)
+
+/-- **Exercise 13.13 (2), standard part.** $`\mathcal P(A)` is in bijective correspondence
+with the set of all functions $`f : A \to \{0, 1\}`, by taking characteristic functions. -/
+theorem bijOn_chi (A : ZFSet.{u}) :
+    Set.BijOn (chi A) (powerset A : Set ZFSet.{u}) (funs A two : Set ZFSet.{u}) := by
+  refine ⟨fun B hB => mem_funs.2 (isFunc_chi (mem_powerset.1 hB)), fun B _ B' _ h => ?_,
+    fun g hg => ?_⟩
+  · rw [← relPreimage_chi (A := A) (B := B), ← relPreimage_chi (A := A) (B := B'), h]
+  · have hg' := mem_funs.1 hg
+    refine ⟨relPreimage g {num 1}, mem_powerset.2 fun a ha => ?_, chi_relPreimage hg'⟩
+    obtain ⟨c, -, hac⟩ := mem_relPreimage.1 ha
+    exact (pair_mem_prod.1 (hg'.1 hac)).1
+
+namespace NonstandardFramework
+
+variable (F : NonstandardFramework.{u}) {A B : ZFSet.{u}}
+
+/-- **Exercise 13.13 (2).** $`{}^*\mathcal P(A)` is in bijective correspondence with the set
+of all internal functions $`f : {}^*A \to \{0, 1\}`, again by taking characteristic
+functions. -/
+theorem bijOn_chi_star (hA : IsSetOf F.U A) :
+    Set.BijOn (chi (F.star A)) (F.star (powerset A) : Set ZFSet.{u})
+      {g | IsFunc (F.star A) two g ∧ F.Internal g} := by
+  have hone : F.Internal ({num 1} : ZFSet.{u}) := by
+    have := F.internal_singleton (F.internal_star (F.hU.isSetOf_num 1).1)
+    rwa [F.star_num] at this
+  have hzero : F.Internal ({num 0} : ZFSet.{u}) := by
+    have := F.internal_singleton (F.internal_star (F.hU.isSetOf_num 0).1)
+    rwa [F.star_num] at this
+  have hnumU : ∀ k, (num k : ZFSet.{u}) ∈ F.U' := fun k => (F.isUniverse'.isSetOf_num k).1
+  have hAU := F.star_subset_U' hA
+  refine ⟨fun B hB => ?_, fun B _ B' _ h => ?_, fun g hg => ?_⟩
+  · obtain ⟨hBA, hBint⟩ := (F.mem_star_powerset_iff hA).1 hB
+    have hBset : IsSetOf F.U' B := isSetOf_of_subset hBint.mem_U' fun y hy => hAU (hBA hy)
+    have hD := F.internal_sdiff (F.internal_star hA.1) (F.isSetOf_star hA) hBint
+    have hDset : IsSetOf F.U' (F.star A \ B) :=
+      F.isUniverse'.isSetOf_sdiff (F.isSetOf_star hA)
+    have h1 := F.internal_prod hBint hBset hone (F.isUniverse'.isSetOf_singleton (hnumU 1))
+    have h2 := F.internal_prod hD hDset hzero (F.isUniverse'.isSetOf_singleton (hnumU 0))
+    have hsub : ∀ {S c : ZFSet.{u}}, S ⊆ F.U' → c ∈ F.U' → prod S {c} ⊆ F.U' :=
+      fun hS hc p hp => by
+        obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 hp
+        rw [mem_singleton.1 hb]
+        exact (F.isUniverse'.isSetOf_opair (hS ha) hc).1
+    exact ⟨isFunc_chi hBA, F.internal_union h1
+      (isSetOf_of_subset h1.mem_U' (hsub (F.isUniverse'.subset hBset) (hnumU 1))) h2
+      (isSetOf_of_subset h2.mem_U' (hsub (F.isUniverse'.subset hDset) (hnumU 0)))⟩
+  · rw [← relPreimage_chi (A := F.star A) (B := B), ← relPreimage_chi (A := F.star A) (B := B'),
+      h]
+  · obtain ⟨hfunc, hint⟩ := hg
+    have hrel : RelIn F.U' g := fun p hp => by
+      obtain ⟨a, ha, w, hw, rfl⟩ := mem_prod.1 (hfunc.1 hp)
+      refine ⟨a, hAU ha, w, ?_, rfl⟩
+      have : w = num 0 ∨ w = num 1 := by simpa [two] using hw
+      rcases this with rfl | rfl
+      · exact hnumU 0
+      · exact hnumU 1
+    have hgset : IsSetOf F.U' g := isSetOf_of_subset hint.mem_U' fun p hp => by
+      obtain ⟨a, ha, b, hb, rfl⟩ := hrel p hp
+      exact (F.isUniverse'.isSetOf_opair ha hb).1
+    refine ⟨relPreimage g {num 1}, ?_, chi_relPreimage hfunc⟩
+    refine (F.mem_star_powerset_iff hA).2 ⟨fun a ha => ?_,
+      F.internal_relPreimage hint hgset hrel hone⟩
+    obtain ⟨c, -, hac⟩ := mem_relPreimage.1 ha
+    exact (pair_mem_prod.1 (hfunc.1 hac)).1
+
 /-- A function between two sets, written with quantifiers bounded by those sets. -/
 theorem _root_.Goldblatt.isFunc_iff_bounded {V g : ZFSet.{u}} (hA : A ⊆ V) (hB : B ⊆ V)
     (hg : g ⊆ prod A B) :
@@ -664,6 +937,14 @@ theorem mem_star_funs_iff {g : ZFSet.{u}} (hA : IsSetOf F.U A) (hB : IsSetOf F.U
     exact (key g hgP).2 hfunc
 
 end NonstandardFramework
+
+/-!
+## 13.17 Hyperfiniteness: the characterization by internal bijections
+
+The proof of Theorem 13.17.1 transfers two sentences built on one formula, which says that
+$`f` is a bijection from the initial segment determined by $`n` onto $`Z`. The formula and its
+meaning are set up first.
+-/
 
 /-- The statement, with all quantifiers bounded and ranging over a universe $`W`, that $`V` is
 the initial segment $`\{x \in N : 1 \le x \le n\}` and that $`f` is a bijection from $`V` onto
@@ -949,6 +1230,17 @@ theorem hyperfinite_iff :
       · exact Or.inr ⟨y, hBU hy, hy⟩
     · exact (bijSpec_iff (fun x hx => hNU' (mem_sep.1 hx).1) hBU hNU' hfU').2
         ⟨rfl, hfunc, hinj, hran⟩
+
+/-!
+## 13.18 Exercises on Hyperfinite Sets and Sizes
+
+Initial segments are hyperfinite, and infinite when their end point is unlimited. The
+exercises of Section 13.18 follow: bounds for internal injections between initial segments,
+hyperfiniteness and size of internal subsets and of the internal power set, greatest and
+least elements, and the characterization of hyperfinite sets by internal surjections. The two
+exercises that do not involve numbers (internal subsets and internal images of hyperfinite
+sets) are proved above for arbitrary frameworks.
+-/
 
 /-- **Section 13.17.** For each $`n \in {}^*\mathbb N`, the initial segment
 $`\{1, \dots, n\}` of $`{}^*\mathbb N` belongs to $`{}^*\mathcal P_F(\mathbb N)`: it is
@@ -1307,6 +1599,99 @@ theorem eq_of_internal_bijection {m : ZFSet.{u}} (hn : n ∈ F.star F.N) (hm : m
   have hsegm := F.hyperfinite_seg hm
   rw [← F.icard_eq_of_bijection F.isSetOf_N (hsegm.mem_star_finPow F.isSetOf_N sep_subset) hn hf
     hfunc hinj hran, F.icard_seg hm]
+
+/-- The power set of a finite set is finite. -/
+theorem _root_.Goldblatt.finite_coe_powerset {x : ZFSet.{u}} (h : (x : Set ZFSet.{u}).Finite) :
+    ((powerset x : ZFSet.{u}) : Set ZFSet.{u}).Finite := by
+  have : Finite (𝒫 (x : Set ZFSet.{u})) := h.powerset.to_subtype
+  have : Finite (powerset x) := Finite.of_equiv _ (powersetEquiv x).symm
+  exact Set.toFinite _
+
+theorem _root_.Goldblatt.card_coe_powerset {x : ZFSet.{u}} (h : (x : Set ZFSet.{u}).Finite) :
+    Nat.card ((powerset x : ZFSet.{u}) : Set ZFSet.{u}) = 2 ^ Nat.card (x : Set ZFSet.{u}) := by
+  have e : Nat.card ((powerset x : ZFSet.{u}) : Set ZFSet.{u}) =
+      Nat.card (𝒫 (x : Set ZFSet.{u})) := Nat.card_congr (powersetEquiv x)
+  rw [e, Nat.card_coe_set_eq, Nat.card_coe_set_eq, Set.ncard_powerset _ h]
+
+/-- **Exercise 13.18 (4).** The internal power set
+$`\mathcal P_I(A) = \mathcal P(A) \cap {}^*\mathbb U = \{B \subseteq A : B \text{ is
+internal}\}`. -/
+def internalPowerset (A : ZFSet.{u}) : ZFSet.{u} := (powerset A).sep F.Internal
+
+/-- The function $`k \mapsto 2^k` on the natural numbers, as a set of pairs in the
+universe. -/
+def powFn : ZFSet.{u} := ZFSet.range fun k : ℕ => pair (F.nat k) (F.nat (2 ^ k))
+
+theorem isFunc_powFn : IsFunc F.N F.N F.powFn := by
+  refine ⟨fun p hp => ?_, fun z hz => ?_⟩
+  · obtain ⟨k, rfl⟩ := mem_range.1 hp
+    exact pair_mem_prod.2 ⟨F.mem_N.2 ⟨k, rfl⟩, F.mem_N.2 ⟨_, rfl⟩⟩
+  · obtain ⟨k, rfl⟩ := F.mem_N.1 hz
+    refine ⟨F.nat (2 ^ k), mem_range.2 ⟨k, rfl⟩, fun w hw => ?_⟩
+    obtain ⟨j, hj⟩ := mem_range.1 hw
+    obtain ⟨h1, h2⟩ := pair_inj.1 hj
+    rw [← h2, F.nat_injective h1]
+
+/-- **Exercise 13.18 (4).** If $`A` is hyperfinite, then so is its internal power set
+$`\mathcal P_I(A)`. Moreover, if $`|A| = n` then $`|\mathcal P_I(A)| = 2^n`, where
+$`n \mapsto 2^n` is the transform of the exponential function on $`\mathbb N`. -/
+theorem hyperfinite_internalPowerset (hT : IsSetOf F.U T) (hA : A ∈ F.star (finPow T)) :
+    F.internalPowerset A ∈ F.star (finPow (powerset T)) ∧
+      F.icard (powerset T) (F.internalPowerset A) = app (F.star F.powFn) (F.icard T A) := by
+  have hPT := F.hU.isSetOf_powerset hT
+  have hFT := F.hU.isSetOf_finPow hT
+  have hFPT := F.hU.isSetOf_finPow hPT
+  have hC := F.hU.isSetOf_of_isFunc hFT F.isSetOf_N (F.isFunc_cardFn T)
+  have hC' := F.hU.isSetOf_of_isFunc hFPT F.isSetOf_N (F.isFunc_cardFn (powerset T))
+  have hpow := F.hU.isSetOf_of_isFunc F.isSetOf_N F.isSetOf_N F.isFunc_powFn
+  have h := F.transfer
+    (.all 0 (.const (finPow T)) (.ex 1 (.const (finPow (powerset T))) (.conj
+      (.all 2 (.const (powerset T)) (.biimp (.elem (.var 2) (.var 1))
+        (.all 3 (.var 2) (.elem (.var 3) (.var 0)))))
+      (.ex 4 (.const F.N) (.ex 5 (.const F.N) (.conj
+        (.elem (.opair (.var 0) (.var 4)) (.const (F.cardFn T)))
+        (.conj (.elem (.opair (.var 1) (.var 5)) (.const (F.cardFn (powerset T))))
+          (.elem (.opair (.var 4) (.var 5)) (.const F.powFn)))))))))
+    (by simp [IsSentence, hFT.1, hFPT.1, hPT.1, hC.1, hC'.1, hpow.1, F.isSetOf_N.1])
+  sat_simp at h
+  obtain ⟨y, -, hy, hymem, c, -, -, d, -, -, hc, hd, hcd⟩ := h.1 (by
+    intro x _ hx
+    obtain ⟨hxT, hxfin⟩ := mem_finPow.1 hx
+    have hPx : powerset x ∈ finPow (powerset T) := mem_finPow.2
+      ⟨fun z hz => mem_powerset.2 fun w hw => hxT (mem_powerset.1 hz hw), finite_coe_powerset hxfin⟩
+    refine ⟨powerset x, (F.hU.subset hFPT hPx), hPx, fun z _ hz => ?_, _, F.nat_mem_U _,
+      F.mem_N.2 ⟨_, rfl⟩, _, F.nat_mem_U _, F.mem_N.2 ⟨_, rfl⟩, mem_range.2 ⟨⟨x, hx⟩, rfl⟩,
+      mem_range.2 ⟨⟨powerset x, hPx⟩, rfl⟩, ?_⟩
+    · rw [mem_powerset]
+      exact ⟨fun h w _ hw => h hw,
+        fun h w hw => h w (F.hU.subset hT (mem_powerset.1 hz hw)) hw⟩
+    · rw [card_coe_powerset hxfin]
+      exact mem_range.2 ⟨_, rfl⟩) A (F.star_subset_U' hFT hA) hA
+  have hysub := (F.internal_subset_of_mem_star_finPow hPT hy).1
+  have hAsub := (F.internal_subset_of_mem_star_finPow hT hA).1
+  have hPI : F.internalPowerset A = y := by
+    ext z
+    rw [internalPowerset, mem_sep, mem_powerset]
+    constructor
+    · rintro ⟨hzA, hzint⟩
+      have hzP := (F.mem_star_powerset_iff hT).2 ⟨fun w hw => hAsub (hzA hw), hzint⟩
+      exact (hymem z (F.star_subset_U' hPT hzP) hzP).2 fun w _ hw => hzA hw
+    · intro hzy
+      have hzP := hysub hzy
+      obtain ⟨hzT, hzint⟩ := (F.mem_star_powerset_iff hT).1 hzP
+      exact ⟨fun w hw => (hymem z (F.star_subset_U' hPT hzP) hzP).1 hzy w
+        (F.star_subset_U' hT (hzT hw)) hw, hzint⟩
+  rw [hPI]
+  refine ⟨hy, ?_⟩
+  rw [icard, icard, (F.isFunc_star_cardFn hPT).1.isFunction.app_eq hd,
+    (F.isFunc_star_cardFn hT).1.isFunction.app_eq hc]
+  exact ((F.isFunc_star F.isSetOf_N F.isSetOf_N F.isFunc_powFn).isFunction.app_eq hcd).symm
+
+/-- **Exercise 13.18 (4).** If $`A` is hyperfinite, then so is its internal power set. -/
+theorem hyperfinite_internalPowerset' (hA : F.Hyperfinite A) :
+    F.Hyperfinite (F.internalPowerset A) :=
+  let ⟨T, hT, hAT⟩ := hA
+  ⟨powerset T, F.hU.isSetOf_powerset hT, (F.hyperfinite_internalPowerset hT hAT).1⟩
 
 /-!
 ## 13.19 Hyperfinite Summation
