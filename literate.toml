@@ -1,0 +1,2 @@
+docstrings_as_text = true
+hide_commands = ["set_option", "open", "universe", "variable"]
