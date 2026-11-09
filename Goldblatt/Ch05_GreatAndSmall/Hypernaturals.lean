@@ -24,8 +24,18 @@ hypernaturals are exactly the standard natural numbers, so every nonstandard hyp
 unlimited and exceeds every standard one. The hypernaturals at limited distance from an
 unlimited hypernatural $`K` form a copy of the integers, the galaxy of $`K` within the
 hypernaturals. These galaxies are ordered, and the order has no largest element, no smallest
-unlimited element, and is dense: the hypernaturals consist of the natural numbers followed by
-a densely ordered family of copies of the integers without first or last member.
+unlimited element, and is dense. So, in order, the hypernaturals are the standard naturals and
+then a family of blocks, each ordered like the integers; the family of blocks is dense and has
+neither a least nor a greatest block.
+
+Three facts in this section are supplements that Section 5.10 does not state: every
+nonnegative hyperreal has a hypernatural integer part
+({lit}`exists_hyperNat_le_lt_add_one`), and the set of unlimited hypernaturals has no least
+element ({lit}`exists_lt_of_mem_unlimitedHyperNat`,
+{lit}`not_exists_isLeast_unlimitedHyperNat`); the book proves only the weaker-looking fact
+that there is no smallest unlimited galaxy. The characterisation of the limited hyperintegers
+({lit}`limited_hyperInt_iff`) belongs to Exercise 5.11(1) but is proved here, because the
+corresponding fact for hypernaturals is derived from it.
 
 Statements about hypernaturals are proved from representing sequences of natural numbers; the
 class of such a sequence is written {lit}`hnat k`.
@@ -141,7 +151,8 @@ theorem mem_hyperNat_iff_hyperInt_nonneg : x ∈ ℕ* ↔ x ∈ ℤ* ∧ 0 ≤ x
     rw [this]
     exact hnat_mem_hyperNat _
 
-/-- **Exercise 5.11(1), limited hyperintegers.** The only limited hyperintegers are the
+/-- **Exercise 5.11(1), limited hyperintegers** (placed in the Section 5.10 part of the file
+because {lit}`limited_hyperNat_iff` uses it). The only limited hyperintegers are the
 standard integers. If $`|k| < m` for a standard $`m`, then by transfer $`k` is one of the
 finitely many integers strictly between $`-m` and $`m`. -/
 theorem limited_hyperInt_iff (hK : K ∈ ℤ*) : Limited K ↔ ∃ n : ℤ, K = n := by
@@ -217,9 +228,9 @@ theorem mem_unlimitedHyperNat : K ∈ unlimitedHyperNat ↔ K ∈ ℕ* ∧ Unlim
 theorem omega_mem_unlimitedHyperNat : (ω : ℝ*) ∈ unlimitedHyperNat :=
   mem_unlimitedHyperNat.2 ⟨omega_mem_hyperNat, unlimited_omega⟩
 
-/-- **Section 5.10.** Every nonnegative hyperreal lies within $`1` of a hypernatural: there is
-a hypernatural $`N` with $`N \le x < N + 1`. This is the transfer of the existence of the
-integer part. -/
+/-- **Section 5.10, supplement (not stated in the book).** Every nonnegative hyperreal lies
+within $`1` of a hypernatural: there is a hypernatural $`N` with $`N \le x < N + 1`. This is
+the transfer of the existence of the integer part. -/
 theorem exists_hyperNat_le_lt_add_one (hx : 0 ≤ x) : ∃ N ∈ ℕ*, N ≤ x ∧ x < N + 1 :=
   ⟨hfloor x, hfloor_mem_hyperNat hx, hfloor_le x, lt_hfloor_add_one x⟩
 
@@ -245,8 +256,10 @@ theorem sub_one_mem_hyperNat (hK : K ∈ ℕ*) (h0 : K ≠ 0) : K - 1 ∈ ℕ* :
   have := add_one_le_of_lt_of_mem_hyperInt h0' hz (lt_of_le_of_ne (hyperNat_nonneg hK) h0.symm)
   linarith
 
-/-- **Section 5.10.** The set $`{}^*\mathbb N - \mathbb N` of unlimited hypernaturals has no
-least element: the predecessor of an unlimited hypernatural is an unlimited hypernatural. -/
+/-- **Section 5.10, supplement (not stated in the book).** Below every unlimited hypernatural
+there is another: the predecessor of an unlimited hypernatural is an unlimited hypernatural.
+The section itself proves only that there is no smallest unlimited galaxy
+({lit}`exists_unlimited_hyperNat_galLT`). -/
 theorem exists_lt_of_mem_unlimitedHyperNat (hK : K ∈ unlimitedHyperNat) :
     ∃ H ∈ unlimitedHyperNat, H < K := by
   rw [mem_unlimitedHyperNat] at hK
@@ -255,7 +268,8 @@ theorem exists_lt_of_mem_unlimitedHyperNat (hK : K ∈ unlimitedHyperNat) :
   rw [sub_eq_add_neg]
   exact hK.2.add_limited limited_one.neg
 
-/-- **Section 5.10.** The set of unlimited hypernaturals has no least element. -/
+/-- **Section 5.10, supplement (not stated in the book).** The set
+$`{}^*\mathbb N - \mathbb N` of unlimited hypernaturals has no least element. -/
 theorem not_exists_isLeast_unlimitedHyperNat : ¬ ∃ K, IsLeast unlimitedHyperNat K := by
   rintro ⟨K, hK, hmin⟩
   obtain ⟨H, hH, hlt⟩ := exists_lt_of_mem_unlimitedHyperNat hK
@@ -497,11 +511,13 @@ theorem exists_hyperNat_galLT_between (hK : K ∈ ℕ*) (hH : H ∈ ℕ*) (h : G
       rw [this]
       exact (h.add_limited limited_one.neg).div_two
 
-/-- **Section 5.10, summary.** The ordering of the hypernaturals consists of
-$`\mathbb N` followed by a densely ordered set of galaxies with no first and no last member:
-the galaxy of a standard number is $`\mathbb N`; it lies below every unlimited galaxy; above
-every galaxy there is another; below every unlimited galaxy there is another unlimited one;
-and between any two galaxies there is a third. -/
+/-- **Section 5.10, summary.** In order, the hypernaturals are the standard naturals and then a
+family of blocks, each ordered like the integers; the family of blocks is dense and has
+neither a least nor a greatest block. In detail: the galaxy of a standard number is
+$`\mathbb N`; it lies below every unlimited galaxy; above every galaxy there is another; below
+every unlimited galaxy there is another unlimited one; and between any two galaxies there is a
+third. (That each unlimited galaxy is ordered like $`\mathbb Z` is
+{lit}`natGalaxyOrderIso`.) -/
 theorem hyperNat_order_structure :
     (∀ m : ℕ, natGalaxy (m : ℝ*) = range ((↑) : ℕ → ℝ*)) ∧
     (∀ m : ℕ, ∀ K ∈ unlimitedHyperNat, GalLT (m : ℝ*) K) ∧
@@ -761,8 +777,8 @@ prime. -/
 theorem natCast_mem_hyperPrime_iff {p : ℕ} : (p : ℝ*) ∈ hyperPrime ↔ p.Prime := by
   rw [natCast_eq_hnat, hnat_mem_hyperPrime_iff, almostAll_const]
 
-/-- **Exercise 5.11(3)(a).** The hyperprimes are precisely the hypernaturals greater than
-$`1` that have no nontrivial factors in $`{}^*\mathbb N`. -/
+/-- **Exercise 5.11(3)(a).** $`q \in {}^*\Pi` if and only if $`q` is a hypernatural, $`q > 1`,
+and the only hypernatural divisors of $`q` are $`1` and $`q`. -/
 theorem mem_hyperPrime_iff :
     q ∈ hyperPrime ↔ q ∈ ℕ* ∧ 1 < q ∧ ∀ d ∈ ℕ*, d ∣ₕ q → d = 1 ∨ d = q := by
   constructor
@@ -804,8 +820,8 @@ theorem mem_hyperPrime_iff :
       obtain ⟨n, a1, a2, a3⟩ := (hd.and (hnp.and h1')).exists
       exact a2 (a1 ▸ Nat.minFac_prime a3.ne')
 
-/-- **Exercise 5.11(3)(b).** Every hypernatural number greater than $`1` has a hyperprime
-factor. -/
+/-- **Exercise 5.11(3)(b).** If $`N \in {}^*\mathbb N` and $`N > 1`, then some hyperprime
+divides $`N`. -/
 theorem exists_hyperPrime_hdvd (hN : N ∈ ℕ*) (h1 : 1 < N) : ∃ p ∈ hyperPrime, p ∣ₕ N := by
   obtain ⟨k, rfl⟩ := exists_hnat_eq hN
   have h1' : ∀ᶠ n in hyperfilter ℕ, 1 < k n := by
@@ -821,8 +837,9 @@ theorem hpow_hnat (p e : ℕ → ℕ) : hpow (hnat p) (hnat e) = hnat fun n => p
   rw [hnat, hnat, hpow_ofSeq_natCast, hnat, ofSeq_eq_ofSeq_iff]
   exact Eventually.of_forall fun n => by push_cast; rfl
 
-/-- **Exercise 5.11(3)(c).** Two hypernaturals are equal if they have exactly the same
-factors of the form $`p^n` with $`p` a hyperprime and $`n` a hypernatural. The power
+/-- **Exercise 5.11(3)(c).** Let $`a, b \in {}^*\mathbb N`. If, for every hyperprime $`p` and
+every hypernatural $`n`, the power $`p^n` divides $`a` exactly when it divides $`b`, then
+$`a = b`. The power
 $`p^n` with hypernatural exponent is the hyperreal power {name}`Goldblatt.hpow`. -/
 theorem hyperNat_eq_of_forall_hyperPrime_pow_hdvd (ha : a ∈ ℕ*) (hb : b ∈ ℕ*)
     (h : ∀ p ∈ hyperPrime, ∀ n ∈ ℕ*, (hpow p n ∣ₕ a ↔ hpow p n ∣ₕ b)) : a = b := by
@@ -857,9 +874,9 @@ theorem hyperNat_eq_of_forall_hyperPrime_pow_hdvd (ha : a ∈ ℕ*) (hb : b ∈ 
   · obtain ⟨n, a1, a2⟩ := ((hiff.2 (hc.mono fun n hn => hn.2)).and hc).exists
     exact a2.1 a1
 
-/-- **Exercise 5.11(3)(d).** A hypernatural number is divisible by every standard positive
-integer if and only if it is divisible by $`p^n` for every standard prime $`p` and every
-$`n \in \mathbb N`. -/
+/-- **Exercise 5.11(3)(d).** For $`N \in {}^*\mathbb N`: every positive $`n \in \mathbb N`
+divides $`N` if and only if every standard prime power $`p^n` (with $`p` prime and
+$`n \in \mathbb N`) divides $`N`. -/
 theorem forall_nat_hdvd_iff_forall_prime_pow_hdvd (hN : N ∈ ℕ*) :
     (∀ n : ℕ, 0 < n → (n : ℝ*) ∣ₕ N) ↔
       ∀ p : ℕ, p.Prime → ∀ n : ℕ, ((p ^ n : ℕ) : ℝ*) ∣ₕ N := by

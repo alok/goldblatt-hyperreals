@@ -74,7 +74,7 @@ end Preliminaries
 A hyperreal is classified by comparing it with the real numbers. It is _limited_ if it lies
 between two reals, _unlimited_ if it lies beyond all of them, _infinitesimal_ if it is zero or
 lies between zero and all reals of its own sign, and _appreciable_ if it is limited without
-being infinitesimal. The definitions below are the book's, word for word; each is then shown
+being infinitesimal. The definitions below are the book's definitions, transcribed directly into Lean; each is then shown
 equivalent to a condition on the absolute value, which is the form used in proofs, and to the
 book's reformulation with natural numbers as bounds.
 
@@ -276,8 +276,8 @@ theorem Unlimited.ne_zero (h : Unlimited b) : b ≠ 0 := fun h0 =>
 theorem Infinitesimal.not_unlimited (h : Infinitesimal b) : ¬ Unlimited b :=
   h.limited.not_unlimited
 
-/-- **Section 5.1.** An appreciable number is one that is neither infinitely small nor
-infinitely big. -/
+/-- **Section 5.1.** $`b` is appreciable if and only if it is neither infinitesimal nor
+unlimited. -/
 theorem appreciable_iff_not_infinitesimal_and_not_unlimited :
     Appreciable b ↔ ¬ Infinitesimal b ∧ ¬ Unlimited b := by
   rw [not_unlimited_iff_limited, Appreciable, and_comm]

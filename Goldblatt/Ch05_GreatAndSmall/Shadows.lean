@@ -1011,7 +1011,8 @@ theorem Infinitesimal.hcos_sub_one_div_infClose (he : Infinitesimal e) :
   rw [abs_div, ← sq_abs e, abs_of_pos (two_pos : (0 : ℝ*) < 2)]
   ring
 
-/-- **Exercise 5.7(3).** Every hyperreal is infinitely close to some hyperrational number. -/
+/-- **Exercise 5.7(3).** The hyperrationals meet every halo: for each hyperreal $`x` there is
+$`q \in {}^*\mathbb Q` with $`x \simeq q`. -/
 theorem exists_hyperRat_infClose (x : ℝ*) : ∃ q ∈ ℚ*, x ≊ q := by
   obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
   have hq : ∀ n : ℕ, ∃ q : ℚ, |r n - q| < 1 / ((n : ℝ) + 1) := fun n => by
@@ -1082,10 +1083,9 @@ theorem shadowHomRat_surjective : Function.Surjective shadowHomRat := fun r => b
   obtain ⟨q, hq, h⟩ := exists_hyperRat_infClose (r : ℝ*)
   exact ⟨⟨q, hq, (limited_coe r).of_infClose h⟩, sh_eq_of_infClose (InfClose.symm h)⟩
 
-/-- **Exercise 5.7(4).** The real field is isomorphic to the ring
-$`{}^*\mathbb Q \cap \mathbb L` of limited hyperrationals factored by its ideal
-$`{}^*\mathbb Q \cap \mathbb I` of hyperrational infinitesimals; the isomorphism sends the
-class of $`q` to its shadow. -/
+/-- **Exercise 5.7(4).** The quotient of the ring $`{}^*\mathbb Q \cap \mathbb L` by the
+ideal $`{}^*\mathbb Q \cap \mathbb I` of its infinitesimal elements is ring-isomorphic to
+$`\mathbb R`. The isomorphism takes the coset of $`q` to the shadow of $`q`. -/
 def limitedHyperRatQuotientEquiv : limitedHyperRat ⧸ infinitesimalHyperRat ≃+* ℝ :=
   RingEquiv.ofBijective
     (Ideal.Quotient.lift infinitesimalHyperRat shadowHomRat fun x hx =>
@@ -1301,9 +1301,11 @@ end Completeness
 The exercise replaces Cauchy sequences by a direct proof of the least upper bound property
 from the shadow property. Given a nonempty set $`A` that is bounded above, let $`s_n` be the
 least integer $`k` such that $`k/n` is an upper bound of $`A`; then the shadow of
-$`s_N / N` for an unlimited $`N` is the least upper bound of $`A`. As in Section 5.8, $`N` is
-the class of the sequence of positive integers, so $`s_N / N` is the class of the sequence
-$`s_n / n`; the sequence is indexed from $`0` with denominator $`n + 1`.
+$`s_N / N` for an unlimited $`N` is the least upper bound of $`A`. Part (b), that $`s_N / N`
+is limited, is proved for every positive hypernatural $`N` ({lit}`limited_least_int_div`). For
+part (c) one $`N` suffices and, as in Section 5.8, it is taken to be the class of the sequence
+of positive integers, so $`s_N / N` is the class of the sequence $`s_n / n`; that sequence is
+indexed from $`0` with denominator $`n + 1`.
 
 The existence of $`s_n` in part (a) uses the Archimedean property. For the reals it is known;
 for a general ordered field it follows from the shadow property
@@ -1354,39 +1356,71 @@ theorem exists_mem_lt_of_least_int_div {A : Set F} {d : F} {s : ℤ}
   have := hmin _ hub
   omega
 
-/-- **Exercise 5.9(b).** Let $`A` be nonempty and bounded above and let $`s_n` be the least
-integer such that $`s_n / (n + 1)` is an upper bound of $`A`. Then the class of the sequence
-$`s_n / (n + 1)`, which is the book's $`s_N / N` for the unlimited hypernatural
-$`N = [1, 2, 3, \dots]`, is limited: it lies between two elements of the field. Explicitly,
-it is above $`a - 1` for any $`a \in A` and below $`u + 1` for any upper bound $`u`. -/
+/-- **Exercise 5.9(b), pointwise form.** Let $`A` be nonempty and bounded above, let
+$`d_n` be a sequence of natural numbers and $`t_n` a sequence of integers such that, for
+almost all $`n`, $`d_n` is positive and $`t_n` is the least integer for which $`t_n / d_n` is
+an upper bound of $`A`. Then the class of the sequence $`t_n / d_n` is limited: it lies above
+$`a - 1` for any $`a \in A` and below $`u + 1` for any upper bound $`u`. This is the
+computation behind {lit}`limited_least_int_div`, with $`t_n = s_{d_n}`. -/
+theorem limited_of_eventually_least_int_div {A : Set F} (hne : A.Nonempty) (hbdd : BddAbove A)
+    {d : ℕ → ℕ} {t : ℕ → ℤ}
+    (h : ∀ᶠ n in hyperfilter ℕ, 0 < d n ∧ (t n : F) / (d n : F) ∈ upperBounds A ∧
+      ∀ j : ℤ, (j : F) / (d n : F) ∈ upperBounds A → t n ≤ j) :
+    ∃ r u : F,
+      (r : Ultrapower F) < ((fun n : ℕ => (t n : F) / (d n : F)) : Ultrapower F) ∧
+      ((fun n : ℕ => (t n : F) / (d n : F)) : Ultrapower F) < (u : Ultrapower F) := by
+  obtain ⟨a, ha⟩ := hne
+  obtain ⟨u, hu⟩ := hbdd
+  refine ⟨a - 1, u + 1, Ultrapower.const_lt_coe.2 (h.mono fun n hn => ?_),
+    Ultrapower.coe_lt_const.2 (h.mono fun n hn => ?_)⟩
+  · have : a ≤ (t n : F) / (d n : F) := hn.2.1 ha
+    linarith
+  · obtain ⟨hd, -, hmin⟩ := hn
+    have hpos : (0 : F) < (d n : F) := by exact_mod_cast hd
+    obtain ⟨a', ha', hlt⟩ := exists_mem_lt_of_least_int_div hmin
+    have h1 : ((t n : F) - 1) / (d n : F) < u := hlt.trans_le (hu ha')
+    have h2 : 1 / (d n : F) ≤ 1 := by
+      rw [div_le_one hpos]
+      exact_mod_cast hd
+    have h3 : (t n : F) / (d n : F) = ((t n : F) - 1) / (d n : F) + 1 / (d n : F) := by ring
+    linarith
+
+/-- **Exercise 5.9(b).** Let $`A` be nonempty and bounded above and, for each positive natural
+$`m`, let $`s_m` be the least integer such that $`s_m / m` is an upper bound of $`A`. Let
+$`N = [k_n]` be a positive hypernatural of the ultrapower, for instance any unlimited one.
+Then $`s_N / N`, the class of the sequence $`s_{k_n} / k_n`, is limited: it lies between two
+elements of the field. The hypernatural $`N` is given by a representing sequence $`k` of
+natural numbers that is positive for almost all $`n`. -/
 theorem limited_least_int_div {A : Set F} (hne : A.Nonempty) (hbdd : BddAbove A) {s : ℕ → ℤ}
+    (hs : ∀ m : ℕ, 0 < m → (s m : F) / (m : F) ∈ upperBounds A)
+    (hmin : ∀ m : ℕ, 0 < m → ∀ j : ℤ, (j : F) / (m : F) ∈ upperBounds A → s m ≤ j)
+    {k : ℕ → ℕ} (hk : ∀ᶠ n in hyperfilter ℕ, 0 < k n) :
+    ∃ r u : F,
+      (r : Ultrapower F) < ((fun n : ℕ => (s (k n) : F) / (k n : F)) : Ultrapower F) ∧
+      ((fun n : ℕ => (s (k n) : F) / (k n : F)) : Ultrapower F) < (u : Ultrapower F) :=
+  limited_of_eventually_least_int_div hne hbdd
+    (hk.mono fun n hn => ⟨hn, hs (k n) hn, hmin (k n) hn⟩)
+
+/-- **Exercise 5.9(b), the case used in part (c).** The special case $`N = [1, 2, 3, \dots]`
+of {name}`limited_least_int_div`, with the sequence $`s` re-indexed from $`0`: if $`s_n` is the
+least integer such that $`s_n / (n + 1)` is an upper bound of $`A`, then the class of the
+sequence $`s_n / (n + 1)` is limited. -/
+theorem limited_least_int_div_succ {A : Set F} (hne : A.Nonempty) (hbdd : BddAbove A)
+    {s : ℕ → ℤ}
     (hs : ∀ n : ℕ, (s n : F) / ((n + 1 : ℕ) : F) ∈ upperBounds A)
     (hmin : ∀ n : ℕ, ∀ j : ℤ, (j : F) / ((n + 1 : ℕ) : F) ∈ upperBounds A → s n ≤ j) :
     ∃ r t : F,
       (r : Ultrapower F) < ((fun n : ℕ => (s n : F) / ((n + 1 : ℕ) : F)) : Ultrapower F) ∧
-      ((fun n : ℕ => (s n : F) / ((n + 1 : ℕ) : F)) : Ultrapower F) < (t : Ultrapower F) := by
-  obtain ⟨a, ha⟩ := hne
-  obtain ⟨u, hu⟩ := hbdd
-  refine ⟨a - 1, u + 1, Ultrapower.const_lt_coe.2 (Eventually.of_forall fun n => ?_),
-    Ultrapower.coe_lt_const.2 (Eventually.of_forall fun n => ?_)⟩
-  · have : a ≤ (s n : F) / ((n + 1 : ℕ) : F) := hs n ha
-    linarith
-  · have hpos : (0 : F) < ((n + 1 : ℕ) : F) := by exact_mod_cast n.succ_pos
-    obtain ⟨a', ha', hlt⟩ := exists_mem_lt_of_least_int_div (hmin n)
-    have h1 : ((s n : F) - 1) / ((n + 1 : ℕ) : F) < u := hlt.trans_le (hu ha')
-    have h2 : 1 / ((n + 1 : ℕ) : F) ≤ 1 := by
-      rw [div_le_one hpos]
-      exact_mod_cast n.succ_pos
-    have h3 : (s n : F) / ((n + 1 : ℕ) : F) =
-        ((s n : F) - 1) / ((n + 1 : ℕ) : F) + 1 / ((n + 1 : ℕ) : F) := by ring
-    linarith
+      ((fun n : ℕ => (s n : F) / ((n + 1 : ℕ) : F)) : Ultrapower F) < (t : Ultrapower F) :=
+  limited_of_eventually_least_int_div (d := fun n => n + 1) hne hbdd
+    (Eventually.of_forall fun n => ⟨n.succ_pos, hs n, hmin n⟩)
 
 /-- **Exercise 5.9(c).** An ordered field with the shadow property has the least upper bound
 property: every nonempty subset that is bounded above has a least upper bound. With $`s_n`
 the least integer such that $`s_n/(n+1)` bounds $`A` above (part (a), available because the
 field is Archimedean by {name}`archimedean_of_shadowProperty`), the class of the sequence
-$`s_n/(n+1)` is limited (part (b), {name}`limited_least_int_div`), and the element $`L` of the
-field infinitely close to it is the least upper bound. -/
+$`s_n/(n+1)` is limited (part (b), {name}`limited_least_int_div_succ`), and the element $`L`
+of the field infinitely close to it is the least upper bound. -/
 theorem exists_isLUB_of_shadowProperty (h : ShadowProperty F) {A : Set F}
     (hne : A.Nonempty) (hbdd : BddAbove A) : ∃ c, IsLUB A c := by
   have : Archimedean F := archimedean_of_shadowProperty h
@@ -1397,7 +1431,7 @@ theorem exists_isLUB_of_shadowProperty (h : ShadowProperty F) {A : Set F}
   choose s hs hmin using hex
   let x : ℕ → F := fun n => (s n : F) / ((n + 1 : ℕ) : F)
   -- (b) the class of `x` is limited, so it has a shadow `L`
-  obtain ⟨L, hL⟩ := h (x : Ultrapower F) (limited_least_int_div hne hbdd hs hmin)
+  obtain ⟨L, hL⟩ := h (x : Ultrapower F) (limited_least_int_div_succ hne hbdd hs hmin)
   -- (c) `L` is the least upper bound
   refine ⟨L, fun a' ha' => ?_, fun u' hu' => ?_⟩
   · by_contra hlt
