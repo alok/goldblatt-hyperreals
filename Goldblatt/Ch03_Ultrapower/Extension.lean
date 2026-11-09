@@ -745,7 +745,8 @@ theorem starRel₂_prod (A : Set α) (B : Set β) {x : αS} {y : βS} :
 /-- **Exercise 3.15(1).** $`{}^*(\mathbb R^k) = ({}^*\mathbb R)^k`: the enlargement of the set
 of all $`k`-tuples is the set of all $`k`-tuples of elements of the ultrapower. (The underlying
 identification of tuples is {lit}`Ultrapower.tupleEquiv`.) -/
-theorem starRel_univ {ι : Type*} [Finite ι] : (starRel (univ : Set (ι → α)) : Set (ι → αS)) = univ := by
+theorem starRel_univ {ι : Type*} [Finite ι] :
+    (starRel (univ : Set (ι → α)) : Set (ι → αS)) = univ := by
   ext x
   simp [starRel, starSet_univ]
 
