@@ -93,8 +93,8 @@ theorem forall_mem_extendedTail_iff {P : ℝ* → Prop} :
     (∀ y ∈ extendedTail s, P y) ↔ ∀ N ∈ unlimitedHyperNat, P (hyperSeq s N) :=
   forall_mem_image
 
-/-- **Theorem 6.2.1, transfer step.** Transfer of a termwise inequality: if $`s_n \le t_n` for all $`n` then the same holds for
-the extended sequences at every argument. -/
+/-- **Theorem 6.2.1, transfer step.** Transfer of a termwise inequality: if $`s_n \le t_n`
+for all $`n` then the same holds for the extended sequences at every argument. -/
 theorem hyperSeq_le_hyperSeq (h : ∀ n, s n ≤ t n) (x : ℝ*) : hyperSeq s x ≤ hyperSeq t x := by
   obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
   rw [hyperSeq_ofSeq, hyperSeq_ofSeq, ofSeq_le_ofSeq_iff]
@@ -105,13 +105,13 @@ theorem hyperSeq_const (c : ℝ) (x : ℝ*) : hyperSeq (fun _ => c) x = (c : ℝ
   obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
   rfl
 
-/-- **Theorem 6.2.1, transfer step.** Transfer of an upper bound: if $`s_n \le b` for all $`n` then every value of the extended
-sequence is at most $`b`. -/
+/-- **Theorem 6.2.1, transfer step.** Transfer of an upper bound: if $`s_n \le b` for all
+$`n` then every value of the extended sequence is at most $`b`. -/
 theorem hyperSeq_le_coe {b : ℝ} (h : ∀ n, s n ≤ b) (x : ℝ*) : hyperSeq s x ≤ b := by
   simpa [hyperSeq_const] using hyperSeq_le_hyperSeq (t := fun _ => b) h x
 
-/-- **Theorem 6.2.1, transfer step.** Transfer of a lower bound: if $`b \le s_n` for all $`n` then every value of the extended
-sequence is at least $`b`. -/
+/-- **Theorem 6.2.1, transfer step.** Transfer of a lower bound: if $`b \le s_n` for all
+$`n` then every value of the extended sequence is at least $`b`. -/
 theorem coe_le_hyperSeq {b : ℝ} (h : ∀ n, b ≤ s n) (x : ℝ*) : (b : ℝ*) ≤ hyperSeq s x := by
   simpa [hyperSeq_const] using hyperSeq_le_hyperSeq (s := fun _ => b) h x
 
@@ -185,28 +185,30 @@ theorem natCast_lt_of_mem_unlimitedHyperNat (hN : N ∈ unlimitedHyperNat) (n : 
     (n : ℝ*) < N :=
   natCast_lt_of_mem_hyperNat_of_notMem_range hN.1 hN.2 n
 
-/-- A hypernatural above an unlimited hypernatural is unlimited. -/
+/-- **Theorem 6.1.1, step of the proof.** A hypernatural above an unlimited hypernatural is
+unlimited. -/
 theorem mem_unlimitedHyperNat_of_le (hM : M ∈ unlimitedHyperNat) (hN : N ∈ ℕ*) (h : M ≤ N) :
     N ∈ unlimitedHyperNat := by
   refine ⟨hN, ?_⟩
   rintro ⟨n, rfl⟩
   exact absurd h (not_le.2 (natCast_lt_of_mem_unlimitedHyperNat hM n))
 
-/-- The successor of an unlimited hypernatural is an unlimited hypernatural. -/
+/-- **Section 6.2, step of the application.** The successor of an unlimited hypernatural is
+an unlimited hypernatural. -/
 theorem add_one_mem_unlimitedHyperNat (hN : N ∈ unlimitedHyperNat) :
     N + 1 ∈ unlimitedHyperNat :=
   mem_unlimitedHyperNat_of_le hN
     (add_mem_hyperNat hN.1 (by simpa using natCast_mem_hyperNat 1)) (by linarith)
 
-/-- Transfer of the shift of index: $`s_{N+1}` is the extended term at $`N` of the shifted
-sequence $`n \mapsto s_{n+1}`. -/
+/-- **Section 6.2, transfer step.** Transfer of the shift of index: $`s_{N+1}` is the
+extended term at $`N` of the shifted sequence $`n \mapsto s_{n+1}`. -/
 theorem hyperSeq_add_one (s : ℕ → ℝ) (hN : N ∈ ℕ*) :
     hyperSeq s (N + 1) = hyperSeq (fun n => s (n + 1)) N := by
   obtain ⟨k, rfl⟩ := exists_hnat_eq hN
   rw [← hnat_const_one, hnat_add, hyperSeq_hnat, hyperSeq_hnat]
 
-/-- **Theorem 6.2.1, transfer step.** Transfer of monotonicity: the extension of a nondecreasing sequence is nondecreasing on
-the hypernaturals. -/
+/-- **Theorem 6.2.1, transfer step.** Transfer of monotonicity: the extension of a
+nondecreasing sequence is nondecreasing on the hypernaturals. -/
 theorem hyperSeq_mono (hs : Monotone s) (hM : M ∈ ℕ*) (hN : N ∈ ℕ*) (h : M ≤ N) :
     hyperSeq s M ≤ hyperSeq s N := by
   obtain ⟨k, rfl⟩ := exists_hnat_eq hM
@@ -319,25 +321,29 @@ theorem exists_unlimited_hyperSeq_mem_starSet_iff (s : ℕ → ℝ) (A : Set ℝ
     refine ⟨hnat k, hnat_mem_unlimitedHyperNat_iff.2 hk, ?_⟩
     rwa [hyperSeq_hnat, hyperreal_ofSeq_mem_starSet]
 
-/-- Principle (a) for strict upper bounds: every extended term is below the real number $`r`
+/-- **Section 6.8, principle (a), strict upper bounds.** Principle (a) for the set below
+$`r`: every extended term is below the real number $`r`
 if and only if some standard tail is below $`r`. -/
 theorem forall_unlimited_hyperSeq_lt_iff (s : ℕ → ℝ) (r : ℝ) :
     (∀ N ∈ unlimitedHyperNat, hyperSeq s N < r) ↔ ∀ᶠ n in atTop, s n < r := by
   simpa [starSet_Iio_real] using forall_unlimited_hyperSeq_mem_starSet_iff s (Iio r)
 
-/-- Principle (a) for strict lower bounds: every extended term is above the real number $`r`
+/-- **Section 6.8, principle (a), strict lower bounds.** Principle (a) for the set above
+$`r`: every extended term is above the real number $`r`
 if and only if some standard tail is above $`r`. -/
 theorem forall_unlimited_lt_hyperSeq_iff (s : ℕ → ℝ) (r : ℝ) :
     (∀ N ∈ unlimitedHyperNat, (r : ℝ*) < hyperSeq s N) ↔ ∀ᶠ n in atTop, r < s n := by
   simpa [starSet_Ioi_real] using forall_unlimited_hyperSeq_mem_starSet_iff s (Ioi r)
 
-/-- Principle (b) for strict upper bounds: some extended term is below the real number $`r`
+/-- **Section 6.8, principle (b), strict upper bounds.** Principle (b) for the set below
+$`r`: some extended term is below the real number $`r`
 if and only if $`s_n < r` for arbitrarily large standard $`n`. -/
 theorem exists_unlimited_hyperSeq_lt_iff (s : ℕ → ℝ) (r : ℝ) :
     (∃ N ∈ unlimitedHyperNat, hyperSeq s N < r) ↔ ∃ᶠ n in atTop, s n < r := by
   simpa [starSet_Iio_real] using exists_unlimited_hyperSeq_mem_starSet_iff s (Iio r)
 
-/-- Principle (b) for strict lower bounds: some extended term is above the real number $`r`
+/-- **Section 6.8, principle (b), strict lower bounds.** Principle (b) for the set above
+$`r`: some extended term is above the real number $`r`
 if and only if $`r < s_n` for arbitrarily large standard $`n`. -/
 theorem exists_unlimited_lt_hyperSeq_iff (s : ℕ → ℝ) (r : ℝ) :
     (∃ N ∈ unlimitedHyperNat, (r : ℝ*) < hyperSeq s N) ↔ ∃ᶠ n in atTop, r < s n := by
@@ -491,11 +497,10 @@ end Convergence
 ## 6.2 Monotone Convergence
 
 The first application is a proof that a bounded monotone sequence converges. For a
-nondecreasing sequence bounded above, every extended term is limited, and its shadow is shown
-to be the least upper bound of the set of terms. A set has only one least upper bound, so all
-extended terms have the same shadow and the sequence converges to it by Theorem 6.1.1. The
-section ends with the book's example: the powers of a number strictly between $`0` and $`1`
-converge to $`0`.
+nondecreasing sequence bounded above, pick any extended term: it is limited, and its shadow
+turns out to be the supremum of the terms. The supremum does not depend on which extended
+term was picked, so Theorem 6.1.1 gives convergence to it. The section ends with the
+book's example: the powers of a number strictly between $`0` and $`1` converge to $`0`.
 -/
 
 section MonotoneConvergence
@@ -505,7 +510,7 @@ variable {s : ℕ → ℝ} {N : ℝ*}
 /-- **Theorem 6.2.1, key step.** For a nondecreasing real sequence that is bounded above,
 every extended term is limited and its shadow is the least upper bound of the set of terms.
 -/
-theorem Monotone.isLUB_sh_hyperSeq (hs : Monotone s) (hb : BddAbove (range s))
+theorem _root_.Monotone.isLUB_sh_hyperSeq (hs : Monotone s) (hb : BddAbove (range s))
     (hN : N ∈ unlimitedHyperNat) :
     Limited (hyperSeq s N) ∧ IsLUB (range s) (sh (hyperSeq s N)) := by
   obtain ⟨b, hb⟩ := hb
@@ -527,7 +532,7 @@ theorem Monotone.isLUB_sh_hyperSeq (hs : Monotone s) (hb : BddAbove (range s))
 /-- **Theorem 6.2.1 (1).** A nondecreasing real sequence that is bounded above converges, and
 its limit is the least upper bound of its terms. The limit is produced as the common shadow
 of the extended terms. -/
-theorem Monotone.exists_isLUB_tendsto (hs : Monotone s) (hb : BddAbove (range s)) :
+theorem _root_.Monotone.exists_isLUB_tendsto (hs : Monotone s) (hb : BddAbove (range s)) :
     ∃ L : ℝ, IsLUB (range s) L ∧ Tendsto s atTop (𝓝 L) := by
   obtain ⟨hlim, hlub⟩ := Monotone.isLUB_sh_hyperSeq hs hb omega_mem_unlimitedHyperNat
   refine ⟨_, hlub, tendsto_iff_forall_unlimited_infClose.2 fun N hN => ?_⟩
@@ -538,7 +543,7 @@ theorem Monotone.exists_isLUB_tendsto (hs : Monotone s) (hb : BddAbove (range s)
 /-- **Theorem 6.2.1 (2).** A nonincreasing real sequence that is bounded below converges, and
 its limit is the greatest lower bound of its terms. This is case (1) applied to the sequence
 of negatives. -/
-theorem Antitone.exists_isGLB_tendsto (hs : Antitone s) (hb : BddBelow (range s)) :
+theorem _root_.Antitone.exists_isGLB_tendsto (hs : Antitone s) (hb : BddBelow (range s)) :
     ∃ L : ℝ, IsGLB (range s) L ∧ Tendsto s atTop (𝓝 L) := by
   obtain ⟨b, hb⟩ := hb
   have hmono : Monotone fun n => -s n := fun m n h => neg_le_neg (hs h)
@@ -892,7 +897,7 @@ theorem cauchySeq_iff_forall_unlimited_infClose :
 some standard index $`j` on, the terms are within $`1` of $`s_j`; by transfer every extended
 term is within $`1` of the real number $`s_j`. This replaces the appeal to the standard fact
 that Cauchy sequences are bounded. -/
-theorem CauchySeq.limited_hyperSeq (h : CauchySeq s) {N : ℝ*} (hN : N ∈ unlimitedHyperNat) :
+theorem _root_.CauchySeq.limited_hyperSeq (h : CauchySeq s) {N : ℝ*} (hN : N ∈ unlimitedHyperNat) :
     Limited (hyperSeq s N) := by
   obtain ⟨j, hj⟩ := Metric.cauchySeq_iff.1 h 1 one_pos
   obtain ⟨k, hk, rfl⟩ := exists_hnat_of_mem_unlimitedHyperNat hN

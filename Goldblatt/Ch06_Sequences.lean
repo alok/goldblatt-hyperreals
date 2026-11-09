@@ -5,13 +5,15 @@ import Goldblatt.Ch06_Sequences.Series
 /-!
 # 6. Convergence of Sequences and Series
 
-A real sequence $`s` is a function on the natural numbers, so it extends to a hypersequence
-defined on the hypernatural numbers (Section 3.13). Its values at unlimited hypernaturals are
-the _extended terms_ of the sequence, and together they form its _extended tail_. This
-chapter shows that the classical notions of the theory of sequences are statements about the
-extended tail, usually simpler ones than the standard definitions: a quantifier over
-tolerances and a quantifier over indices are replaced by a single statement about
-infinitely close numbers.
+The theme of this chapter is that the standard vocabulary of sequences (limit, bound,
+Cauchy, cluster point, limit superior) can be read off from what a sequence does at
+unlimited indices. In each case the usual definition, with its quantifier over tolerances
+and its quantifier over indices, turns into one statement about infinitely close numbers.
+
+Some terminology is needed to say this. The extension of a real sequence $`s` to the
+hypernaturals was constructed in Section 3.13. An _extended term_ of $`s` is a value
+$`s_N` of that extension at an unlimited hypernatural $`N`. The _extended tail_ is the set of
+all extended terms.
 
 * The sequence converges to $`L` exactly when every extended term is infinitely close to
   $`L`.
@@ -86,8 +88,9 @@ statement. Exercise 6.11(6) is false as printed when the ratios converge to zero
 proved for a nonzero limit, and a counterexample to the printed form is included. Exercise
 6.11(8) assumes that the terms are nonzero, and the first inequality of its part (c) is strict
 only from the second term on: it is proved in the weak form for every index and in the book's
-strict form for every positive index. In the ratio tests the limits superior and inferior are taken in the extended
-reals, so that an unbounded sequence of ratios has limit superior plus infinity.
+strict form for every positive index. In the ratio tests the limits superior and inferior
+are taken in the extended reals, so that an unbounded sequence of ratios has limit superior
+plus infinity.
 
 ## Names for later chapters
 

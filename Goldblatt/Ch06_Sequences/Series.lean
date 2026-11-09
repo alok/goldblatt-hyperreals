@@ -106,8 +106,8 @@ theorem partialSum_const_mul (c : ℝ) (a : ℕ → ℝ) :
 theorem hyperSum_natCast (a : ℕ → ℝ) (n : ℕ) : hyperSum a (n : ℝ*) = (partialSum a n : ℝ*) :=
   hyperSeq_natCast_real _ n
 
-/-- Transfer of $`s_{n+1} = s_n + a_n`: the hyperfinite sum of $`N + 1` terms is the sum of
-$`N` terms plus the term $`a_N`. -/
+/-- **Section 6.10, transfer step.** Transfer of $`s_{n+1} = s_n + a_n`: the
+hyperfinite sum of $`N + 1` terms is the sum of $`N` terms plus the term $`a_N`. -/
 theorem hyperSum_add_one (a : ℕ → ℝ) (hN : N ∈ ℕ*) :
     hyperSum a (N + 1) = hyperSum a N + hyperSeq a N := by
   rw [hyperSum, hyperSeq_add_one _ hN, hyperSum, ← hyperSeq_add]
@@ -142,8 +142,9 @@ theorem hyperSumIcc_hnat (a : ℕ → ℝ) {k l : ℕ → ℕ} (h : hnat k ≤ h
   rw [ofSeq_eq_ofSeq_iff]
   exact (hnat_le_hnat_iff.1 h).mono fun n hn => partialSum_succ_sub a hn
 
-/-- Transfer of termwise comparison of block sums: if $`a_i \le b_i` for all standard
-$`i \ge j`, then $`\sum_M^N a_i \le \sum_M^N b_i` for all hypernaturals $`j \le M \le N`. -/
+/-- **Section 6.10, transfer step.** Transfer of termwise comparison of block sums:
+if $`a_i \le b_i` for all standard $`i \ge j`, then $`\sum_M^N a_i \le \sum_M^N b_i` for all
+hypernaturals $`j \le M \le N`. -/
 theorem hyperSumIcc_le_hyperSumIcc {j : ℕ} (h : ∀ i, j ≤ i → a i ≤ b i) (hM : M ∈ ℕ*)
     (hN : N ∈ ℕ*) (hjM : (j : ℝ*) ≤ M) (hMN : M ≤ N) :
     hyperSumIcc a M N ≤ hyperSumIcc b M N := by
@@ -154,7 +155,8 @@ theorem hyperSumIcc_le_hyperSumIcc {j : ℕ} (h : ∀ i, j ≤ i → a i ≤ b i
   exact hjM.mono fun n hn =>
     Finset.sum_le_sum fun i hi => h i (hn.trans (Finset.mem_Icc.1 hi).1)
 
-/-- Transfer of nonnegativity of block sums: if $`0 \le a_i` for all standard $`i \ge j`, then
+/-- **Section 6.10, transfer step.** Transfer of nonnegativity of block sums: if
+$`0 \le a_i` for all standard $`i \ge j`, then
 $`0 \le \sum_M^N a_i` for all hypernaturals $`j \le M \le N`. -/
 theorem hyperSumIcc_nonneg {j : ℕ} (h : ∀ i, j ≤ i → 0 ≤ a i) (hM : M ∈ ℕ*) (hN : N ∈ ℕ*)
     (hjM : (j : ℝ*) ≤ M) (hMN : M ≤ N) : 0 ≤ hyperSumIcc a M N := by
@@ -167,7 +169,7 @@ theorem hyperSumIcc_nonneg {j : ℕ} (h : ∀ i, j ≤ i → 0 ≤ a i) (hM : M 
   exact hjM.mono fun n hn =>
     Finset.sum_nonneg fun i hi => h i (hn.trans (Finset.mem_Icc.1 hi).1)
 
-/-- Transfer of the triangle inequality for block sums:
+/-- **Section 6.10, transfer step.** Transfer of the triangle inequality for block sums:
 $`|\sum_M^N a_i| \le \sum_M^N |a_i|` for hypernaturals $`M \le N`. -/
 theorem abs_hyperSumIcc_le (a : ℕ → ℝ) (hM : M ∈ ℕ*) (hN : N ∈ ℕ*) (hMN : M ≤ N) :
     |hyperSumIcc a M N| ≤ hyperSumIcc (fun i => |a i|) M N := by
@@ -276,8 +278,9 @@ The exercises apply the two criteria of Section 6.10. Exercise (6) is false as p
 the ratios $`a_i / b_i` converge to zero; the statement is proved with the hypothesis that
 the limit is nonzero, the half that survives without it is proved separately, and a
 counterexample to the printed statement is given. In Exercise (8) the terms are assumed
-nonzero, which the book needs implicitly for the ratios to be defined, and the inequality of
-part (c) is weak, since it is an equality for $`n = 0`.
+nonzero, which the book needs implicitly for the ratios to be defined. The first inequality
+of its part (c) is proved in the weak form for every $`n` and in the strict form, as printed,
+for $`n \ge 1`; at $`n = 0` it is an equality.
 -/
 
 section ExercisesSeries
@@ -587,8 +590,8 @@ theorem exists_tendsto_div_seriesConverges_not_seriesConverges :
   · simpa using tendsto_pow_zero_of_abs_lt_one hhalf
   · exact one_ne_zero (limit_unique tendsto_const_nhds h.tendsto_zero)
 
-/-- Transfer of nonvanishing: if no term of the sequence is zero then no value of the extended
-sequence is zero. -/
+/-- **Exercise 6.11(8), transfer step.** Transfer of nonvanishing: if no term of the
+sequence is zero then no value of the extended sequence is zero. -/
 theorem hyperSeq_ne_zero (ha : ∀ i, a i ≠ 0) (x : ℝ*) : hyperSeq a x ≠ 0 := by
   obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
   intro h
@@ -597,7 +600,8 @@ theorem hyperSeq_ne_zero (ha : ∀ i, a i ≠ 0) (x : ℝ*) : hyperSeq a x ≠ 0
   obtain ⟨n, hn⟩ := h'.exists
   exact ha _ hn
 
-/-- The extended sequence of ratios of consecutive absolute values is the ratio of the
+/-- **Exercise 6.11(8), transfer step.** The extended sequence of ratios of consecutive
+absolute values is the ratio of the
 absolute values of consecutive extended terms. -/
 theorem hyperSeq_ratio (a : ℕ → ℝ) (hN : N ∈ ℕ*) :
     hyperSeq (fun i => |a (i + 1)| / |a i|) N = |hyperSeq a (N + 1)| / |hyperSeq a N| := by
@@ -683,26 +687,46 @@ theorem sum_Icc_abs_le_of_ratio {k : ℕ} (hc : 0 ≤ c)
 
 /-- **Exercise 6.11(8)(d) (ratio test, convergence).** Suppose that no $`a_i` is zero and that
 $$`\limsup_{i\to\infty} \frac{|a_{i+1}|}{|a_i|} < 1.`
-Then the series $`\sum a_i` is absolutely convergent. With $`c` and $`k` as in part (b), the
-inequality of part (c) gives $`|a_i| \le (|a_k| / c^k)\, c^i` for $`i \ge k`, so for unlimited
-$`M \le N` the block sum $`\sum_M^N |a_i|` is at most a real multiple of the block sum of the
-geometric series, which is infinitesimal by result 7(b).
+Then the series $`\sum a_i` is absolutely convergent. Take $`c` and $`k` as in part (b) and
+unlimited $`M \le N`. The second inequality of part (c), transferred to the block from $`M`
+to $`N`, bounds $`\sum_M^N |a_i|` by $`|a_k|` times the block sum of the geometric series
+from $`M - k` to $`N - k`. These two indices are unlimited, so that block sum is
+infinitesimal by result 7(b), and so is its product with the real number $`|a_k|`. The
+Cauchy criterion of Section 6.10 finishes the proof.
 
 The hypothesis that the terms are nonzero is implicit in the book, where the ratios must be
 defined. It cannot be dropped in Lean, where division by zero gives zero. -/
 theorem seriesConverges_abs_of_limSupE_ratio_lt_one (ha : ∀ i, a i ≠ 0)
     (h : limSupE (fun i => |a (i + 1)| / |a i|) < 1) : SeriesConverges fun i => |a i| := by
   obtain ⟨c, hc0, hc1, k, hk⟩ := exists_forall_ge_ratio_lt ha h
-  have hgeo : SeriesConverges fun i => |a k| / c ^ k * c ^ i :=
-    ⟨_, (seriesSum_geometric (by rw [abs_of_pos hc0]; exact hc1)).const_mul _⟩
-  refine seriesConverges_of_forall_ge_le (j := k) (fun i _ => abs_nonneg _) (fun i hi => ?_) hgeo
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hi
-  have := abs_le_pow_mul_abs_of_ratio hc0.le hk n
-  have hck : c ^ k ≠ 0 := (pow_pos hc0 k).ne'
-  calc |a (k + n)| ≤ c ^ n * |a k| := this
-    _ = |a k| / c ^ k * c ^ (k + n) := by
-      rw [pow_add]
-      field_simp
+  have hc : |c| < 1 := by rw [abs_of_pos hc0]; exact hc1
+  rw [seriesConverges_iff_forall_unlimited_hyperSumIcc]
+  intro M hM N hN hMN
+  obtain ⟨p, hp, rfl⟩ := exists_hnat_of_mem_unlimitedHyperNat hM
+  obtain ⟨q, hq, rfl⟩ := exists_hnat_of_mem_unlimitedHyperNat hN
+  have hpq : ∀ᶠ n in hyperfilter ℕ, p n ≤ q n := hnat_le_hnat_iff.1 hMN
+  have hpq' : hnat (fun n => p n - k) ≤ hnat fun n => q n - k :=
+    hnat_le_hnat_iff.2 (hpq.mono fun n hn => Nat.sub_le_sub_right hn k)
+  have hgeo : Infinitesimal
+      (hyperSumIcc (fun i => c ^ i) (hnat fun n => p n - k) (hnat fun n => q n - k)) :=
+    infinitesimal_hyperSumIcc_geometric hc
+      (hnat_mem_unlimitedHyperNat_iff.2 ((tendsto_sub_atTop_nat k).comp hp))
+      (hnat_mem_unlimitedHyperNat_iff.2 ((tendsto_sub_atTop_nat k).comp hq)) hpq'
+  have hle : hyperSumIcc (fun i => |a i|) (hnat p) (hnat q) ≤
+      hyperSumIcc (fun i => c ^ i) (hnat fun n => p n - k) (hnat fun n => q n - k) *
+        ((|a k| : ℝ) : ℝ*) := by
+    rw [hyperSumIcc_hnat _ hMN, hyperSumIcc_hnat _ hpq']
+    change _ ≤ Hyperreal.ofSeq fun n => (∑ i ∈ Finset.Icc (p n - k) (q n - k), c ^ i) * |a k|
+    rw [ofSeq_le_ofSeq_iff]
+    filter_upwards [hp.eventually_ge_atTop k, hpq] with n hn hn'
+    have := sum_Icc_abs_le_of_ratio hc0.le hk (p n - k) (q n - k)
+    rwa [Nat.add_sub_cancel' hn, Nat.add_sub_cancel' (hn.trans hn')] at this
+  have h0 : 0 ≤ hyperSumIcc (fun i => |a i|) (hnat p) (hnat q) :=
+    hyperSumIcc_nonneg (j := 0) (fun i _ => abs_nonneg _) hM.1 hN.1
+      (by simpa using hyperNat_nonneg hM.1) hMN
+  refine (hgeo.mul_limited (limited_coe |a k|)).of_abs_le ?_
+  rw [abs_of_nonneg h0]
+  exact hle.trans (le_abs_self _)
 
 /-- **Exercise 6.11(8) (ratio test, convergence).** Under the hypotheses of the ratio test the
 series $`\sum a_i` converges. -/

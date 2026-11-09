@@ -53,20 +53,42 @@ theorem bounded_neg (hb : ∃ b : ℝ, ∀ n, |s n| < b) : ∃ b : ℝ, ∀ n, |
   simpa using hb
 
 /-- **Section 6.8.** Every real upper bound of a sequence is an upper bound of its set of
-cluster points. -/
-theorem bddAbove_clusterSet (hb : BddAbove (range s)) : BddAbove (clusterSet s) := by
-  obtain ⟨b, hb⟩ := hb
-  refine ⟨b, fun c hc => ?_⟩
+cluster points: if $`s_n \le b` for all $`n` and $`c` is a cluster point, then $`c \le b`.
+A cluster point is the shadow of an extended term, and the bound transfers to that term. -/
+theorem le_of_mem_clusterSet_of_forall_le {b c : ℝ} (hb : ∀ n, s n ≤ b)
+    (hc : c ∈ clusterSet s) : c ≤ b := by
   obtain ⟨N, -, h⟩ := mem_clusterSet_iff.1 hc
-  exact coe_le_coe_of_infClose_le h.symm (hyperSeq_le_coe (fun n => hb ⟨n, rfl⟩) N)
+  exact coe_le_coe_of_infClose_le h.symm (hyperSeq_le_coe hb N)
 
 /-- **Section 6.8.** Every real lower bound of a sequence is a lower bound of its set of
-cluster points. -/
-theorem bddBelow_clusterSet (hb : BddBelow (range s)) : BddBelow (clusterSet s) := by
-  obtain ⟨b, hb⟩ := hb
-  refine ⟨b, fun c hc => ?_⟩
+cluster points: if $`b \le s_n` for all $`n` and $`c` is a cluster point, then $`b \le c`. -/
+theorem le_of_mem_clusterSet_of_forall_ge {b c : ℝ} (hb : ∀ n, b ≤ s n)
+    (hc : c ∈ clusterSet s) : b ≤ c := by
   obtain ⟨N, -, h⟩ := mem_clusterSet_iff.1 hc
-  exact coe_le_coe_of_le_infClose (coe_le_hyperSeq (fun n => hb ⟨n, rfl⟩) N) h
+  exact coe_le_coe_of_le_infClose (coe_le_hyperSeq hb N) h
+
+/-- **Section 6.8.** The upper bounds of the set of terms are upper bounds of the set of
+cluster points. This is {name}`le_of_mem_clusterSet_of_forall_le` in terms of sets of bounds.
+-/
+theorem upperBounds_range_subset_upperBounds_clusterSet :
+    upperBounds (range s) ⊆ upperBounds (clusterSet s) :=
+  fun _ hb _ hc => le_of_mem_clusterSet_of_forall_le (fun n => hb ⟨n, rfl⟩) hc
+
+/-- **Section 6.8.** The lower bounds of the set of terms are lower bounds of the set of
+cluster points. -/
+theorem lowerBounds_range_subset_lowerBounds_clusterSet :
+    lowerBounds (range s) ⊆ lowerBounds (clusterSet s) :=
+  fun _ hb _ hc => le_of_mem_clusterSet_of_forall_ge (fun n => hb ⟨n, rfl⟩) hc
+
+/-- **Section 6.8.** If the sequence is bounded above then so is its set of cluster points.
+-/
+theorem bddAbove_clusterSet (hb : BddAbove (range s)) : BddAbove (clusterSet s) :=
+  hb.imp fun _ hb => upperBounds_range_subset_upperBounds_clusterSet hb
+
+/-- **Section 6.8.** If the sequence is bounded below then so is its set of cluster points.
+-/
+theorem bddBelow_clusterSet (hb : BddBelow (range s)) : BddBelow (clusterSet s) :=
+  hb.imp fun _ hb => lowerBounds_range_subset_lowerBounds_clusterSet hb
 
 /-- **Section 6.8.** A bounded sequence has a cluster point (Theorem 6.6.2). -/
 theorem clusterSet_nonempty_of_bounded (hb : ∃ b : ℝ, ∀ n, |s n| < b) :
@@ -331,7 +353,8 @@ theorem infinite_setOf_limSup_sub_lt (hb : ∃ b : ℝ, ∀ n, |s n| < b) {e : �
 sequence that starts at $`n`. -/
 def tailSup (s : ℕ → ℝ) (n : ℕ) : ℝ := sSup (s '' Ici n)
 
-/-- A term of the tail is at most the supremum of the tail. -/
+/-- **Section 6.8, step towards Theorem 6.8.5.** A term of the tail is at most the supremum
+of the tail. -/
 theorem le_tailSup (hb : BddAbove (range s)) {m n : ℕ} (h : n ≤ m) : s m ≤ tailSup s n :=
   le_csSup (hb.mono (image_subset_range _ _)) ⟨m, h, rfl⟩
 
@@ -501,7 +524,8 @@ theorem limSupE_of_tendsto_atBot (h : Tendsto s atTop atBot) : limSupE s = ⊥ :
   rw [limSupE, ite_eq_right (not_not.2 (bddAbove_range_of_tendsto_atBot h)), ite_eq_left h]
 
 /-- **Section 6.8, case (2)(ii) of the general definition.** The extended limit superior of a
-sequence that is bounded above and does not diverge to minus infinity is the least upper bound of its cluster points. -/
+sequence that is bounded above and does not diverge to minus infinity is the least upper
+bound of its cluster points. -/
 theorem limSupE_of_bddAbove_of_not_tendsto_atBot (hb : BddAbove (range s))
     (h : ¬ Tendsto s atTop atBot) : limSupE s = ((sSup (clusterSet s) : ℝ) : EReal) := by
   rw [limSupE, ite_eq_right (not_not.2 hb), ite_eq_right h]
@@ -618,9 +642,9 @@ theorem eventually_gt_of_lt_limInfE {r : ℝ} (h : (r : EReal) < limInfE s) :
   rw [limInfE_eq_neg_limSupE_neg, EReal.lt_neg_comm, ← EReal.coe_neg] at h
   exact (eventually_lt_of_limSupE_lt h).mono fun n hn => by linarith
 
-/-- **Section 6.8, example.** The bounded sequence $`(-1)^n` does not converge: its limit
-superior is $`1` and its limit inferior is $`-1`. The extended terms at even unlimited
-hypernaturals are $`1` and those at odd ones are $`-1`. -/
+/-- **Section 6.8, illustration (not in the book).** The bounded sequence $`(-1)^n` does
+not converge: its limit superior is $`1` and its limit inferior is $`-1`. The
+extended terms at even unlimited hypernaturals are $`1` and those at odd ones are $`-1`. -/
 theorem limSup_limInf_neg_one_pow :
     limSup (fun n : ℕ => (-1 : ℝ) ^ n) = 1 ∧ limInf (fun n : ℕ => (-1 : ℝ) ^ n) = -1 := by
   set s : ℕ → ℝ := fun n => (-1 : ℝ) ^ n with hs
@@ -718,7 +742,8 @@ theorem infinite_setOf_lt_limInf_add (hb : ∃ b : ℝ, ∀ n, |s n| < b) {e : �
 that starts at $`n`. -/
 def tailInf (s : ℕ → ℝ) (n : ℕ) : ℝ := sInf (s '' Ici n)
 
-/-- The tail infimum is minus the tail supremum of the sequence of negatives. -/
+/-- **Exercise 6.9(2), reduction step.** The tail infimum is minus the tail supremum of the
+sequence of negatives. -/
 theorem tailInf_eq_neg_tailSup_neg (s : ℕ → ℝ) (n : ℕ) :
     tailInf s n = -tailSup (fun m => -s m) n := by
   rw [tailInf, tailSup, Real.sInf_def]
