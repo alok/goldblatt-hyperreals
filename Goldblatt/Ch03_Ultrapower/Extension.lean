@@ -138,8 +138,19 @@ theorem starMap_id : (⋆(id : α → α) : αS → αS) = id := by
   rw [starMap_ofSeq]
   rfl
 
-/-- **Exercise 3.12(3).** The absolute value of the hyperreals, defined by cases from the
-order, satisfies $`|[r_n]| = [|r_n|]`: it is the extension of the real absolute value. -/
+/-- **Exercise 3.12(3), the definition by cases.** The absolute value of a hyperreal $`x` is
+$`x` if $`x > 0`, is $`0` if $`x = 0`, and is $`-x` if $`x < 0`. The absolute value of the
+hyperreals used in this project is Mathlib's, the supremum of $`x` and $`-x`; this lemma shows
+that it is the function the exercise defines. -/
+theorem hyperreal_abs_cases (x : ℝ*) : |x| = if 0 < x then x else if x = 0 then 0 else -x := by
+  split_ifs with h₁ h₂
+  · exact abs_of_pos h₁
+  · rw [h₂, abs_zero]
+  · exact abs_of_neg (lt_of_le_of_ne (not_lt.1 h₁) h₂)
+
+/-- **Exercise 3.12(3).** The absolute value of the hyperreals, which by
+{name}`Goldblatt.hyperreal_abs_cases` is the one defined by cases from the order, satisfies
+$`|[r_n]| = [|r_n|]`: it is the extension of the real absolute value. -/
 theorem starMap_abs (x : ℝ*) : ⋆(fun a : ℝ => |a|) x = |x| :=
   (Germ.abs_def x).symm
 
@@ -663,11 +674,46 @@ theorem starRel_binary {P : α → α → Prop} {x y : αS} :
   rw [h, starRel_ofSeq, starRel₂_ofSeq]
   rfl
 
-/-- **Section 3.14.** The enlargement of the graph of a function of several arguments is the
-graph of its extension. -/
+/-- **Section 3.14, tuple-packed form.** The enlargement of the graph of a function of several
+arguments is the graph of its extension, with the arguments packed into a single element of the
+ultrapower of tuples and the graph treated as a binary relation between a tuple and a value.
+This is the unary statement in disguise; the statement about the enlargement of the graph as a
+relation of arity $`m + 1` is {lit}`Goldblatt.starRel_graph`. -/
 theorem starRel₂_graph_starMapN {ι : Type*} (f : (ι → α) → β) {x : ι → αS}
     {y : βS} : ⋆(fun a b => f a = b) (Ultrapower.tuple x) y ↔ starMapN f x = y :=
   starRel₂_graph f
+
+/-- **Section 3.14, appending a coordinate.** Appending the class of a sequence to a tuple of
+classes of sequences gives the tuple of classes of the sequences with the new one appended. -/
+theorem Ultrapower.snoc_ofSeq {k : ℕ} (r : Fin k → ℕ → α) (s : ℕ → α) :
+    Fin.snoc (α := fun _ => αS) (fun i => (ofSeq (r i) : αS)) (ofSeq s) =
+      fun i => ofSeq (Fin.snoc (α := fun _ => ℕ → α) r s i) := by
+  funext i
+  refine Fin.lastCases ?_ (fun j => ?_) i <;> simp
+
+/-- **Section 3.14, appending a coordinate.** The $`n`-th terms of a tuple of sequences with one
+sequence appended are the $`n`-th terms of the tuple with the $`n`-th term of the new sequence
+appended. -/
+theorem Ultrapower.snoc_apply_apply {k : ℕ} (r : Fin k → ℕ → α) (s : ℕ → α) (n : ℕ) :
+    (fun i => Fin.snoc (α := fun _ => ℕ → α) r s i n) =
+      Fin.snoc (α := fun _ => α) (fun i => r i n) (s n) := by
+  funext i
+  refine Fin.lastCases ?_ (fun j => ?_) i <;> simp
+
+/-- **Section 3.14.** The enlargement of the graph of a function of $`m` arguments, the graph
+being a relation of arity $`m + 1` (a set of tuples of length $`m + 1`) enlarged as such, is the
+graph of the extension: $`{}^*(\operatorname{Graph} f)(x_1, \dots, x_m, y)` if and only if
+$`{}^*f(x_1, \dots, x_m) = y`. Here a tuple of length $`m + 1` is a tuple of length $`m` with
+one more entry appended. -/
+theorem starRel_graph {m : ℕ} (f : (Fin m → α) → α) {x : Fin m → αS} {y : αS} :
+    Fin.snoc (α := fun _ => αS) x y ∈
+        starRel {a : Fin (m + 1) → α | f (Fin.init a) = a (Fin.last m)} ↔
+      starMapN f x = y := by
+  obtain ⟨r, rfl⟩ := Ultrapower.exists_rep_tuple (α := α) x
+  obtain ⟨s, rfl⟩ := ofSeq_surjective (α := α) y
+  rw [Ultrapower.snoc_ofSeq, starRel_ofSeq, starMapN_ofSeq, Ultrapower.ofSeq_eq_ofSeq]
+  refine eventually_congr (Eventually.of_forall fun n => ?_)
+  simp [Ultrapower.snoc_apply_apply]
 
 /-!
 ## 3.15 Exercises on Enlarged Relations
@@ -718,9 +764,32 @@ theorem starSet_ran (P : α → β → Prop) :
   simp only [starRel₂_ofSeq]
   exact almostAll_exists_iff (p := fun n a => P a (s n))
 
-/-- **Exercise 3.15(3).** The generalization to relations of higher arity: for a relation
-between $`k`-tuples and a further argument, a $`k`-tuple of elements of the ultrapower lies in
-the enlargement of the domain if and only if it lies in the domain of the enlarged relation. -/
+/-- **Exercise 3.15(3).** The generalization to relations of higher arity. Let $`P` be a
+relation of arity $`k + 1`, a set of tuples of length $`k + 1`, and let its domain be the
+relation of arity $`k` consisting of the tuples that some further entry extends to a member of
+$`P`. Then $`{}^*(\operatorname{dom} P) = \operatorname{dom} {}^*P`, both enlargements being
+those of Section 3.14: a $`k`-tuple of elements of the ultrapower lies in the enlargement of the
+domain if and only if some further element of the ultrapower extends it to a member of
+$`{}^*P`. As in the binary case, the proof chooses witnesses along the index set. -/
+theorem starRel_dom_snoc {k : ℕ} (P : Set (Fin (k + 1) → α)) :
+    (starRel {a : Fin k → α | ∃ b, Fin.snoc (α := fun _ => α) a b ∈ P} : Set (Fin k → αS)) =
+      {x | ∃ y : αS, Fin.snoc (α := fun _ => αS) x y ∈ starRel P} := by
+  ext x
+  obtain ⟨r, rfl⟩ := Ultrapower.exists_rep_tuple (α := α) x
+  rw [starRel_ofSeq, mem_ofPred_eq, (ofSeq_surjective (α := α) (αS := αS)).exists]
+  simp only [Ultrapower.snoc_ofSeq, starRel_ofSeq]
+  refine (almostAll_exists_iff
+    (p := fun n b => Fin.snoc (α := fun _ => α) (fun i => r i n) b ∈ P)).trans ?_
+  refine exists_congr fun s => eventually_congr (Eventually.of_forall fun n => ?_)
+  simp [Ultrapower.snoc_apply_apply]
+
+/-- **Exercise 3.15(3), tuple-packed form.** A variant in which the relation is presented as a
+binary relation between a tuple and one further argument, possibly of another type, and the
+tuple of elements of the ultrapower is packed into a single element of the ultrapower of
+tuples: the packed tuple lies in the enlargement of the domain if and only if the enlarged
+binary relation relates it to something. This reduces to the binary case by unfolding; the
+statement about a relation of arity $`k + 1` enlarged as in Section 3.14 is
+{name}`Goldblatt.starRel_dom_snoc`. -/
 theorem starRel_dom {ι : Type*} (P : (ι → α) → β → Prop) :
     (starRel {a | ∃ b, P a b} : Set (ι → αS)) = {x | ∃ y : βS, ⋆P (Ultrapower.tuple x) y} := by
   ext x
@@ -736,8 +805,10 @@ theorem starSet_dom_partial {A : Set α} (f : A → β) :
   simp only [mem_ofPred_eq, starRel₂_graph_partial]
   exact ⟨fun h => ⟨_, h, rfl⟩, fun ⟨_, h, _⟩ => h⟩
 
-/-- **Exercise 3.15(3).** For a partial function of several arguments with domain $`A`, a set
-of tuples, the domain of the extension is the enlargement of $`A` as a relation. -/
+/-- **Exercise 3.15(3), tuple-packed form.** For a partial function of several arguments with
+domain $`A`, a set of tuples, the domain of the extension is the enlargement of $`A` as a
+relation. The graph is again treated as a binary relation between a packed tuple and a
+value. -/
 theorem starRel_dom_partial {ι : Type*} {A : Set (ι → α)} (f : A → β) :
     (starRel A : Set (ι → αS)) =
       {x | ∃ y : βS, ⋆(fun a b => ∃ h : a ∈ A, f ⟨a, h⟩ = b) (Ultrapower.tuple x) y} := by

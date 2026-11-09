@@ -385,11 +385,11 @@ class StarType (α : Type u) (αS : outParam (Type u)) where
   /-- The identification of the star type with the ultrapower. -/
   equiv : αS ≃ Ultrapower α
 
-/-- The star type of a general type is its ultrapower. -/
+/-- **Section 3.6, convention.** The star type of a general type is its ultrapower. -/
 instance (priority := low) instStarTypeUltrapower (α : Type u) : StarType α (Ultrapower α) :=
   ⟨Equiv.refl _⟩
 
-/-- The star type of the reals is the type of hyperreals. -/
+/-- **Section 3.6, convention.** The star type of the reals is the type of hyperreals. -/
 instance instStarTypeReal : StarType ℝ ℝ* := ⟨Equiv.refl _⟩
 
 namespace Ultrapower
@@ -405,7 +405,7 @@ standard element inside the star type. For a real number this is the coercion in
 hyperreals. -/
 def of (a : α) : αS := StarType.equiv.symm (Germ.const a)
 
-/-- The identification of the star type with the ultrapower sends the class of a sequence to
+/-- **Section 3.6.** The identification of the star type with the ultrapower sends the class of a sequence to
 its germ. -/
 theorem equiv_ofSeq (r : ℕ → α) : StarType.equiv (ofSeq r : αS) = Germ.ofFun r :=
   Equiv.apply_symm_apply _ _
@@ -452,11 +452,12 @@ theorem of_injective : Function.Injective (of : α → αS) := fun _ _ h => of_i
 
 end Ultrapower
 
-/-- In the ultrapower itself, the class of a sequence is its germ. -/
+/-- **Section 3.6.** In the ultrapower itself, the class of a sequence is its germ. -/
 theorem Ultrapower.ofSeq_ultrapower {α : Type*} (r : ℕ → α) :
     (Ultrapower.ofSeq r : Ultrapower α) = Germ.ofFun r := rfl
 
-/-- In the ultrapower itself, the copy of a standard element is the constant germ. -/
+/-- **Section 3.7.** In the ultrapower itself, the copy of a standard element is the constant
+germ. -/
 theorem Ultrapower.of_ultrapower {α : Type*} (a : α) :
     (Ultrapower.of a : Ultrapower α) = Germ.const a := rfl
 
@@ -852,6 +853,21 @@ theorem const_bijective_of_principal (j : ℕ) :
   refine ⟨fun a b h => Germ.const_inj.1 h, fun x => ?_⟩
   induction x using Germ.inductionOn with
   | _ f => exact ⟨f j, Germ.coe_eq.2 (by simp [EventuallyEq])⟩
+
+/-- **Section 3.8, principal ultrafilters give nothing new.** With the principal ultrafilter
+at an index $`j`, the inclusion of the reals is an isomorphism of ordered fields from the reals
+onto the ultrapower: it is a bijection that preserves sums, products and the order. So a
+principal ultrafilter produces only a copy of the reals. -/
+noncomputable def constOrderRingIsoOfPrincipal (j : ℕ) : ℝ ≃+*o Germ (pure j : Filter ℕ) ℝ where
+  toEquiv := Equiv.ofBijective _ (const_bijective_of_principal j)
+  map_add' _ _ := rfl
+  map_mul' _ _ := rfl
+  map_le_map_iff' := Germ.const_le_iff
+
+/-- **Section 3.8.** The isomorphism {name}`Goldblatt.constOrderRingIsoOfPrincipal` is the
+inclusion of the reals as classes of constant sequences. -/
+theorem constOrderRingIsoOfPrincipal_apply (j : ℕ) (r : ℝ) :
+    constOrderRingIsoOfPrincipal j r = Germ.const r := rfl
 
 /-- **Section 3.8, nonprincipal ultrafilters always give something new.** For any nonprincipal
 ultrafilter on the natural numbers, the class of the identity sequence in the corresponding

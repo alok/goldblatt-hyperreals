@@ -36,6 +36,27 @@ overview and the index.
   functions and its exercises, partial functions and hypersequences, the enlargement of
   relations of any finite arity and its exercises, and the discussion of uniqueness.
 
+## The sections of the chapter
+
+Each section of the book's chapter is a section of one of the three parts, under the same number.
+
+* 3.1 The Ring of Real-Valued Sequences (part 1).
+* 3.2 Equivalence Modulo an Ultrafilter (part 1).
+* 3.3 Exercises on Almost-Everywhere Agreement (part 1).
+* 3.4 A Suggestive Logical Notation (part 1).
+* 3.5 Exercises on Statement Values (part 1).
+* 3.6 The Ultrapower (part 1).
+* 3.7 Including the Reals in the Hyperreals (part 1).
+* 3.8 Infinitesimals and Unlimited Numbers (part 1).
+* 3.9 Enlarging Sets (part 2).
+* 3.10 Exercises on Enlargement (part 2).
+* 3.11 Extending Functions (part 3).
+* 3.12 Exercises on Extensions (part 3).
+* 3.13 Partial Functions and Hypersequences (part 3).
+* 3.14 Enlarging Relations (part 3).
+* 3.15 Exercises on Enlarged Relations (part 3).
+* 3.16 Is the Hyperreal System Unique? (part 3).
+
 ## Conventions of the formalization
 
 * The index ultrafilter is Mathlib's {name}`Filter.hyperfilter` on the natural numbers, as fixed
@@ -56,6 +77,17 @@ overview and the index.
   live, is named by the class {name}`Goldblatt.StarType`: it is the type of hyperreals for the
   reals and the ultrapower for every other type. All definitions and theorems are stated for an
   arbitrary star type, so one statement serves both.
+* Consequently the enlargement {name}`Goldblatt.starSet` of a set of elements of a type does not
+  have the fixed type "set of germs". For a set of reals it is a set of hyperreals, typed
+  {lit}`Set ℝ*`. For a set in any other type, including the type of pairs of reals, the type of
+  tuples of reals and the type of natural numbers, it is a set in the ultrapower
+  {lit}`Ultrapower _` of that type. The hyperreals and the ultrapower of the reals are the same
+  type by definition, and both instances use the identity identification, so nothing is lost;
+  but statements should be written against the star type and not against a type of germs.
+* The notation {lit}`⋆` elaborates its argument without looking at the type expected of the
+  result, so the star type is always the one found by instance resolution from the type of the
+  argument: writing a type ascription around {lit}`⋆A` does not change which star type is
+  chosen, it only has to agree with it up to unfolding.
 * The book's prefix star is the notation {lit}`⋆`: {lit}`⋆A` is the enlargement
   {name}`Goldblatt.starSet` of a set, {lit}`⋆f` the extension {name}`Goldblatt.starMap` of a
   function, and for a two-place function or relation it produces {name}`Goldblatt.starMap₂` or

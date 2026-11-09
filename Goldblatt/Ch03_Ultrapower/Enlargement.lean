@@ -71,7 +71,7 @@ $`[r], [s]` when $`P(r_n, s_n)` for almost all $`n`. Written {lit}`⋆P`. -/
 def starRel₂ (P : α → β → Prop) : αS → βS → Prop :=
   fun x y => Germ.LiftRel P (StarType.equiv x) (StarType.equiv y)
 
-/-- The book's prefix star. Applied to a set it is the enlargement {lit}`starSet`; applied to a
+/-- **Sections 3.9, 3.11 and 3.14, notation.** The book's prefix star. Applied to a set it is the enlargement {lit}`starSet`; applied to a
 function of one argument it is the extension {lit}`starMap`; applied to a function of two
 arguments it is {lit}`starMap₂`; applied to a binary relation it is {lit}`starRel₂`. -/
 scoped syntax:max "⋆" term:max : term
@@ -94,20 +94,20 @@ elab_rules : term
       | _, _ => throwError "⋆: expected a set, a function of one or two arguments, or a \
           binary relation, but{indentExpr e}\nhas type{indentExpr t}"
 
-/-- Display {lit}`starSet A` as {lit}`⋆A`. -/
+/-- **Section 3.9, notation.** Display {lit}`starSet A` as {lit}`⋆A`. -/
 @[app_unexpander Goldblatt.starSet]
 def unexpandStarSet : Lean.PrettyPrinter.Unexpander
   | `($_ $A) => `(⋆ $A)
   | _ => throw ()
 
-/-- Display {lit}`starMap f` as {lit}`⋆f`. -/
+/-- **Section 3.11, notation.** Display {lit}`starMap f` as {lit}`⋆f`. -/
 @[app_unexpander Goldblatt.starMap]
 def unexpandStarMap : Lean.PrettyPrinter.Unexpander
   | `($_ $f) => `(⋆ $f)
   | `($_ $f $x) => `(⋆ $f $x)
   | _ => throw ()
 
-/-- Display {lit}`starMap₂ f` as {lit}`⋆f`. -/
+/-- **Section 3.12, notation.** Display {lit}`starMap₂ f` as {lit}`⋆f`. -/
 @[app_unexpander Goldblatt.starMap₂]
 def unexpandStarMap₂ : Lean.PrettyPrinter.Unexpander
   | `($_ $f) => `(⋆ $f)
@@ -115,7 +115,7 @@ def unexpandStarMap₂ : Lean.PrettyPrinter.Unexpander
   | `($_ $f $x $y) => `(⋆ $f $x $y)
   | _ => throw ()
 
-/-- Display {lit}`starRel₂ P` as {lit}`⋆P`. -/
+/-- **Section 3.14, notation.** Display {lit}`starRel₂ P` as {lit}`⋆P`. -/
 @[app_unexpander Goldblatt.starRel₂]
 def unexpandStarRel₂ : Lean.PrettyPrinter.Unexpander
   | `($_ $f) => `(⋆ $f)
@@ -598,7 +598,8 @@ theorem mul_mem_hyperNat {x y : ℝ*} (hx : x ∈ ℕ*) (hy : y ∈ ℕ*) : x * 
   mul_mem_starSet (by rintro _ ⟨a, rfl⟩ _ ⟨b, rfl⟩; exact ⟨a * b, by push_cast; rfl⟩) hx hy
 
 /-- **Exercise 3.10(7).** $`{}^*\mathbb Z` is a subring of the hyperreals: it contains $`0` and
-$`1` and is closed under addition, negation and multiplication. -/
+$`1` and is closed under addition, negation and multiplication. (The exercise asks for closure
+under addition, multiplication and subtraction, which this gives.) -/
 def hyperIntSubring : Subring ℝ* where
   carrier := ℤ*
   zero_mem' := by simpa using intCast_mem_hyperInt 0
