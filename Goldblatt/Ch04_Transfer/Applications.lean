@@ -51,39 +51,52 @@ section FreeVars
 
 variable {S : Type u}
 
+/-- **Section 4.3.** The only variable of a variable is itself. -/
 @[simp] theorem Term.vars_var (x : ℕ) : (var x : Term S).vars = {x} := rfl
 
+/-- **Section 4.3.** A constant has no variables. -/
 @[simp] theorem Term.vars_const (s : S) : (const s).vars = ∅ := rfl
 
+/-- **Section 4.3.** The variables of $`f(\tau)` are those of $`\tau`. -/
 @[simp] theorem Term.vars_app₁ (f : S → S) (t : Term S) : (app₁ f t).vars = t.vars := by
   ext x
   simp [app₁, vars]
 
+/-- **Section 4.3.** The variables of $`f(\tau_1, \tau_2)` are those of the two arguments. -/
 @[simp] theorem Term.vars_app₂ (f : S → S → S) (t u : Term S) :
     (app₂ f t u).vars = t.vars ∪ u.vars := by
   ext x
   simp [app₂, vars, Fin.exists_fin_two]
 
+/-- **Section 4.3.** For a partial function $`f`, the variables of $`f(\tau)` are those of $`\tau`.
+-/
 @[simp] theorem Term.vars_papp₁ (A : Set S) (f : A → S) (t : Term S) :
     (papp₁ A f t).vars = t.vars := by
   ext x
   simp [papp₁, vars]
 
+/-- **Section 4.3.** The free variables of $`\tau \in A` are the variables of $`\tau`. -/
 @[simp] theorem Formula.freeVars_mem (t : Term S) (A : Set S) : (mem t A).freeVars = t.vars := by
   ext x
   simp [mem, freeVars]
 
+/-- **Section 4.3.** The free variables of $`P(\tau_1, \tau_2)` are the variables of the two terms.
+-/
 @[simp] theorem Formula.freeVars_rel₂ (P : S → S → Prop) (t u : Term S) :
     (rel₂ P t u).freeVars = t.vars ∪ u.vars := by
   ext x
   simp [rel₂, freeVars, Fin.exists_fin_two]
 
+/-- **Section 4.3.** The free variables of $`\tau_1 = \tau_2` are the variables of the two terms. -/
 @[simp] theorem Formula.freeVars_eq (t u : Term S) : (eq t u).freeVars = t.vars ∪ u.vars :=
   freeVars_rel₂ _ t u
 
+/-- **Section 4.3.** The free variables of $`\tau_1 < \tau_2` are the variables of the two terms. -/
 @[simp] theorem Formula.freeVars_lt (t u : Term ℝ) : (lt t u).freeVars = t.vars ∪ u.vars :=
   freeVars_rel₂ _ t u
 
+/-- **Section 4.3.** The free variables of $`\tau_1 \le \tau_2` are the variables of the two terms.
+-/
 @[simp] theorem Formula.freeVars_le (t u : Term ℝ) : (le t u).freeVars = t.vars ∪ u.vars :=
   freeVars_rel₂ _ t u
 
@@ -323,18 +336,23 @@ def Formula.anyEq (t : Term S) : S → List S → Formula S
   | r, [] => eq t (const r)
   | r, r' :: l => or (eq t (const r)) (anyEq t r' l)
 
+/-- **Section 4.1, example 3.** The disjunction $`\tau = r_1 \lor \dots \lor \tau = r_k` is true
+when $`\tau` names one of the listed elements. -/
 theorem Formula.holds_anyEq {t : Term S} {v : Valuation S} (r : S) (l : List S) :
     (anyEq t r l).Holds v ↔ ∃ a, t.Names v a ∧ a ∈ r :: l := by
   induction l generalizing r with
   | nil => simp [anyEq]
   | cons r' l ih => simp [anyEq, ih r', and_or_left, exists_or]
 
+/-- **Section 4.1, example 3.** The disjunction is defined when $`\tau` is. -/
 theorem Formula.defined_anyEq {t : Term S} {v : Valuation S} (r : S) (l : List S) :
     (anyEq t r l).Defined v ↔ t.Defined v := by
   induction l generalizing r with
   | nil => simp [anyEq]
   | cons r' l ih => simp [anyEq, ih r']
 
+/-- **Section 4.1, example 3.** The transform of the disjunction is true when the transform of
+$`\tau` names the standard copy of one of the listed elements. -/
 theorem Formula.holds_star_anyEq {t : Term α} {v : Valuation αS} (r : α) (l : List α) :
     ((anyEq t r l).star : Formula αS).Holds v ↔
       ∃ a, (t.star : Term αS).Names v a ∧ ∃ b ∈ r :: l, of b = a := by
@@ -342,6 +360,8 @@ theorem Formula.holds_star_anyEq {t : Term α} {v : Valuation αS} (r : α) (l :
   | nil => simp [anyEq]
   | cons r' l ih => simp [anyEq, ih r', and_or_left, exists_or]
 
+/-- **Section 4.1, example 3.** The transform of the disjunction is defined when the transform of
+$`\tau` is. -/
 theorem Formula.defined_star_anyEq {t : Term α} {v : Valuation αS} (r : α) (l : List α) :
     ((anyEq t r l).star : Formula αS).Defined v ↔ (t.star : Term αS).Defined v := by
   induction l generalizing r with
@@ -716,6 +736,8 @@ variable, is essential, because a sentence containing $`\omega` is not the trans
 natural numbers. -/
 noncomputable def seqFun (s : ℕ → ℝ) : ℕᵣ → ℝ := fun x => s ⌊(x : ℝ)⌋₊
 
+/-- **Section 4.5.** The partial function of a sequence takes the value $`s_n` at the natural number
+$`n`. -/
 theorem seqFun_natCast (s : ℕ → ℝ) (n : ℕ) : seqFun s ⟨n, n, rfl⟩ = s n := by
   simp [seqFun]
 

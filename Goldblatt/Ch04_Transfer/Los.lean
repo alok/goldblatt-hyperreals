@@ -54,6 +54,8 @@ def eval (r : SeqValuation α) (n : ℕ) : Valuation α := fun x => (r x).map fu
 /-- **Section 4.6.** The assignment of constant sequences that corresponds to a valuation. -/
 def const (v : Valuation α) : SeqValuation α := fun x => (v x).map fun a _ => a
 
+/-- **Section 4.6.** Giving a variable the class of a sequence, after taking classes, is the same as
+assigning it the sequence first. -/
 theorem germ_update_some (r : SeqValuation α) (x : ℕ) (s : ℕ → α) :
     update (r.germ : Valuation αS) x (some (ofSeq s)) = germ (update r x (some s)) := by
   funext y
@@ -62,6 +64,7 @@ theorem germ_update_some (r : SeqValuation α) (x : ℕ) (s : ℕ → α) :
     simp [germ]
   · simp [germ, update_of_ne h]
 
+/-- **Section 4.6.** Taking the value away from a variable commutes with taking classes. -/
 theorem germ_update_none (r : SeqValuation α) (x : ℕ) :
     update (r.germ : Valuation αS) x none = germ (update r x none) := by
   funext y
@@ -70,6 +73,8 @@ theorem germ_update_none (r : SeqValuation α) (x : ℕ) :
     simp [germ]
   · simp [germ, update_of_ne h]
 
+/-- **Section 4.6.** Giving a variable the $`n`-th term of a sequence, at the index $`n`, is the
+same as assigning it the sequence first. -/
 theorem eval_update_some (r : SeqValuation α) (x : ℕ) (s : ℕ → α) (n : ℕ) :
     update (r.eval n) x (some (s n)) = eval (update r x (some s)) n := by
   funext y
@@ -78,6 +83,8 @@ theorem eval_update_some (r : SeqValuation α) (x : ℕ) (s : ℕ → α) (n : �
     simp [eval]
   · simp [eval, update_of_ne h]
 
+/-- **Section 4.6.** Taking the value away from a variable commutes with passing to the index $`n`.
+-/
 theorem eval_update_none (r : SeqValuation α) (x : ℕ) (n : ℕ) :
     update (r.eval n) x none = eval (update r x none) n := by
   funext y
@@ -86,18 +93,22 @@ theorem eval_update_none (r : SeqValuation α) (x : ℕ) (n : ℕ) :
     simp [eval]
   · simp [eval, update_of_ne h]
 
+/-- **Section 4.6.** The assignment of constant sequences gives back the valuation at every index.
+-/
 @[simp]
 theorem eval_const (v : Valuation α) (n : ℕ) : (const v).eval n = v := by
   funext x
   simp only [eval, const, Option.map_map]
   exact Option.map_id'
 
+/-- **Section 4.6.** The classes of the constant sequences are the standard copies of the values. -/
 theorem germ_const (v : Valuation α) :
     ((const v).germ : Valuation αS) = fun x => (v x).map of := by
   funext x
   simp only [germ, const, Option.map_map]
   rfl
 
+/-- **Section 4.6.** The empty assignment of sequences yields the empty valuation. -/
 @[simp]
 theorem germ_const_empty :
     ((const (Valuation.empty : Valuation α)).germ : Valuation αS) = Valuation.empty := rfl

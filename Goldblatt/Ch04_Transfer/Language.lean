@@ -242,6 +242,7 @@ abbrev Valuation (S : Type u) : Type u := ℕ → Option S
 it. -/
 def Valuation.empty {S : Type u} : Valuation S := fun _ => none
 
+/-- **Section 4.3.** The empty valuation gives no variable a value. -/
 @[simp]
 theorem Valuation.empty_apply {S : Type u} (x : ℕ) : (Valuation.empty : Valuation S) x = none :=
   rfl
@@ -260,12 +261,15 @@ def Names : Term S → Valuation S → S → Prop
   | func A f ts, v, a =>
       ∃ args, (∀ i, (ts i).Names v (args i)) ∧ ∃ h : args ∈ A, f ⟨args, h⟩ = a
 
+/-- **Section 4.3.** A variable names its value, if it has one. -/
 @[simp] theorem names_var {x : ℕ} {v : Valuation S} {a : S} :
     (var x).Names v a ↔ v x = some a := Iff.rfl
 
+/-- **Section 4.3.** A constant names itself. -/
 @[simp] theorem names_const {s : S} {v : Valuation S} {a : S} :
     (const s).Names v a ↔ s = a := Iff.rfl
 
+/-- **Section 4.3.** Unfolding of what a function symbol applied to terms names. -/
 theorem names_func {m : ℕ} {A : Set (Fin m → S)} {f : A → S} {ts : Fin m → Term S}
     {v : Valuation S} {a : S} :
     (func A f ts).Names v a ↔
@@ -279,11 +283,14 @@ def Closed : Term S → Valuation S → Prop
   | const _, _ => True
   | func _ _ ts, v => ∀ i, (ts i).Closed v
 
+/-- **Section 4.3.** A variable is closed when it has a value. -/
 @[simp] theorem closed_var {x : ℕ} {v : Valuation S} : (var x : Term S).Closed v ↔ v x ≠ none :=
   Iff.rfl
 
+/-- **Section 4.3.** A constant is closed. -/
 @[simp] theorem closed_const {s : S} {v : Valuation S} : (const s).Closed v := trivial
 
+/-- **Section 4.3.** A function symbol applied to terms is closed when the terms are. -/
 theorem closed_func {m : ℕ} {A : Set (Fin m → S)} {f : A → S} {ts : Fin m → Term S}
     {v : Valuation S} : (func A f ts).Closed v ↔ ∀ i, (ts i).Closed v := Iff.rfl
 
@@ -299,10 +306,13 @@ def Defined : Term S → Valuation S → Prop
   | func A f ts, v =>
       (∀ i, (ts i).Defined v) ∧ ((∀ i, (ts i).Closed v) → (func A f ts).Denotes v)
 
+/-- **Section 4.3.** A variable is defined: it has no closed subterm unless it has a value. -/
 @[simp] theorem defined_var {x : ℕ} {v : Valuation S} : (var x : Term S).Defined v := trivial
 
+/-- **Section 4.3.** A constant is defined. -/
 @[simp] theorem defined_const {s : S} {v : Valuation S} : (const s).Defined v := trivial
 
+/-- **Section 4.3.** Unfolding of definedness for a function symbol applied to terms. -/
 theorem defined_func {m : ℕ} {A : Set (Fin m → S)} {f : A → S} {ts : Fin m → Term S}
     {v : Valuation S} :
     (func A f ts).Defined v ↔
@@ -452,24 +462,40 @@ section simp
 variable {k : ℕ} {P : Set (Fin k → S)} {ts : Fin k → Term S} {φ ψ : Formula S}
   {v : Valuation S} {x : ℕ} {B : Set S}
 
+/-- **Section 4.3.** Unfolding of definedness for an atomic formula. -/
 theorem defined_rel : (rel P ts).Defined v ↔ ∀ i, (ts i).Defined v := Iff.rfl
+/-- **Section 4.3.** Unfolding of definedness for a conjunction. -/
 @[simp] theorem defined_and : (and φ ψ).Defined v ↔ φ.Defined v ∧ ψ.Defined v := Iff.rfl
+/-- **Section 4.3.** Unfolding of definedness for a disjunction. -/
 @[simp] theorem defined_or : (or φ ψ).Defined v ↔ φ.Defined v ∧ ψ.Defined v := Iff.rfl
+/-- **Section 4.3.** Unfolding of definedness for a negation. -/
 @[simp] theorem defined_not : (not φ).Defined v ↔ φ.Defined v := Iff.rfl
+/-- **Section 4.3.** Unfolding of definedness for an implication. -/
 @[simp] theorem defined_imp : (imp φ ψ).Defined v ↔ φ.Defined v ∧ ψ.Defined v := Iff.rfl
+/-- **Section 4.3.** Unfolding of definedness for a biconditional. -/
 @[simp] theorem defined_iff : (iff φ ψ).Defined v ↔ φ.Defined v ∧ ψ.Defined v := Iff.rfl
+/-- **Section 4.3.** Unfolding of definedness for a bounded universal quantifier. -/
 @[simp] theorem defined_all : (all x B φ).Defined v ↔ φ.Defined (update v x none) := Iff.rfl
+/-- **Section 4.3.** Unfolding of definedness for a bounded existential quantifier. -/
 @[simp] theorem defined_ex : (ex x B φ).Defined v ↔ φ.Defined (update v x none) := Iff.rfl
 
+/-- **Section 4.3.** Unfolding of the truth condition for an atomic formula. -/
 theorem holds_rel :
     (rel P ts).Holds v ↔ ∃ args, (∀ i, (ts i).Names v (args i)) ∧ args ∈ P := Iff.rfl
+/-- **Section 4.3.** Unfolding of the truth condition for a conjunction. -/
 @[simp] theorem holds_and : (and φ ψ).Holds v ↔ φ.Holds v ∧ ψ.Holds v := Iff.rfl
+/-- **Section 4.3.** Unfolding of the truth condition for a disjunction. -/
 @[simp] theorem holds_or : (or φ ψ).Holds v ↔ φ.Holds v ∨ ψ.Holds v := Iff.rfl
+/-- **Section 4.3.** Unfolding of the truth condition for a negation. -/
 @[simp] theorem holds_not : (not φ).Holds v ↔ ¬φ.Holds v := Iff.rfl
+/-- **Section 4.3.** Unfolding of the truth condition for an implication. -/
 @[simp] theorem holds_imp : (imp φ ψ).Holds v ↔ (φ.Holds v → ψ.Holds v) := Iff.rfl
+/-- **Section 4.3.** Unfolding of the truth condition for a biconditional. -/
 @[simp] theorem holds_iff : (iff φ ψ).Holds v ↔ (φ.Holds v ↔ ψ.Holds v) := Iff.rfl
+/-- **Section 4.3.** Unfolding of the truth condition for a bounded universal quantifier. -/
 @[simp] theorem holds_all : (all x B φ).Holds v ↔
     ∀ a ∈ B, φ.Defined (update v x (some a)) → φ.Holds (update v x (some a)) := Iff.rfl
+/-- **Section 4.3.** Unfolding of the truth condition for a bounded existential quantifier. -/
 @[simp] theorem holds_ex : (ex x B φ).Holds v ↔
     ∃ a ∈ B, φ.Defined (update v x (some a)) ∧ φ.Holds (update v x (some a)) := Iff.rfl
 
@@ -498,6 +524,8 @@ def IsDefined (φ : Formula S) : Prop := φ.Defined Valuation.empty
 valuation. -/
 def IsTrue (φ : Formula S) : Prop := φ.Holds Valuation.empty
 
+/-- **Section 4.3.** Two valuations that agree on a set of variables other than $`x` agree on the
+whole set once $`x` is treated the same way in both. -/
 theorem update_congr_of_diff {v w : Valuation S} {F : Set ℕ} {x : ℕ}
     (h : ∀ y ∈ F \ {x}, v y = w y) (o : Option S) : ∀ y ∈ F, update v x o y = update w x o y := by
   intro y hy
@@ -578,6 +606,8 @@ def subst (x : ℕ) (s : S) : Term S → Term S
   | const c => const c
   | func A f ts => func A f fun i => (ts i).subst x s
 
+/-- **Section 4.3.** What a term names after the constant $`s` is substituted for $`x` is what it
+names when $`x` is given the value $`s`. -/
 theorem names_subst {x : ℕ} {s : S} {t : Term S} {v : Valuation S} {a : S} :
     (t.subst x s).Names v a ↔ t.Names (update v x (some s)) a := by
   induction t generalizing a with
@@ -589,6 +619,8 @@ theorem names_subst {x : ℕ} {s : S} {t : Term S} {v : Valuation S} {a : S} :
   | const c => rfl
   | func A f ts ih => simp only [subst, names_func, ih]
 
+/-- **Section 4.3.** Substituting a constant for $`x` and giving $`x` a value have the same effect
+on closedness. -/
 theorem closed_subst {x : ℕ} {s : S} {t : Term S} {v : Valuation S} :
     (t.subst x s).Closed v ↔ t.Closed (update v x (some s)) := by
   induction t with
@@ -600,6 +632,8 @@ theorem closed_subst {x : ℕ} {s : S} {t : Term S} {v : Valuation S} :
   | const c => rfl
   | func A f ts ih => simp only [subst, closed_func, ih]
 
+/-- **Section 4.3.** Substituting a constant for $`x` and giving $`x` a value have the same effect
+on definedness of a term. -/
 theorem defined_subst {x : ℕ} {s : S} {t : Term S} {v : Valuation S} :
     (t.subst x s).Defined v ↔ t.Defined (update v x (some s)) := by
   induction t with
@@ -778,26 +812,32 @@ section generic
 
 variable {v : Valuation S} {t u : Term S} {c : S}
 
+/-- **Section 4.3.** What a function symbol of one argument applied to a term names. -/
 theorem names_func_one {A : Set (Fin 1 → S)} {g : A → S} :
     (func A g ![t]).Names v c ↔
       ∃ a, t.Names v a ∧ ∃ h : (fun _ => a) ∈ A, g ⟨fun _ => a, h⟩ = c := by
   rw [names_func, exists_fin_one_pi]
   simp only [Fin.forall_fin_one, Matrix.cons_val_zero]
 
+/-- **Section 4.3.** What a function symbol of two arguments applied to terms names. -/
 theorem names_func_two {A : Set (Fin 2 → S)} {g : A → S} :
     (func A g ![t, u]).Names v c ↔
       ∃ a b, t.Names v a ∧ u.Names v b ∧ ∃ h : ![a, b] ∈ A, g ⟨![a, b], h⟩ = c := by
   rw [names_func, exists_fin_two_pi]
   simp only [Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one, and_assoc]
 
+/-- **Section 4.3.** Closedness for a function symbol of one argument. -/
 theorem closed_func_one {A : Set (Fin 1 → S)} {g : A → S} :
     (func A g ![t]).Closed v ↔ t.Closed v := by
   simp only [closed_func, Fin.forall_fin_one, Matrix.cons_val_zero]
 
+/-- **Section 4.3.** Closedness for a function symbol of two arguments. -/
 theorem closed_func_two {A : Set (Fin 2 → S)} {g : A → S} :
     (func A g ![t, u]).Closed v ↔ t.Closed v ∧ u.Closed v := by
   simp only [closed_func, Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one]
 
+/-- **Section 4.3.** Definedness for a function symbol of one argument: the argument is defined and,
+if it is closed, what it names lies in the domain. -/
 theorem defined_func_one {A : Set (Fin 1 → S)} {g : A → S} :
     (func A g ![t]).Defined v ↔
       t.Defined v ∧ (t.Closed v → ∃ a, t.Names v a ∧ (fun _ => a) ∈ A) := by
@@ -806,6 +846,8 @@ theorem defined_func_one {A : Set (Fin 1 → S)} {g : A → S} :
   refine and_congr_right fun _ => imp_congr_right fun _ => ?_
   exact ⟨fun ⟨_, a, ha, h, _⟩ => ⟨a, ha, h⟩, fun ⟨a, ha, h⟩ => ⟨_, a, ha, h, rfl⟩⟩
 
+/-- **Section 4.3.** Definedness for a function symbol of two arguments: the arguments are defined
+and, if they are closed, the pair they name lies in the domain. -/
 theorem defined_func_two {A : Set (Fin 2 → S)} {g : A → S} :
     (func A g ![t, u]).Defined v ↔ t.Defined v ∧ u.Defined v ∧
       (t.Closed v → u.Closed v → ∃ a b, t.Names v a ∧ u.Names v b ∧ ![a, b] ∈ A) := by
@@ -823,25 +865,33 @@ section helpers
 
 variable {v : Valuation S} {t u : Term S} {c : S}
 
+/-- **Section 4.3.** $`f(\tau)` names $`f(a)` when $`\tau` names $`a`. -/
 @[simp] theorem names_app₁ {f : S → S} :
     (app₁ f t).Names v c ↔ ∃ a, t.Names v a ∧ f a = c := by
   simp only [app₁, names_func_one, mem_univ, exists_true_left]
 
+/-- **Section 4.3.** $`f(\tau_1, \tau_2)` names $`f(a, b)` when $`\tau_1` names $`a` and $`\tau_2`
+names $`b`. -/
 @[simp] theorem names_app₂ {f : S → S → S} :
     (app₂ f t u).Names v c ↔ ∃ a b, t.Names v a ∧ u.Names v b ∧ f a b = c := by
   simp only [app₂, names_func_two, mem_univ, exists_true_left, Matrix.cons_val_zero,
     Matrix.cons_val_one]
 
+/-- **Section 4.3.** For a partial function $`f`, the term $`f(\tau)` names $`f(a)` when $`\tau`
+names an element $`a` of the domain. -/
 @[simp] theorem names_papp₁ {A : Set S} {f : A → S} :
     (papp₁ A f t).Names v c ↔ ∃ a, t.Names v a ∧ ∃ h : a ∈ A, f ⟨a, h⟩ = c := by
   simp only [papp₁, names_func_one]
   rfl
 
+/-- **Section 4.3.** $`f(\tau)` is closed when $`\tau` is. -/
 @[simp] theorem closed_app₁ {f : S → S} : (app₁ f t).Closed v ↔ t.Closed v := closed_func_one
 
+/-- **Section 4.3.** $`f(\tau_1, \tau_2)` is closed when both arguments are. -/
 @[simp] theorem closed_app₂ {f : S → S → S} :
     (app₂ f t u).Closed v ↔ t.Closed v ∧ u.Closed v := closed_func_two
 
+/-- **Section 4.3.** For a partial function $`f`, the term $`f(\tau)` is closed when $`\tau` is. -/
 @[simp] theorem closed_papp₁ {A : Set S} {f : A → S} : (papp₁ A f t).Closed v ↔ t.Closed v :=
   closed_func_one
 
@@ -853,6 +903,8 @@ is. -/
   obtain ⟨a, ha⟩ := hd.denotes hc
   exact ⟨a, ha, mem_univ _⟩
 
+/-- **Section 4.3.** A term built with a total function of two arguments is defined as soon as its
+arguments are. -/
 @[simp] theorem defined_app₂ {f : S → S → S} :
     (app₂ f t u).Defined v ↔ t.Defined v ∧ u.Defined v := by
   rw [app₂, defined_func_two, ← and_assoc]
@@ -900,19 +952,23 @@ section generic
 
 variable {v : Valuation S} {t u : Term S}
 
+/-- **Section 4.3.** Truth of an atomic formula with a unary relation. -/
 theorem holds_rel_one {P : Set (Fin 1 → S)} :
     (rel P ![t]).Holds v ↔ ∃ a, t.Names v a ∧ (fun _ => a) ∈ P := by
   rw [holds_rel, exists_fin_one_pi]
   simp only [Fin.forall_fin_one, Matrix.cons_val_zero]
 
+/-- **Section 4.3.** Truth of an atomic formula with a binary relation. -/
 theorem holds_rel_two {P : Set (Fin 2 → S)} :
     (rel P ![t, u]).Holds v ↔ ∃ a b, t.Names v a ∧ u.Names v b ∧ ![a, b] ∈ P := by
   rw [holds_rel, exists_fin_two_pi]
   simp only [Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one, and_assoc]
 
+/-- **Section 4.3.** An atomic formula with a unary relation is defined when its term is. -/
 theorem defined_rel_one {P : Set (Fin 1 → S)} : (rel P ![t]).Defined v ↔ t.Defined v := by
   simp only [defined_rel, Fin.forall_fin_one, Matrix.cons_val_zero]
 
+/-- **Section 4.3.** An atomic formula with a binary relation is defined when its terms are. -/
 theorem defined_rel_two {P : Set (Fin 2 → S)} :
     (rel P ![t, u]).Defined v ↔ t.Defined v ∧ u.Defined v := by
   simp only [defined_rel, Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one]
@@ -923,34 +979,44 @@ section helpers
 
 variable {v : Valuation S} {t u : Term S}
 
+/-- **Section 4.3.** $`\tau \in A` is true when $`\tau` names a member of $`A`. -/
 @[simp] theorem holds_mem {A : Set S} : (mem t A).Holds v ↔ ∃ a, t.Names v a ∧ a ∈ A :=
   holds_rel_one
 
+/-- **Section 4.3.** $`P(\tau_1, \tau_2)` is true when the terms name elements related by $`P`. -/
 @[simp] theorem holds_rel₂ {P : S → S → Prop} :
     (rel₂ P t u).Holds v ↔ ∃ a b, t.Names v a ∧ u.Names v b ∧ P a b :=
   holds_rel_two
 
+/-- **Section 4.3.** $`\tau_1 = \tau_2` is true when the terms name the same element. -/
 @[simp] theorem holds_eq : (eq t u).Holds v ↔ ∃ a b, t.Names v a ∧ u.Names v b ∧ a = b :=
   holds_rel_two
 
+/-- **Section 4.3.** $`\tau_1 < \tau_2` is true when the terms name reals in that order. -/
 @[simp] theorem holds_lt {t u : Term ℝ} {v : Valuation ℝ} :
     (lt t u).Holds v ↔ ∃ a b, t.Names v a ∧ u.Names v b ∧ a < b :=
   holds_rel_two
 
+/-- **Section 4.3.** $`\tau_1 \le \tau_2` is true when the terms name reals in that order. -/
 @[simp] theorem holds_le {t u : Term ℝ} {v : Valuation ℝ} :
     (le t u).Holds v ↔ ∃ a b, t.Names v a ∧ u.Names v b ∧ a ≤ b :=
   holds_rel_two
 
+/-- **Section 4.3.** $`\tau \in A` is defined when $`\tau` is. -/
 @[simp] theorem defined_mem {A : Set S} : (mem t A).Defined v ↔ t.Defined v := defined_rel_one
 
+/-- **Section 4.3.** $`P(\tau_1, \tau_2)` is defined when both terms are. -/
 @[simp] theorem defined_rel₂ {P : S → S → Prop} :
     (rel₂ P t u).Defined v ↔ t.Defined v ∧ u.Defined v := defined_rel_two
 
+/-- **Section 4.3.** $`\tau_1 = \tau_2` is defined when both terms are. -/
 @[simp] theorem defined_eq : (eq t u).Defined v ↔ t.Defined v ∧ u.Defined v := defined_rel_two
 
+/-- **Section 4.3.** $`\tau_1 < \tau_2` is defined when both terms are. -/
 @[simp] theorem defined_lt {t u : Term ℝ} {v : Valuation ℝ} :
     (lt t u).Defined v ↔ t.Defined v ∧ u.Defined v := defined_rel_two
 
+/-- **Section 4.3.** $`\tau_1 \le \tau_2` is defined when both terms are. -/
 @[simp] theorem defined_le {t u : Term ℝ} {v : Valuation ℝ} :
     (le t u).Defined v ↔ t.Defined v ∧ u.Defined v := defined_rel_two
 
@@ -1106,30 +1172,41 @@ section StarNotation
 
 variable {α αS : Type u} [StarType α αS]
 
+/-- **Section 4.4.** The star-transform leaves a variable alone. -/
 @[simp] theorem Term.star_var (x : ℕ) : ((Term.var x : Term α).star : Term αS) = .var x := rfl
 
+/-- **Section 4.4.** The star-transform replaces a constant by its standard copy. -/
 @[simp] theorem Term.star_const (s : α) : ((Term.const s).star : Term αS) = .const (of s) := rfl
 
+/-- **Section 4.4.** The star-transform of a conjunction. -/
 @[simp] theorem Formula.star_and (φ ψ : Formula α) :
     ((φ.and ψ).star : Formula αS) = φ.star.and ψ.star := rfl
+/-- **Section 4.4.** The star-transform of a disjunction. -/
 @[simp] theorem Formula.star_or (φ ψ : Formula α) :
     ((φ.or ψ).star : Formula αS) = φ.star.or ψ.star := rfl
+/-- **Section 4.4.** The star-transform of a negation. -/
 @[simp] theorem Formula.star_not (φ : Formula α) : (φ.not.star : Formula αS) = φ.star.not := rfl
+/-- **Section 4.4.** The star-transform of an implication. -/
 @[simp] theorem Formula.star_imp (φ ψ : Formula α) :
     ((φ.imp ψ).star : Formula αS) = φ.star.imp ψ.star := rfl
+/-- **Section 4.4.** The star-transform of a biconditional. -/
 @[simp] theorem Formula.star_iff (φ ψ : Formula α) :
     ((φ.iff ψ).star : Formula αS) = φ.star.iff ψ.star := rfl
+/-- **Section 4.4.** The star-transform of a bounded universal quantifier. -/
 @[simp] theorem Formula.star_all (x : ℕ) (P : Set α) (φ : Formula α) :
     ((Formula.all x P φ).star : Formula αS) = .all x (⋆P) φ.star := rfl
+/-- **Section 4.4.** The star-transform of a bounded existential quantifier. -/
 @[simp] theorem Formula.star_ex (x : ℕ) (P : Set α) (φ : Formula α) :
     ((Formula.ex x P φ).star : Formula αS) = .ex x (⋆P) φ.star := rfl
 
+/-- **Section 4.4.** The star-transform of a one-tuple of terms. -/
 theorem Term.star_vec_one (t : Term α) :
     (fun i => ((![t] : Fin 1 → Term α) i).star : Fin 1 → Term αS) = ![t.star] := by
   funext i
   rw [Fin.eq_zero i]
   rfl
 
+/-- **Section 4.4.** The star-transform of a pair of terms. -/
 theorem Term.star_vec_two (t u : Term α) :
     (fun i => ((![t, u] : Fin 2 → Term α) i).star : Fin 2 → Term αS) = ![t.star, u.star] := by
   funext i
@@ -1145,6 +1222,8 @@ theorem starMapOnN_univ_one (f : α → α) (a : αS)
   exact (starMapOnN_ofSeq_eq_ofSeq (r := fun _ => r) h).2
     (Eventually.of_forall fun n => ⟨mem_univ _, rfl⟩)
 
+/-- **Section 3.14.** A pair of classes of sequences, as a two-tuple, is the tuple of the classes of
+the pair of sequences. -/
 theorem vec_two_ofSeq (r s : ℕ → α) :
     (![ofSeq r, ofSeq s] : Fin 2 → αS) = fun i => ofSeq (![r, s] i) := by
   funext i
@@ -1229,24 +1308,33 @@ names $`{}^*f(a)` when the transform of $`\tau` names an element $`a` of $`{}^*A
   · rintro ⟨h, rfl⟩
     exact ⟨hiff.2 h, starMapOnN_unaryRel A f a (hiff.2 h) h⟩
 
+/-- **Section 4.4.** The transform of $`f(\tau)` is closed when the transform of $`\tau` is. -/
 @[simp] theorem closed_star_app₁ {f : α → α} :
     ((app₁ f t).star : Term αS).Closed v ↔ (t.star : Term αS).Closed v := by
   simp only [app₁, star, star_vec_one, closed_func_one]
 
+/-- **Section 4.4.** The transform of $`f(\tau_1, \tau_2)` is closed when the transforms of both
+arguments are. -/
 @[simp] theorem closed_star_app₂ {f : α → α → α} :
     ((app₂ f t u).star : Term αS).Closed v ↔
       (t.star : Term αS).Closed v ∧ (u.star : Term αS).Closed v := by
   simp only [app₂, star, star_vec_two, closed_func_two]
 
+/-- **Section 4.4.** For a partial function $`f`, the transform of $`f(\tau)` is closed when the
+transform of $`\tau` is. -/
 @[simp] theorem closed_star_papp₁ {A : Set α} {f : A → α} :
     ((papp₁ A f t).star : Term αS).Closed v ↔ (t.star : Term αS).Closed v := by
   simp only [papp₁, star, star_vec_one, closed_func_one]
 
+/-- **Section 4.4.** The transform of $`f(\tau)`, with $`f` total, is defined when the transform of
+$`\tau` is. -/
 @[simp] theorem defined_star_app₁ {f : α → α} :
     ((app₁ f t).star : Term αS).Defined v ↔ (t.star : Term αS).Defined v := by
   simp only [app₁, star, star_vec_one, defined_func_one, starRel_univ, mem_univ, and_true]
   exact and_iff_left_of_imp fun hd hc => hd.denotes hc
 
+/-- **Section 4.4.** The transform of $`f(\tau_1, \tau_2)`, with $`f` total, is defined when the
+transforms of both arguments are. -/
 @[simp] theorem defined_star_app₂ {f : α → α → α} :
     ((app₂ f t u).star : Term αS).Defined v ↔
       (t.star : Term αS).Defined v ∧ (u.star : Term αS).Defined v := by
@@ -1257,6 +1345,9 @@ names $`{}^*f(a)` when the transform of $`\tau` names an element $`a` of $`{}^*A
   obtain ⟨b, hb⟩ := hd.2.denotes hc'
   exact ⟨a, b, ha, hb⟩
 
+/-- **Section 4.4.** For a partial function $`f` with domain $`A`, the transform of $`f(\tau)` is
+defined when the transform of $`\tau` is and, if that is closed, the element it names lies in
+$`{}^*A`. -/
 @[simp] theorem defined_star_papp₁ {A : Set α} {f : A → α} :
     ((papp₁ A f t).star : Term αS).Defined v ↔ (t.star : Term αS).Defined v ∧
       ((t.star : Term αS).Closed v → ∃ a, (t.star : Term αS).Names v a ∧ a ∈ (⋆A : Set αS)) := by
@@ -1301,22 +1392,31 @@ inequality between hyperreals. -/
     (le t u).star.Holds v ↔ ∃ a b, t.star.Names v a ∧ u.star.Names v b ∧ a ≤ b := by
   simp only [le, holds_star_rel₂, starRel₂_le]
 
+/-- **Section 4.4.** The transform of $`\tau \in A` is defined when the transform of $`\tau` is. -/
 @[simp] theorem defined_star_mem {A : Set α} :
     ((mem t A).star : Formula αS).Defined v ↔ (t.star : Term αS).Defined v := by
   simp only [mem, star, Term.star_vec_one, defined_rel_one]
 
+/-- **Section 4.4.** The transform of $`P(\tau_1, \tau_2)` is defined when the transforms of both
+terms are. -/
 @[simp] theorem defined_star_rel₂ {P : α → α → Prop} :
     ((rel₂ P t u).star : Formula αS).Defined v ↔
       (t.star : Term αS).Defined v ∧ (u.star : Term αS).Defined v := by
   simp only [rel₂, star, Term.star_vec_two, defined_rel_two]
 
+/-- **Section 4.4.** The transform of $`\tau_1 = \tau_2` is defined when the transforms of both
+terms are. -/
 @[simp] theorem defined_star_eq :
     ((eq t u).star : Formula αS).Defined v ↔
       (t.star : Term αS).Defined v ∧ (u.star : Term αS).Defined v := defined_star_rel₂
 
+/-- **Section 4.4.** The transform of $`\tau_1 < \tau_2` is defined when the transforms of both
+terms are. -/
 @[simp] theorem defined_star_lt {t u : Term ℝ} {v : Valuation ℝ*} :
     (lt t u).star.Defined v ↔ t.star.Defined v ∧ u.star.Defined v := defined_star_rel₂
 
+/-- **Section 4.4.** The transform of $`\tau_1 \le \tau_2` is defined when the transforms of both
+terms are. -/
 @[simp] theorem defined_star_le {t u : Term ℝ} {v : Valuation ℝ*} :
     (le t u).star.Defined v ↔ t.star.Defined v ∧ u.star.Defined v := defined_star_rel₂
 
