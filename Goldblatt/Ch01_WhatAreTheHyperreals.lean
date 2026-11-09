@@ -21,8 +21,10 @@ general theory of enlargements with its applications.
 
 The few Lean statements below are previews, proved directly from Mathlib, of phenomena that
 the following chapters establish systematically.  Everything on this page lives in the
-namespace {lit}`Goldblatt.Intro`, so that the official definitions of later chapters are
-free to use the natural names.
+namespace {lit}`Goldblatt.Intro`, a sub-namespace of the project-wide {lit}`Goldblatt`.
+This is a deliberate deviation from the project convention of a single namespace: it leaves
+the official definitions of later chapters free to use the natural names.  Statements marked
+as _illustrations_ are additions of this project and are not taken from the book.
 
 ## 1.1 Infinitely Small and Large
 
@@ -45,12 +47,17 @@ variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
 
 /-- **Section 1.1, definition** (infinitely small).  An element $`x` of an ordered field is
 infinitely small when $`|x| < 1/n` for every positive integer $`n`.  Zero is allowed here;
-the book's _infinitesimals_ of Section 1.1 are the nonzero such elements. -/
+the book's _infinitesimals_ of Section 1.1 are the nonzero such elements.  This predicate is
+only used on this page.  Mathlib, and with it the later chapters, expresses the same
+condition through the Archimedean class of $`x`; the two agree by
+{lit}`infinitelySmall_iff_archimedeanClassMk_pos` below. -/
 def InfinitelySmall (x : K) : Prop :=
   ∀ n : ℕ, 0 < n → |x| < 1 / (n : K)
 
 /-- **Section 1.1, definition** (infinitely large).  An element $`w` of an ordered field is
-infinitely large when $`|w| > n` for every positive integer $`n`. -/
+infinitely large when $`|w| > n` for every positive integer $`n`.  In Mathlib's language
+this says that the Archimedean class of $`w` is negative; see
+{lit}`infinitelyLarge_iff_archimedeanClassMk_neg` below. -/
 def InfinitelyLarge (w : K) : Prop :=
   ∀ n : ℕ, 0 < n → (n : K) < |w|
 
@@ -91,11 +98,50 @@ ordered field, in particular in $`\mathbb{R}`, no element is infinitely large. -
 theorem not_infinitelyLarge [Archimedean K] (w : K) : ¬ InfinitelyLarge w := fun hw =>
   hw.infinitelySmall_inv.1 hw.infinitelySmall_inv.2.eq_zero
 
+/-- **Section 1.1, definition** (agreement with Mathlib, illustration).  An element $`x` of an
+ordered field is infinitely small exactly when its Archimedean class is positive, that is,
+when $`n\,|x| < 1` for every natural number $`n`.  This is the form in which Mathlib states
+that $`x` is infinitesimal, so the page-local predicate {name}`InfinitelySmall` coincides
+with the notion used from Chapter 5 on. -/
+theorem infinitelySmall_iff_archimedeanClassMk_pos (x : K) :
+    InfinitelySmall x ↔ 0 < ArchimedeanClass.mk x := by
+  rw [← ArchimedeanClass.mk_one, ArchimedeanClass.mk_lt_mk]
+  simp only [abs_one, nsmul_eq_mul]
+  constructor
+  · intro h n
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simp
+    · have hn' : (0 : K) < n := Nat.cast_pos.mpr hn
+      have := h n hn
+      rwa [lt_div_iff₀' hn'] at this
+  · intro h n hn
+    have hn' : (0 : K) < n := Nat.cast_pos.mpr hn
+    rw [lt_div_iff₀' hn']
+    exact h n
+
+/-- **Section 1.1, definition** (agreement with Mathlib, illustration).  An element $`w` of an
+ordered field is infinitely large exactly when its Archimedean class is negative, that is,
+when $`n \cdot 1 < |w|` for every natural number $`n`.  This is the form in which Mathlib
+states that $`w` is infinite (unlimited), so {name}`InfinitelyLarge` coincides with the
+notion used from Chapter 5 on. -/
+theorem infinitelyLarge_iff_archimedeanClassMk_neg (w : K) :
+    InfinitelyLarge w ↔ ArchimedeanClass.mk w < 0 := by
+  rw [← ArchimedeanClass.mk_one, ArchimedeanClass.mk_lt_mk]
+  simp only [abs_one, nsmul_eq_mul, mul_one]
+  constructor
+  · intro h n
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · have := h 1 one_pos
+      simp only [Nat.cast_one, Nat.cast_zero] at this ⊢
+      exact zero_lt_one.trans this
+    · exact h n hn
+  · exact fun h n _ => h n
+
 end OrderedField
 
 /-- The real number $`n`, embedded in the hyperreals, is the hyperreal natural number
 $`n`. -/
-theorem coe_natCast (n : ℕ) : ((n : ℝ) : ℝ*) = n := rfl
+theorem hyperreal_coe_natCast (n : ℕ) : ((n : ℝ) : ℝ*) = n := rfl
 
 /-- **Section 1.1** (the hyperreals contain a nonzero infinitesimal).  The hyperreal
 $`\varepsilon`, the class of the sequence $`(1/n)`, is nonzero and infinitely small. -/
@@ -104,13 +150,13 @@ theorem epsilon_infinitelySmall : (ε : ℝ*) ≠ 0 ∧ InfinitelySmall (ε : �
   rw [abs_of_pos epsilon_pos]
   have h : (0 : ℝ) < 1 / n := by positivity
   have h' : (ε : ℝ*) < ((1 / n : ℝ) : ℝ*) := epsilon_lt_of_pos h
-  rwa [coe_div, coe_one, coe_natCast] at h'
+  rwa [coe_div, coe_one, hyperreal_coe_natCast] at h'
 
 /-- **Section 1.1** (the hyperreals contain an infinite number).  The hyperreal $`\omega`,
 the class of the sequence $`(n)`, is infinitely large. -/
 theorem omega_infinitelyLarge : InfinitelyLarge (ω : ℝ*) := by
   intro n _
-  rw [abs_omega, ← coe_natCast]
+  rw [abs_omega, ← hyperreal_coe_natCast]
   exact coe_lt_omega n
 
 /-- **Section 1.1** (existence of a positive infinitesimal).  There is a hyperreal that is
@@ -126,11 +172,11 @@ theorem exists_unlimited : ∃ w : ℝ*, ∀ r : ℝ, (r : ℝ*) < w :=
 /-- **Section 1.1** (the reals are an ordered subfield of the hyperreals).  The canonical map
 $`\mathbb{R} \to {}^*\mathbb{R}`, which {name}`Hyperreal.coeRingHom` packages as a
 homomorphism of ordered rings, is strictly increasing and hence injective. -/
-theorem coe_strictMono : StrictMono ((↑) : ℝ → ℝ*) := fun _ _ => coe_lt_coe.mpr
+theorem hyperreal_coe_strictMono : StrictMono ((↑) : ℝ → ℝ*) := fun _ _ => coe_lt_coe.mpr
 
 /-- **Section 1.1** (the extension is proper).  Some hyperreal is not a real number: the
 embedding of $`\mathbb{R}` in $`{}^*\mathbb{R}` is not surjective. -/
-theorem coe_not_surjective : ¬ Function.Surjective ((↑) : ℝ → ℝ*) := fun h => by
+theorem hyperreal_coe_not_surjective : ¬ Function.Surjective ((↑) : ℝ → ℝ*) := fun h => by
   obtain ⟨r, hr⟩ := h ω
   exact lt_irrefl _ (hr ▸ coe_lt_omega r)
 
@@ -151,15 +197,47 @@ Abraham Robinson showed, using tools from mathematical logic, that the older lan
 be made fully rigorous: there are ordered fields extending the reals in which infinitesimals
 exist and to which the true statements about the reals transfer.
 
-The one computation worth recording is the Leibnizian derivative.  To differentiate
-$`x^2` one forms the quotient of the increments for an infinitesimal increment
-$`\varepsilon` and observes that it differs from $`2x` only by $`\varepsilon`.  In the
-hyperreals this is an honest algebraic identity, and "neglecting" the leftover infinitesimal
-becomes the operation of taking the standard part, which is studied in Chapters 5 and 8.
+The one computation the section displays is Leibniz's rule for the differential of a
+product.  The difference between two successive values of $`xy` is
+$`(x + dx)(y + dy) - xy = x\,dy + y\,dx + dx\,dy`, and the rule $`d(xy) = x\,dy + y\,dx`
+results from dropping $`dx\,dy` as infinitely small in comparison with the other terms.
+In an ordered field with infinitesimals the first step is an algebraic identity, and the
+second has a precise meaning: relative to either differential, the dropped term is itself
+infinitely small.
+
+As an illustration that is not in the book, the same pattern differentiates $`x^2`: the
+quotient of the increments for the infinitesimal increment $`\varepsilon` differs from
+$`2x` only by $`\varepsilon`.  "Neglecting" the leftover infinitesimal becomes the operation
+of taking the standard part, which is studied in Chapters 5 and 8.
+
+The section ends with Robinson's hyperreal field and the transfer principle, and with a
+warning about its scope: transfer applies to properties of a certain logical form, and
+Dedekind completeness is not one of them.  The hyperreal field is _not_ Dedekind complete;
+the set of reals inside it is bounded above and has no least upper bound.
 -/
 
-/-- **Section 1.2** (the Leibnizian derivative of the square).  For a real $`x` and the
-infinitesimal $`\varepsilon`,
+/-- **Section 1.2** (Newton and Leibniz; the increment of a product).  For any $`x`, $`y`
+and increments $`dx`, $`dy`,
+$$`(x + dx)(y + dy) - xy = x\,dy + y\,dx + dx\,dy .`
+The book quotes this for Leibniz's differentials; as an identity it holds in every
+commutative ring, and it is stated here in the hyperreals. -/
+theorem leibniz_product_increment (x y dx dy : ℝ*) :
+    (x + dx) * (y + dy) - x * y = x * dy + y * dx + dx * dy := by
+  ring
+
+/-- **Section 1.2** (Newton and Leibniz; the omitted term is comparatively infinitely small).
+If $`dx` and $`dy` are nonzero and infinitely small, then the term $`dx\,dy` omitted from
+Leibniz's product rule is infinitely small compared with each differential:
+both $`dx\,dy/dx` and $`dx\,dy/dy` are infinitely small.  The book says only that the term
+is infinitely small in comparison with the rest; this is the reading made precise here. -/
+theorem leibniz_omitted_term_infinitelySmall {dx dy : ℝ*} (hdx : InfinitelySmall dx)
+    (hdy : InfinitelySmall dy) (hx0 : dx ≠ 0) (hy0 : dy ≠ 0) :
+    InfinitelySmall (dx * dy / dx) ∧ InfinitelySmall (dx * dy / dy) := by
+  rw [mul_div_cancel_left₀ dy hx0, mul_div_cancel_right₀ dx hy0]
+  exact ⟨hdy, hdx⟩
+
+/-- **Illustration for Section 1.2** (the Leibnizian derivative of the square; an addition
+of this project, not a computation from the book).  For a real $`x` and the infinitesimal $`\varepsilon`,
 $$`\frac{(x+\varepsilon)^2 - x^2}{\varepsilon} = 2x + \varepsilon ,`
 so the increment quotient is infinitely close to $`2x`. -/
 theorem sq_increment_quotient (x : ℝ) :
@@ -168,12 +246,31 @@ theorem sq_increment_quotient (x : ℝ) :
   field_simp
   ring
 
-/-- **Section 1.2** (the neglected term is infinitesimal).  The increment quotient of the
+/-- **Illustration for Section 1.2** (the neglected term is infinitesimal; an addition of
+this project).  The increment quotient of the
 square at $`x` differs from the real number $`2x` by an infinitely small amount. -/
 theorem sq_increment_quotient_sub_infinitelySmall (x : ℝ) :
     InfinitelySmall ((((x : ℝ*) + ε) ^ 2 - (x : ℝ*) ^ 2) / ε - 2 * x) := by
   rw [sq_increment_quotient, add_sub_cancel_left]
   exact epsilon_infinitelySmall.2
+
+/-- **Section 1.2** (Robinson; the hyperreals are not Dedekind complete).  The book states this
+without proof as its example of a property that does not transfer.  The set of real numbers,
+viewed inside $`{}^*\mathbb{R}`, is nonempty and bounded above by $`\omega`, but it has no
+least upper bound: if $`s` were one, then $`s - 1` would not be an upper bound, so
+$`s - 1 < r` for some real $`r`, and then the real $`r + 1` would exceed $`s`. -/
+theorem hyperreal_not_dedekind_complete :
+    (Set.range ((↑) : ℝ → ℝ*)).Nonempty ∧ BddAbove (Set.range ((↑) : ℝ → ℝ*)) ∧
+      ¬ ∃ s : ℝ*, IsLUB (Set.range ((↑) : ℝ → ℝ*)) s := by
+  refine ⟨⟨_, 0, rfl⟩, ⟨ω, ?_⟩, ?_⟩
+  · rintro _ ⟨r, rfl⟩
+    exact (coe_lt_omega r).le
+  · rintro ⟨s, hs⟩
+    have hlt : s - 1 < s := sub_one_lt s
+    obtain ⟨_, ⟨r, rfl⟩, hr⟩ := (lt_isLUB_iff hs).mp hlt
+    have hle : ((r + 1 : ℝ) : ℝ*) ≤ s := hs.1 ⟨r + 1, rfl⟩
+    rw [coe_add, coe_one] at hle
+    linarith
 
 /-!
 ## 1.3 What Is a Real Number?
@@ -189,7 +286,8 @@ sequences in place of rational Cauchy sequences.
 The section closes with the Eudoxus–Archimedes principle, that of two magnitudes the
 smaller can be multiplied to exceed the larger.  It holds in $`\mathbb{R}` and is exactly
 what excludes infinite and infinitesimal reals.  The hyperreal line is an ordered field in
-which the principle fails, and consequently one that is not Dedekind complete.
+which the principle fails.  That fits with the failure of Dedekind completeness announced in
+Section 1.2 and proved above: a Dedekind complete ordered field is always Archimedean.
 -/
 
 /-- **Section 1.3, answer (2)** (Dedekind completeness of the reals).  Every nonempty set of
@@ -217,8 +315,10 @@ theorem completeOrderedField_iso_unique (F G : Type*)
     (e₁ e₂ : F ≃+*o G) : e₁ = e₂ :=
   Subsingleton.elim e₁ e₂
 
-/-- **Section 1.3** (the Eudoxus–Archimedes principle in the reals).  For positive reals
-$`a` and $`b` some integer multiple of $`a` exceeds $`b`. -/
+/-- **Section 1.3** (the Eudoxus–Archimedes principle in the reals).  For a positive
+real $`a` and any real $`b`, some natural multiple of $`a` exceeds $`b`.  The book's
+principle is the case $`b > 0`; the Lean statement drops that hypothesis, which is not
+needed. -/
 theorem real_eudoxus_archimedes {a b : ℝ} (ha : 0 < a) : ∃ n : ℕ, b < n * a := by
   obtain ⟨n, hn⟩ := exists_nat_gt (b / a)
   exact ⟨n, (div_lt_iff₀ ha).mp hn⟩
@@ -233,29 +333,14 @@ positive hyperreal $`1` exceeds $`\omega`: for every natural number $`n`,
 $`n \cdot 1 < \omega`. -/
 theorem hyperreal_eudoxus_archimedes_fails : ∀ n : ℕ, (n : ℝ*) * 1 < ω := by
   intro n
-  rw [mul_one, ← coe_natCast]
+  rw [mul_one, ← hyperreal_coe_natCast]
   exact coe_lt_omega n
 
-/-- **Section 1.3** (the hyperreals are not Archimedean). -/
+/-- **Section 1.3** (the hyperreals are not Archimedean).  The ordered field of hyperreals
+does not satisfy Mathlib's {name}`Archimedean` property, because $`\omega` exceeds every
+natural number. -/
 theorem hyperreal_not_archimedean : ¬ Archimedean ℝ* := fun _ =>
   not_infinitelyLarge (ω : ℝ*) omega_infinitelyLarge
-
-/-- **Section 1.3** (the hyperreals are not Dedekind complete).  The set of real numbers,
-viewed inside $`{}^*\mathbb{R}`, is nonempty and bounded above by $`\omega`, but it has no
-least upper bound: if $`s` were one, then $`s - 1` would not be an upper bound, so
-$`s - 1 < r` for some real $`r`, and then the real $`r + 1` would exceed $`s`. -/
-theorem hyperreal_not_dedekind_complete :
-    (Set.range ((↑) : ℝ → ℝ*)).Nonempty ∧ BddAbove (Set.range ((↑) : ℝ → ℝ*)) ∧
-      ¬ ∃ s : ℝ*, IsLUB (Set.range ((↑) : ℝ → ℝ*)) s := by
-  refine ⟨⟨_, 0, rfl⟩, ⟨ω, ?_⟩, ?_⟩
-  · rintro _ ⟨r, rfl⟩
-    exact (coe_lt_omega r).le
-  · rintro ⟨s, hs⟩
-    have hlt : s - 1 < s := sub_one_lt s
-    obtain ⟨_, ⟨r, rfl⟩, hr⟩ := (lt_isLUB_iff hs).mp hlt
-    have hle : ((r + 1 : ℝ) : ℝ*) ≤ s := hs.1 ⟨r + 1, rfl⟩
-    rw [coe_add, coe_one] at hle
-    linarith
 
 /-!
 ## 1.4 Historical References
