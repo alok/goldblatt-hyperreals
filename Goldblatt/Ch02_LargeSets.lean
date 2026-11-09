@@ -90,11 +90,14 @@ of indices where $`r` is strictly below $`s`. -/
 def lessSet (r s : ℕ → ℝ) : Set ℕ := {n | r n < s n}
 
 /-- **Section 2.2.** The sequence $`1, 0, 1, 0, \dots` (indexed, as in the book, so that the
-first term has index one: the value is one at odd indices and zero at even ones). -/
+first term has index one: the value is one at odd indices and zero at even ones). Lean's naturals
+start at zero, so there is one extra term at index zero, with value zero; the book's sequence is
+the restriction to indices at least one. -/
 def alternatingOneZero : ℕ → ℝ := fun n => if Odd n then 1 else 0
 
 /-- **Section 2.2.** The sequence $`0, 1, 0, 1, \dots` (value zero at odd indices and one at
-even ones). -/
+even ones). Lean's naturals start at zero, so there is one extra term at index zero, with value
+one; the book's sequence is the restriction to indices at least one. -/
 def alternatingZeroOne : ℕ → ℝ := fun n => if Odd n then 0 else 1
 
 /-- **Section 2.2.** The two alternating sequences agree nowhere. -/
@@ -200,6 +203,36 @@ $`A_1, \dots, A_n` of $`\mathcal F` with $`A_1 \cap \dots \cap A_n \subseteq B`.
 theorem IsFilter.mem_of_sInter_subset (hF : IsFilter F) (s : Finset (Set I))
     (hs : (↑s : Set (Set I)) ⊆ F) (hB : ⋂₀ (↑s : Set (Set I)) ⊆ B) : B ∈ F :=
   hF.superset_mem (hF.sInter_mem s hs) hB
+
+/-- **Section 2.2.** The single requirement on large sets from which the filter axioms are
+distilled: if $`A` and $`B` are large and $`A \cap B \subseteq C`, then $`C` is large. This is
+the two-set case of {lit}`IsFilter.mem_of_sInter_subset`. -/
+theorem IsFilter.mem_of_inter_subset (hF : IsFilter F) {A B C : Set I} (hA : A ∈ F) (hB : B ∈ F)
+    (h : A ∩ B ⊆ C) : C ∈ F :=
+  hF.superset_mem (hF.inter_mem hA hB) h
+
+/-- **Section 2.2.** For an arbitrary collection $`\mathcal F`, the single requirement
+"$`A, B \in \mathcal F` and $`A \cap B \subseteq C` imply $`C \in \mathcal F`" is equivalent to
+the conjunction of closure under binary intersections and closure under supersets: take
+$`C = A \cap B` for the first and $`B = A` for the second. -/
+theorem filter_axioms_iff_mem_of_inter_subset (F : Set (Set I)) :
+    ((∀ A B, A ∈ F → B ∈ F → A ∩ B ∈ F) ∧ (∀ A B, A ∈ F → A ⊆ B → B ∈ F)) ↔
+      ∀ A B C, A ∈ F → B ∈ F → A ∩ B ⊆ C → C ∈ F := by
+  constructor
+  · rintro ⟨hinter, hsup⟩ A B C hA hB h
+    exact hsup _ _ (hinter A B hA hB) h
+  · intro h
+    refine ⟨fun A B hA hB => h A B _ hA hB Subset.rfl, fun A B hA hAB => h A A B hA hA ?_⟩
+    rw [inter_self]
+    exact hAB
+
+/-- **Section 2.3.** A filter is exactly a nonempty collection satisfying the single requirement
+of Section 2.2. -/
+theorem isFilter_iff_mem_of_inter_subset (F : Set (Set I)) :
+    IsFilter F ↔ F.Nonempty ∧ ∀ A B C, A ∈ F → B ∈ F → A ∩ B ⊆ C → C ∈ F := by
+  rw [← filter_axioms_iff_mem_of_inter_subset]
+  exact ⟨fun h => ⟨h.nonempty, fun _ _ => h.inter_mem, fun _ _ => h.superset_mem⟩,
+    fun h => ⟨h.1, fun {_ _} => h.2.1 _ _, fun {_ _} => h.2.2 _ _⟩⟩
 
 /-- **Section 2.3.** A filter contains the empty set if and only if it is the whole power
 set. -/
@@ -824,7 +857,7 @@ theorem hasFIP_iff_exists_isProperFilter [Nonempty I] :
   ⟨fun h => ⟨generatedFilter H, (isProperFilter_generatedFilter_iff H).mpr h,
     subset_generatedFilter H⟩, fun ⟨_, hF, hHF⟩ => hF.hasFIP.mono hHF⟩
 
-/-- Auxiliary: a point of $`A` lying in every member of $`s` other than $`A` lies in every
+/-- **Fact 2.5(8), auxiliary** (also used for Exercise 2.7(5)(i)). A point of $`A` lying in every member of $`s` other than $`A` lies in every
 member of $`s`. -/
 private theorem mem_sInter_of_mem_sInter_erase [DecidableEq (Set I)] {s : Finset (Set I)}
     {x : I} (hx : x ∈ ⋂₀ (↑(s.erase A) : Set (Set I))) (hxA : x ∈ A) :
@@ -836,7 +869,7 @@ private theorem mem_sInter_of_mem_sInter_erase [DecidableEq (Set I)] {s : Finset
     exact hxA
   · exact hx C (Finset.mem_coe.mpr (Finset.mem_erase.mpr ⟨hCA, Finset.mem_coe.mp hC⟩))
 
-/-- Auxiliary: removing $`A` from a finite subcollection of $`\mathcal H \cup \{A\}` leaves a
+/-- **Fact 2.5(8), auxiliary** (also used for Exercise 2.7(5)(i)). Removing $`A` from a finite subcollection of $`\mathcal H \cup \{A\}` leaves a
 subcollection of $`\mathcal H`. -/
 private theorem coe_erase_subset_of_subset_insert [DecidableEq (Set I)] {s : Finset (Set I)}
     (hs : (↑s : Set (Set I)) ⊆ insert A H) : (↑(s.erase A) : Set (Set I)) ⊆ H := by
@@ -934,10 +967,11 @@ theorem isUltrafilter_iff_maximal_isProperFilter : IsUltrafilter F ↔ Maximal I
 /-!
 ## 2.6 Zorn's Lemma
 
-Fact 2.5(8) suggests building an ultrafilter by running through all subsets of $`I` and adding
-each set or its complement, whichever keeps the finite intersection property. Making that
-transfinite recursion precise needs a well-ordering of the power set; Zorn's lemma, an
-equivalent of the axiom of choice, packages the recursion once and for all. The book sketches
+One could try to build an ultrafilter greedily: enumerate the subsets of $`I` and decide each
+in turn, with Fact 2.5(8) guaranteeing that the finite intersection property survives every
+decision. Such an enumeration needs a well-ordering of the power set and a transfinite
+recursion along it; Zorn's lemma, an equivalent of the axiom of choice, packages that recursion
+once and for all. The book sketches
 how Zorn's lemma follows from the axiom of choice and then uses it as a black box; we likewise
 take it from Mathlib, where it is proved from {name}`Classical.choice`.
 
@@ -1023,9 +1057,11 @@ theorem exists_ultrafilter_ne_pure (I : Type*) [Infinite I] :
   rw [← hF.mem_toUltrafilter, h]
   rfl
 
-/-- **Section 2.6, closing remark.** The book notes without proof that an infinite set $`I`
-carries as many nonprincipal ultrafilters as there are members of
-$`\mathcal P(\mathcal P(I))`. Here this is derived from Mathlib's count
+/-- **Section 2.6, closing remark, in Mathlib's vocabulary.** The book notes without proof that
+an infinite set $`I` carries as many nonprincipal ultrafilters as there are members of
+$`\mathcal P(\mathcal P(I))`. This form counts terms of Mathlib's bundled {name}`Ultrafilter`
+other than the {lit}`pure i`, and writes the answer as a cardinal power; the statement about
+the chapter's own objects is {lit}`mk_isUltrafilter_not_isPrincipal`. It is derived from Mathlib's count
 {name}`Cardinal.mk_ultrafilter_of_infinite` of all ultrafilters: removing the principal ones,
 of which there are only as many as points of $`I`, does not change the cardinality
 $`2^{2^{|I|}}`. -/
@@ -1041,6 +1077,27 @@ theorem mk_nonprincipal_ultrafilter (I : Type*) [Infinite I] :
   refine Cardinal.mk_congr (Equiv.subtypeEquivRight fun U => ?_)
   simp only [mem_compl_iff, mem_range, not_exists]
   exact forall_congr' fun i => ⟨fun h h' => h h'.symm, fun h h' => h h'.symm⟩
+
+/-- **Section 2.6, closing remark.** On an infinite set $`I`, the collection of nonprincipal
+ultrafilters (in the sense of this chapter: collections of subsets satisfying
+{name}`Goldblatt.IsUltrafilter` and not {name}`Goldblatt.IsPrincipal`) has the same cardinality
+as $`\mathcal P(\mathcal P(I))`. The book states this without proof; here it is transported
+from {name}`Goldblatt.mk_nonprincipal_ultrafilter` along {name}`Goldblatt.ultrafilterEquiv`. -/
+theorem mk_isUltrafilter_not_isPrincipal (I : Type*) [Infinite I] :
+    Cardinal.mk {F : Set (Set I) // IsUltrafilter F ∧ ¬ IsPrincipal F} =
+      Cardinal.mk (Set (Set I)) := by
+  rw [Cardinal.mk_set, Cardinal.mk_set, ← mk_nonprincipal_ultrafilter I]
+  refine Cardinal.mk_congr ((Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm.trans
+    ((ultrafilterEquiv I).subtypeEquiv fun F => ?_))
+  rw [← not_exists, ← isPrincipal_sets_iff]
+  rfl
+
+/-- **Section 2.6, closing remark.** The same count as a bijection: on an infinite set $`I` the
+nonprincipal ultrafilters are in one-to-one correspondence with the members of
+$`\mathcal P(\mathcal P(I))`. -/
+theorem nonempty_equiv_isUltrafilter_not_isPrincipal (I : Type*) [Infinite I] :
+    Nonempty ({F : Set (Set I) // IsUltrafilter F ∧ ¬ IsPrincipal F} ≃ Set (Set I)) :=
+  Cardinal.eq.mp (mk_isUltrafilter_not_isPrincipal I)
 
 /-!
 ## 2.7 Exercises on Filters
