@@ -576,7 +576,7 @@ theorem infinitesimal_hyperSumIcc_geometric (hc : |c| < 1) (hM : M ∈ unlimited
 $`b_i = 1`, both series have positive terms and $`a_i / b_i` converges (to $`0`), but
 $`\sum a_i` converges and $`\sum b_i` diverges. So the block sums of $`a` between unlimited
 indices are infinitesimal while those of $`b` are not, and the printed claim needs the limit
-of the ratios to be nonzero. -/
+of the ratios to be nonzero, as in {name}`infinitesimal_hyperSumIcc_iff_of_tendsto_div`. -/
 theorem exists_tendsto_div_seriesConverges_not_seriesConverges :
     ∃ a b : ℕ → ℝ, (∀ i, 0 < a i) ∧ (∀ i, 0 < b i) ∧
       (∃ c : ℝ, Tendsto (fun i => a i / b i) atTop (𝓝 c)) ∧
@@ -609,7 +609,7 @@ theorem hyperSeq_ratio (a : ℕ → ℝ) (hN : N ∈ ℕ*) :
 /-- **Exercise 6.11(8)(a).** Suppose that no $`a_i` is zero and that the limit superior of the
 ratios $`|a_{i+1}| / |a_i|` is smaller than $`1`. Then there is a positive real $`c < 1` with
 $`|a_{N+1}| < c\,|a_N|` for all unlimited $`N`. The limit superior is taken in the extended
-reals ({lit}`limSupE`), so that the hypothesis also says that the ratios are bounded above.
+reals ({name}`limSupE`), so that the hypothesis also says that the ratios are bounded above.
 -/
 theorem exists_forall_unlimited_ratio_lt (ha : ∀ i, a i ≠ 0)
     (h : limSupE (fun i => |a (i + 1)| / |a i|) < 1) :
@@ -642,8 +642,9 @@ theorem exists_forall_ge_ratio_lt (ha : ∀ i, a i ≠ 0)
   exact ⟨k, fun n hn => (div_lt_iff₀ (abs_pos.2 (ha n))).1 (hk n hn)⟩
 
 /-- **Exercise 6.11(8)(c), first inequality.** If $`|a_{n+1}| < c\,|a_n|` for all
-$`n \ge k`, with $`c \ge 0`, then $`|a_{k+n}| \le c^n |a_k|` for all $`n`. The book writes a
-strict inequality, which fails for $`n = 0`. -/
+$`n \ge k`, with $`c \ge 0`, then $`|a_{k+n}| \le c^n |a_k|` for all $`n`. This is the weak
+form, valid for every $`n` including $`n = 0`, where both sides are equal. The book's strict
+inequality holds exactly for $`n \ge 1` and is proved below. -/
 theorem abs_le_pow_mul_abs_of_ratio {k : ℕ} (hc : 0 ≤ c)
     (h : ∀ n, k ≤ n → |a (n + 1)| < c * |a n|) (n : ℕ) : |a (k + n)| ≤ c ^ n * |a k| := by
   induction n with
@@ -654,6 +655,21 @@ theorem abs_le_pow_mul_abs_of_ratio {k : ℕ} (hc : 0 ≤ c)
     rw [← add_assoc, pow_succ]
     calc |a (k + n + 1)| ≤ c * (c ^ n * |a k|) := h1.le.trans h2
       _ = c ^ n * c * |a k| := by ring
+
+/-- **Exercise 6.11(8)(c), first inequality, strict form.** If $`|a_{n+1}| < c\,|a_n|` for
+all $`n \ge k`, with $`c \ge 0`, then $`|a_{k+n}| < c^n |a_k|` for every $`n \ge 1`. This is
+the inequality as the book prints it. The restriction to $`n \ge 1` is necessary, since for
+$`n = 0` the two sides coincide. -/
+theorem abs_lt_pow_mul_abs_of_ratio {k : ℕ} (hc : 0 ≤ c)
+    (h : ∀ n, k ≤ n → |a (n + 1)| < c * |a n|) {n : ℕ} (hn : 0 < n) :
+    |a (k + n)| < c ^ n * |a k| := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+  have h1 : |a (k + m + 1)| < c * |a (k + m)| := h (k + m) (Nat.le_add_right k m)
+  have h2 : c * |a (k + m)| ≤ c * (c ^ m * |a k|) :=
+    mul_le_mul_of_nonneg_left (abs_le_pow_mul_abs_of_ratio hc h m) hc
+  rw [Nat.succ_eq_add_one, ← add_assoc, pow_succ]
+  calc |a (k + m + 1)| < c * (c ^ m * |a k|) := lt_of_lt_of_le h1 h2
+    _ = c ^ m * c * |a k| := by ring
 
 /-- **Exercise 6.11(8)(c), second inequality.** If $`|a_{n+1}| < c\,|a_n|` for all
 $`n \ge k`, with $`c \ge 0`, then for all $`m` and $`n`
@@ -696,7 +712,7 @@ theorem seriesConverges_of_limSupE_ratio_lt_one (ha : ∀ i, a i ≠ 0)
 
 /-- **Exercise 6.11(9)(a), first part.** If the limit inferior of the ratios
 $`|a_{i+1}| / |a_i|` is greater than $`1`, then $`|a_{N+1}| > |a_N|` for all unlimited
-$`N`. The limit inferior is taken in the extended reals ({lit}`limInfE`); the value
+$`N`. The limit inferior is taken in the extended reals ({name}`limInfE`); the value
 $`+\infty` is allowed, which makes the statement slightly more general than the book's. -/
 theorem abs_hyperSeq_lt_abs_hyperSeq_add_one
     (h : 1 < limInfE (fun i => |a (i + 1)| / |a i|)) (hN : N ∈ unlimitedHyperNat) :

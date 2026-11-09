@@ -152,7 +152,8 @@ theorem eventually_lt_of_forall_clusterSet_lt {r : ℝ} (hb : BddAbove (range s)
       limited_iff_not_posUnlimited_and_not_negUnlimited.2 ⟨hpos, hneg⟩
     exact hl.lt_of_sh_lt (hr _ (sh_hyperSeq_mem_clusterSet hN hl))
 
-/-- The mirror image of {lit}`eventually_lt_of_forall_clusterSet_lt`: if a sequence is bounded
+/-- **Section 6.8, principle (a) at work.** The mirror image of
+{name}`eventually_lt_of_forall_clusterSet_lt`: if a sequence is bounded
 below and every cluster point is above $`r`, then some standard tail is above $`r`. -/
 theorem eventually_gt_of_forall_clusterSet_gt {r : ℝ} (hb : BddBelow (range s))
     (hr : ∀ c ∈ clusterSet s, r < c) : ∀ᶠ n in atTop, r < s n := by
@@ -173,7 +174,8 @@ theorem frequently_gt_of_mem_clusterSet {c r : ℝ} (hc : c ∈ clusterSet s) (h
   obtain ⟨N, hN, h⟩ := mem_clusterSet_iff.1 hc
   exact ⟨N, hN, (limited_of_infClose_coe h).lt_of_lt_sh (by rwa [sh_eq_of_infClose h])⟩
 
-/-- The mirror image of {lit}`frequently_gt_of_mem_clusterSet`: if $`c` is a cluster point and
+/-- **Section 6.8, principle (b) at work.** The mirror image of
+{name}`frequently_gt_of_mem_clusterSet`: if $`c` is a cluster point and
 $`c < r`, then $`s_n < r` for arbitrarily large $`n`. -/
 theorem frequently_lt_of_mem_clusterSet {c r : ℝ} (hc : c ∈ clusterSet s) (hr : c < r) :
     ∃ᶠ n in atTop, s n < r := by
@@ -223,7 +225,8 @@ theorem isLeast_limInf (hb : ∃ b : ℝ, ∀ n, |s n| < b) : IsLeast (clusterSe
   ⟨limInf_mem_clusterSet hb, fun _ hc =>
     csInf_le (bddBelow_clusterSet (bddBelow_range_of_bounded hb)) hc⟩
 
-/-- The limit inferior of a bounded sequence is at most its limit superior. -/
+/-- **Section 6.8.** The limit inferior of a bounded sequence is at most its limit superior:
+both are cluster points, the smallest and the largest. -/
 theorem limInf_le_limSup (hb : ∃ b : ℝ, ∀ n, |s n| < b) : limInf s ≤ limSup s :=
   (isLeast_limInf hb).2 (limSup_mem_clusterSet hb)
 
@@ -487,17 +490,18 @@ theorem clusterSet_nonempty_of_bddAbove_of_not_tendsto_atBot (hb : BddAbove (ran
     ⟨bddAbove_range_iff_forall_unlimited_not_posUnlimited.1 hb N hN, hneg⟩
   exact ⟨_, sh_hyperSeq_mem_clusterSet hN hl⟩
 
-/-- The extended limit superior of a sequence that is not bounded above is $`+\infty`. -/
+/-- **Section 6.8, case (1) of the general definition.** The extended limit superior of a
+sequence that is not bounded above is $`+\infty`. -/
 theorem limSupE_of_not_bddAbove (h : ¬ BddAbove (range s)) : limSupE s = ⊤ := by
   rw [limSupE, ite_eq_left h]
 
-/-- The extended limit superior of a sequence that diverges to minus infinity is
-$`-\infty`. -/
+/-- **Section 6.8, case (2)(i) of the general definition.** The extended limit superior of a
+sequence that diverges to minus infinity is $`-\infty`. -/
 theorem limSupE_of_tendsto_atBot (h : Tendsto s atTop atBot) : limSupE s = ⊥ := by
   rw [limSupE, ite_eq_right (not_not.2 (bddAbove_range_of_tendsto_atBot h)), ite_eq_left h]
 
-/-- The extended limit superior of a sequence that is bounded above and does not diverge to
-minus infinity is the least upper bound of its cluster points. -/
+/-- **Section 6.8, case (2)(ii) of the general definition.** The extended limit superior of a
+sequence that is bounded above and does not diverge to minus infinity is the least upper bound of its cluster points. -/
 theorem limSupE_of_bddAbove_of_not_tendsto_atBot (hb : BddAbove (range s))
     (h : ¬ Tendsto s atTop atBot) : limSupE s = ((sSup (clusterSet s) : ℝ) : EReal) := by
   rw [limSupE, ite_eq_right (not_not.2 hb), ite_eq_right h]
@@ -587,7 +591,8 @@ theorem limInfE_eq_liminf (s : ℕ → ℝ) :
     simp
   rw [this, EReal.limsup_neg, neg_neg]
 
-/-- For a bounded sequence the extended limit inferior is the real limit inferior. -/
+/-- **Exercise 6.9(1).** For a bounded sequence the extended limit inferior is the real limit
+inferior, so the general definition extends the one for bounded sequences. -/
 theorem limInfE_eq_coe_limInf (hb : ∃ b : ℝ, ∀ n, |s n| < b) :
     limInfE s = ((limInf s : ℝ) : EReal) := by
   rw [limInfE_eq_neg_limSupE_neg, limSupE_eq_coe_limSup (bounded_neg hb),
@@ -613,80 +618,7 @@ theorem eventually_gt_of_lt_limInfE {r : ℝ} (h : (r : EReal) < limInfE s) :
   rw [limInfE_eq_neg_limSupE_neg, EReal.lt_neg_comm, ← EReal.coe_neg] at h
   exact (eventually_lt_of_limSupE_lt h).mono fun n hn => by linarith
 
-end LimSup
-
-/-!
-## 6.9 Exercises on lim sup and lim inf
-
-The first exercise, the definition of the limit inferior of an arbitrary sequence, is
-{lit}`limInfE` above. The second asks for the counterparts for the limit inferior of Theorems
-6.8.4 and 6.8.5; they are obtained from those theorems by passing to the sequence of
-negatives. The third combines the two halves: every interval that is slightly larger than the
-interval from the limit inferior to the limit superior contains a standard tail.
--/
-
-section ExercisesLimSup
-
-variable {s : ℕ → ℝ}
-
-/-- **Exercise 6.9(2), counterpart of Theorem 6.8.4 (1).** For a bounded real sequence and a
-positive real $`e`, some standard tail of the sequence lies above $`\liminf s - e`. -/
-theorem eventually_limInf_sub_lt (hb : ∃ b : ℝ, ∀ n, |s n| < b) {e : ℝ} (he : 0 < e) :
-    ∀ᶠ n in atTop, limInf s - e < s n :=
-  eventually_gt_of_forall_clusterSet_gt (bddBelow_range_of_bounded hb) fun c hc => by
-    linarith [(isLeast_limInf hb).2 hc]
-
-/-- **Exercise 6.9(2), counterpart of Theorem 6.8.4 (2).** For a bounded real sequence and a
-positive real $`e`, $`s_n < \liminf s + e` for arbitrarily large $`n`. -/
-theorem frequently_lt_limInf_add (hb : ∃ b : ℝ, ∀ n, |s n| < b) {e : ℝ} (he : 0 < e) :
-    ∃ᶠ n in atTop, s n < limInf s + e :=
-  frequently_lt_of_mem_clusterSet (limInf_mem_clusterSet hb) (by linarith)
-
-/-- **Exercise 6.9(2), counterpart of Theorem 6.8.4 (2)**, as a statement about infinite sets.
--/
-theorem infinite_setOf_lt_limInf_add (hb : ∃ b : ℝ, ∀ n, |s n| < b) {e : ℝ} (he : 0 < e) :
-    {n | s n < limInf s + e}.Infinite :=
-  Nat.frequently_atTop_iff_infinite.1 (frequently_lt_limInf_add hb he)
-
-/-- **Exercise 6.9(2).** The infimum $`\inf_{m \ge n} s_m` of the standard tail of the sequence
-that starts at $`n`. -/
-def tailInf (s : ℕ → ℝ) (n : ℕ) : ℝ := sInf (s '' Ici n)
-
-/-- The tail infimum is minus the tail supremum of the sequence of negatives. -/
-theorem tailInf_eq_neg_tailSup_neg (s : ℕ → ℝ) (n : ℕ) :
-    tailInf s n = -tailSup (fun m => -s m) n := by
-  rw [tailInf, tailSup, Real.sInf_def]
-  congr 2
-  ext x
-  simp only [Set.mem_neg, mem_image, mem_Ici]
-  constructor
-  · rintro ⟨m, hm, h⟩
-    exact ⟨m, hm, by linarith⟩
-  · rintro ⟨m, hm, h⟩
-    exact ⟨m, hm, by linarith⟩
-
-/-- **Exercise 6.9(2), counterpart of Theorem 6.8.5.** For a bounded real sequence $`s`, the
-infima of the tails converge to the limit inferior:
-$$`\liminf_{n\to\infty} s_n = \lim_{n\to\infty} \Bigl(\inf_{m \ge n} s_m\Bigr).` -/
-theorem tendsto_tailInf_limInf (hb : ∃ b : ℝ, ∀ n, |s n| < b) :
-    Tendsto (tailInf s) atTop (𝓝 (limInf s)) := by
-  have h := limit_const_mul (-1) (tendsto_tailSup_limSup (bounded_neg hb))
-  rw [limInf_eq_neg_limSup_neg]
-  have hfun : tailInf s = fun n => -1 * tailSup (fun m => -s m) n := by
-    funext n
-    rw [tailInf_eq_neg_tailSup_neg]
-    ring
-  rw [hfun]
-  simpa using h
-
-/-- **Exercise 6.9(3).** For a bounded real sequence and a positive real $`e`, there is an
-$`n` such that the standard tail $`s_n, s_{n+1}, \dots` lies in the interval
-$`(\liminf s - e, \limsup s + e)`. -/
-theorem exists_tail_subset_Ioo (hb : ∃ b : ℝ, ∀ n, |s n| < b) {e : ℝ} (he : 0 < e) :
-    ∃ n, ∀ m, n ≤ m → s m ∈ Ioo (limInf s - e) (limSup s + e) :=
-  eventually_atTop.1 ((eventually_limInf_sub_lt hb he).and (eventually_lt_limSup_add hb he))
-
-/-- **Section 6.8, non-vacuity.** The bounded sequence $`(-1)^n` does not converge: its limit
+/-- **Section 6.8, example.** The bounded sequence $`(-1)^n` does not converge: its limit
 superior is $`1` and its limit inferior is $`-1`. The extended terms at even unlimited
 hypernaturals are $`1` and those at odd ones are $`-1`. -/
 theorem limSup_limInf_neg_one_pow :
@@ -738,6 +670,103 @@ theorem limSup_limInf_neg_one_pow :
       norm_num
     · right
       rw [h, Hyperreal.coe_neg, Hyperreal.coe_one]
+
+end LimSup
+
+/-!
+## 6.9 Exercises on lim sup and lim inf
+
+The first exercise, the definition of the limit inferior of an arbitrary sequence, is
+{name}`limInfE` above. The second asks for the counterparts for the limit inferior of Theorems
+6.8.4 and 6.8.5; they are obtained from those theorems by passing to the sequence of
+negatives. The third combines the two halves: every interval that is slightly larger than the
+interval from the limit inferior to the limit superior contains a standard tail.
+-/
+
+section ExercisesLimSup
+
+variable {s : ℕ → ℝ}
+
+/-- **Exercise 6.9(2), counterpart of Theorem 6.8.4 (1).** For a bounded real sequence and a
+positive real $`e`, some standard tail of the sequence lies above $`\liminf s - e`. -/
+theorem eventually_limInf_sub_lt (hb : ∃ b : ℝ, ∀ n, |s n| < b) {e : ℝ} (he : 0 < e) :
+    ∀ᶠ n in atTop, limInf s - e < s n :=
+  eventually_gt_of_forall_clusterSet_gt (bddBelow_range_of_bounded hb) fun c hc => by
+    linarith [(isLeast_limInf hb).2 hc]
+
+/-- **Exercise 6.9(2), counterpart of Theorem 6.8.4 (1)**, as a statement about finite sets:
+$`\liminf s - e < s_n` for all but finitely many $`n`. -/
+theorem finite_setOf_le_limInf_sub (hb : ∃ b : ℝ, ∀ n, |s n| < b) {e : ℝ} (he : 0 < e) :
+    {n | s n ≤ limInf s - e}.Finite := by
+  have h := eventually_limInf_sub_lt hb he
+  rw [← Nat.cofinite_eq_atTop, eventually_cofinite] at h
+  simpa using h
+
+/-- **Exercise 6.9(2), counterpart of Theorem 6.8.4 (2).** For a bounded real sequence and a
+positive real $`e`, $`s_n < \liminf s + e` for arbitrarily large $`n`. -/
+theorem frequently_lt_limInf_add (hb : ∃ b : ℝ, ∀ n, |s n| < b) {e : ℝ} (he : 0 < e) :
+    ∃ᶠ n in atTop, s n < limInf s + e :=
+  frequently_lt_of_mem_clusterSet (limInf_mem_clusterSet hb) (by linarith)
+
+/-- **Exercise 6.9(2), counterpart of Theorem 6.8.4 (2)**, as a statement about infinite sets.
+-/
+theorem infinite_setOf_lt_limInf_add (hb : ∃ b : ℝ, ∀ n, |s n| < b) {e : ℝ} (he : 0 < e) :
+    {n | s n < limInf s + e}.Infinite :=
+  Nat.frequently_atTop_iff_infinite.1 (frequently_lt_limInf_add hb he)
+
+/-- **Exercise 6.9(2).** The infimum $`\inf_{m \ge n} s_m` of the standard tail of the sequence
+that starts at $`n`. -/
+def tailInf (s : ℕ → ℝ) (n : ℕ) : ℝ := sInf (s '' Ici n)
+
+/-- The tail infimum is minus the tail supremum of the sequence of negatives. -/
+theorem tailInf_eq_neg_tailSup_neg (s : ℕ → ℝ) (n : ℕ) :
+    tailInf s n = -tailSup (fun m => -s m) n := by
+  rw [tailInf, tailSup, Real.sInf_def]
+  congr 2
+  ext x
+  simp only [Set.mem_neg, mem_image, mem_Ici]
+  constructor
+  · rintro ⟨m, hm, h⟩
+    exact ⟨m, hm, by linarith⟩
+  · rintro ⟨m, hm, h⟩
+    exact ⟨m, hm, by linarith⟩
+
+/-- **Exercise 6.9(2), counterpart of Theorem 6.8.5.** For a bounded real sequence $`s`, the
+infima of the tails converge to the limit inferior:
+$$`\liminf_{n\to\infty} s_n = \lim_{n\to\infty} \Bigl(\inf_{m \ge n} s_m\Bigr).` -/
+theorem tendsto_tailInf_limInf (hb : ∃ b : ℝ, ∀ n, |s n| < b) :
+    Tendsto (tailInf s) atTop (𝓝 (limInf s)) := by
+  have h := limit_const_mul (-1) (tendsto_tailSup_limSup (bounded_neg hb))
+  rw [limInf_eq_neg_limSup_neg]
+  have hfun : tailInf s = fun n => -1 * tailSup (fun m => -s m) n := by
+    funext n
+    rw [tailInf_eq_neg_tailSup_neg]
+    ring
+  rw [hfun]
+  simpa using h
+
+/-- **Exercise 6.9(2), counterpart of Theorem 6.8.5**, supremum form: the limit inferior of a
+bounded sequence is the least upper bound of its tail infima. It follows from the infimum form
+of Theorem 6.8.5 for the sequence of negatives. -/
+theorem limInf_eq_iSup_tailInf (hb : ∃ b : ℝ, ∀ n, |s n| < b) :
+    limInf s = ⨆ n, tailInf s n := by
+  rw [limInf_eq_neg_limSup_neg, limSup_eq_iInf_tailSup (bounded_neg hb), iInf, iSup,
+    ← Real.sSup_neg]
+  congr 1
+  ext x
+  simp only [Set.mem_neg, mem_range]
+  constructor
+  · rintro ⟨n, h⟩
+    exact ⟨n, by rw [tailInf_eq_neg_tailSup_neg, h, neg_neg]⟩
+  · rintro ⟨n, rfl⟩
+    exact ⟨n, by rw [tailInf_eq_neg_tailSup_neg, neg_neg]⟩
+
+/-- **Exercise 6.9(3).** For a bounded real sequence and a positive real $`e`, there is an
+$`n` such that the standard tail $`s_n, s_{n+1}, \dots` lies in the interval
+$`(\liminf s - e, \limsup s + e)`. -/
+theorem exists_tail_subset_Ioo (hb : ∃ b : ℝ, ∀ n, |s n| < b) {e : ℝ} (he : 0 < e) :
+    ∃ n, ∀ m, n ≤ m → s m ∈ Ioo (limInf s - e) (limSup s + e) :=
+  eventually_atTop.1 ((eventually_limInf_sub_lt hb he).and (eventually_lt_limSup_add hb he))
 
 end ExercisesLimSup
 

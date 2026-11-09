@@ -84,15 +84,22 @@ $`s_n`.
 Three statements differ from the printed text, and each difference is explained at the
 statement. Exercise 6.11(6) is false as printed when the ratios converge to zero; it is
 proved for a nonzero limit, and a counterexample to the printed form is included. Exercise
-6.11(8) assumes that the terms are nonzero, and the inequality of its part (c) is weak rather
-than strict. In the ratio tests the limits superior and inferior are taken in the extended
+6.11(8) assumes that the terms are nonzero, and the first inequality of its part (c) is strict
+only from the second term on: it is proved in the weak form for every index and in the book's
+strict form for every positive index. In the ratio tests the limits superior and inferior are taken in the extended
 reals, so that an unbounded sequence of ratios has limit superior plus infinity.
 
 ## Names for later chapters
 
-The lemma {lit}`tendsto_iff_forall_unlimited_infClose` is Theorem 6.1.1. Its forward half is
-{lit}`hyperSeq_infClose_of_tendsto`. The transfer principles for the terms of a sequence are
-{lit}`forall_unlimited_hyperSeq_mem_starSet_iff` and
-{lit}`exists_unlimited_hyperSeq_mem_starSet_iff`, and unlimited hypernaturals are reduced to
-sequences of natural numbers by {lit}`exists_hnat_of_mem_unlimitedHyperNat`.
+The lemma {name}`Goldblatt.tendsto_iff_forall_unlimited_infClose` is Theorem 6.1.1. Its
+forward half is {name}`Goldblatt.hyperSeq_infClose_of_tendsto`. The extended tail of a sequence
+is the set {name}`Goldblatt.extendedTail`. The transfer principles for the terms of a sequence
+are {name}`Goldblatt.forall_unlimited_hyperSeq_mem_starSet_iff` and
+{name}`Goldblatt.exists_unlimited_hyperSeq_mem_starSet_iff`, and unlimited hypernaturals are
+reduced to sequences of natural numbers by
+{name}`Goldblatt.exists_hnat_of_mem_unlimitedHyperNat`. The limits superior and inferior are
+{name}`Goldblatt.limSup` and {name}`Goldblatt.limInf` for bounded sequences and
+{name}`Goldblatt.limSupE` and {name}`Goldblatt.limInfE` in general, and the series notions are
+{name}`Goldblatt.partialSum`, {name}`Goldblatt.SeriesSum`, {name}`Goldblatt.SeriesConverges`,
+{name}`Goldblatt.hyperSum` and {name}`Goldblatt.hyperSumIcc`.
 -/

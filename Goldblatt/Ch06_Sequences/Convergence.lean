@@ -25,9 +25,10 @@ open scoped Hyperreal Topology
 /-!
 ## Extended terms
 
-A real sequence $`s` extends to the hypersequence {lit}`hyperSeq s` of Section 3.13. Its value
-at an unlimited hypernatural $`N` is an _extended term_ $`s_N`, and the extended terms
-together form the _extended tail_ of the sequence. This preliminary section is the technical
+A real sequence $`s` extends to a hypersequence, {name}`hyperSeq` applied to $`s`, as in
+Section 3.13. Its value at an unlimited hypernatural $`N` is an _extended term_ $`s_N`, and
+the extended terms together form the _extended tail_ of the sequence, which is defined below
+as a set of hyperreals. This preliminary section is the technical
 base of the chapter. It is not a numbered section of the book: it collects what the book
 obtains by quoting the transfer principle for one sentence at a time.
 
@@ -39,10 +40,10 @@ $`n \mapsto s_{k_n}` with $`k` tending to infinity along the ultrafilter, and it
 compared with the behaviour of $`s` on its standard tails. The comparison is made by two
 principles, which the book states in Section 6.8:
 
-* a property that holds for every unlimited hypernatural holds for all but finitely many
-  standard natural numbers, and conversely;
-* a property that holds for some unlimited hypernatural holds for infinitely many standard
-  natural numbers, and conversely.
+* every unlimited hypernatural belongs to the enlargement of a set $`A` of natural numbers
+  exactly when $`A` is cofinite, that is, contains a standard tail of the naturals;
+* the enlargement of $`A` contains at least one unlimited hypernatural exactly when $`A` is
+  infinite, that is, has members beyond every standard bound.
 -/
 
 section ExtendedTerms
@@ -65,7 +66,34 @@ the standard value. -/
 theorem hyperSeq_natCast_real (s : ℕ → ℝ) (n : ℕ) : hyperSeq s (n : ℝ*) = (s n : ℝ*) :=
   hyperSeq_natCast s n
 
-/-- Transfer of a termwise inequality: if $`s_n \le t_n` for all $`n` then the same holds for
+/-- **Chapter 6, extended tail.** The _extended tail_ of a real sequence $`s` is the set
+$`\{s_N : N \text{ unlimited}\}` of its extended terms, a set of hyperreals. It is the image
+of the set of unlimited hypernaturals under the extended sequence. -/
+def extendedTail (s : ℕ → ℝ) : Set ℝ* := hyperSeq s '' unlimitedHyperNat
+
+/-- **Chapter 6, extended tail.** A hyperreal lies in the extended tail of $`s` exactly when
+it is the extended term $`s_N` for some unlimited hypernatural $`N`. -/
+theorem mem_extendedTail_iff {y : ℝ*} :
+    y ∈ extendedTail s ↔ ∃ N ∈ unlimitedHyperNat, hyperSeq s N = y :=
+  Iff.rfl
+
+/-- **Chapter 6, extended tail.** Every extended term belongs to the extended tail. -/
+theorem hyperSeq_mem_extendedTail (hN : N ∈ unlimitedHyperNat) :
+    hyperSeq s N ∈ extendedTail s :=
+  mem_image_of_mem _ hN
+
+/-- **Chapter 6, extended tail.** The extended tail is not empty, because unlimited
+hypernaturals exist. -/
+theorem extendedTail_nonempty (s : ℕ → ℝ) : (extendedTail s).Nonempty :=
+  ⟨_, hyperSeq_mem_extendedTail omega_mem_unlimitedHyperNat⟩
+
+/-- **Chapter 6, extended tail.** A statement about all members of the extended tail is a
+statement about all extended terms. -/
+theorem forall_mem_extendedTail_iff {P : ℝ* → Prop} :
+    (∀ y ∈ extendedTail s, P y) ↔ ∀ N ∈ unlimitedHyperNat, P (hyperSeq s N) :=
+  forall_mem_image
+
+/-- **Theorem 6.2.1, transfer step.** Transfer of a termwise inequality: if $`s_n \le t_n` for all $`n` then the same holds for
 the extended sequences at every argument. -/
 theorem hyperSeq_le_hyperSeq (h : ∀ n, s n ≤ t n) (x : ℝ*) : hyperSeq s x ≤ hyperSeq t x := by
   obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
@@ -77,12 +105,12 @@ theorem hyperSeq_const (c : ℝ) (x : ℝ*) : hyperSeq (fun _ => c) x = (c : ℝ
   obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
   rfl
 
-/-- Transfer of an upper bound: if $`s_n \le b` for all $`n` then every value of the extended
+/-- **Theorem 6.2.1, transfer step.** Transfer of an upper bound: if $`s_n \le b` for all $`n` then every value of the extended
 sequence is at most $`b`. -/
 theorem hyperSeq_le_coe {b : ℝ} (h : ∀ n, s n ≤ b) (x : ℝ*) : hyperSeq s x ≤ b := by
   simpa [hyperSeq_const] using hyperSeq_le_hyperSeq (t := fun _ => b) h x
 
-/-- Transfer of a lower bound: if $`b \le s_n` for all $`n` then every value of the extended
+/-- **Theorem 6.2.1, transfer step.** Transfer of a lower bound: if $`b \le s_n` for all $`n` then every value of the extended
 sequence is at least $`b`. -/
 theorem coe_le_hyperSeq {b : ℝ} (h : ∀ n, b ≤ s n) (x : ℝ*) : (b : ℝ*) ≤ hyperSeq s x := by
   simpa [hyperSeq_const] using hyperSeq_le_hyperSeq (s := fun _ => b) h x
@@ -151,7 +179,8 @@ theorem exists_hnat_of_mem_unlimitedHyperNat (hN : N ∈ unlimitedHyperNat) :
   obtain ⟨k, rfl⟩ := exists_hnat_eq hN.1
   exact ⟨k, hnat_mem_unlimitedHyperNat_iff.1 hN, rfl⟩
 
-/-- An unlimited hypernatural exceeds every standard natural number. -/
+/-- **Theorem 6.1.1, step of the proof.** An unlimited hypernatural exceeds every standard
+natural number, so it lies beyond every standard index. -/
 theorem natCast_lt_of_mem_unlimitedHyperNat (hN : N ∈ unlimitedHyperNat) (n : ℕ) :
     (n : ℝ*) < N :=
   natCast_lt_of_mem_hyperNat_of_notMem_range hN.1 hN.2 n
@@ -176,7 +205,7 @@ theorem hyperSeq_add_one (s : ℕ → ℝ) (hN : N ∈ ℕ*) :
   obtain ⟨k, rfl⟩ := exists_hnat_eq hN
   rw [← hnat_const_one, hnat_add, hyperSeq_hnat, hyperSeq_hnat]
 
-/-- Transfer of monotonicity: the extension of a nondecreasing sequence is nondecreasing on
+/-- **Theorem 6.2.1, transfer step.** Transfer of monotonicity: the extension of a nondecreasing sequence is nondecreasing on
 the hypernaturals. -/
 theorem hyperSeq_mono (hs : Monotone s) (hM : M ∈ ℕ*) (hN : N ∈ ℕ*) (h : M ≤ N) :
     hyperSeq s M ≤ hyperSeq s N := by
@@ -222,10 +251,11 @@ theorem frequently_atTop_iff_exists_tendsto_hyperfilter {P : ℕ → Prop} :
   rw [Filter.Frequently, eventually_atTop_iff_forall_tendsto_hyperfilter]
   simp only [not_forall, almostAll_not, not_not, exists_prop]
 
-/-- **Section 6.8, principle (a).** If a property holds for all unlimited hypernaturals then
-it holds for all but finitely many standard natural numbers, and conversely. Here the property
-is membership in a set $`A` of natural numbers, read on the hypernaturals as membership in the
-enlargement of $`A`. -/
+/-- **Section 6.8, principle (a).** Membership of every unlimited hypernatural in the
+enlargement of a set $`A` of natural numbers is equivalent to $`A` being cofinite in
+$`\mathbb{N}`, which is expressed here by saying that $`A` contains a standard tail of the
+naturals. The book speaks of a property of natural numbers; the property is represented by the
+set $`A` where it holds, and on the hypernaturals by the enlargement of that set. -/
 theorem forall_unlimited_mem_starSet_iff (A : Set ℕ) :
     (∀ N ∈ unlimitedHyperNat, N ∈ ⋆((fun n : ℕ => (n : ℝ)) '' A)) ↔ ∀ᶠ n in atTop, n ∈ A := by
   rw [eventually_atTop_iff_forall_tendsto_hyperfilter]
@@ -241,8 +271,9 @@ theorem forall_unlimited_mem_starSet_iff (A : Set ℕ) :
     obtain ⟨k, hk, rfl⟩ := exists_hnat_of_mem_unlimitedHyperNat hN
     exact (key k).2 (h k hk)
 
-/-- **Section 6.8, principle (b).** If a property holds for some unlimited hypernatural then
-it holds for arbitrarily large standard natural numbers, and conversely. -/
+/-- **Section 6.8, principle (b).** Some unlimited hypernatural lies in the enlargement of a
+set $`A` of natural numbers exactly when $`A` is an infinite set, which is expressed here by
+saying that $`A` has members beyond every standard bound. -/
 theorem exists_unlimited_mem_starSet_iff (A : Set ℕ) :
     (∃ N ∈ unlimitedHyperNat, N ∈ ⋆((fun n : ℕ => (n : ℝ)) '' A)) ↔ ∃ᶠ n in atTop, n ∈ A := by
   rw [frequently_atTop_iff_exists_tendsto_hyperfilter]
@@ -426,8 +457,8 @@ theorem hyperSeq_infClose_of_tendsto (h : Tendsto s atTop (𝓝 L)) (hN : N ∈ 
 /-- **Theorem 6.1.1**, in terms of halos: $`s` converges to $`L` if and only if the extended
 tail of $`s` is contained in the halo of $`L`. -/
 theorem tendsto_iff_extendedTail_subset_hal :
-    Tendsto s atTop (𝓝 L) ↔ hyperSeq s '' unlimitedHyperNat ⊆ hal (L : ℝ*) := by
-  rw [tendsto_iff_forall_unlimited_infClose, image_subset_iff]
+    Tendsto s atTop (𝓝 L) ↔ extendedTail s ⊆ hal (L : ℝ*) := by
+  rw [tendsto_iff_forall_unlimited_infClose, extendedTail, image_subset_iff]
   exact forall₂_congr fun N _ => by rw [mem_preimage, mem_hal, infClose_comm]
 
 /-- **Theorem 6.1.1, consequence.** The limit of a convergent sequence is the shadow of each
@@ -782,6 +813,36 @@ theorem tendsto_atTop_iff_forall_exists_tail :
     obtain ⟨n, hn⟩ := h r
     exact eventually_atTop.2 ⟨n, fun m hm => (hn m hm).le⟩
 
+/-- **Section 6.4, book definition of divergence to minus infinity.** The book says that $`s`
+diverges to minus infinity if for each real $`r` some standard tail lies below $`r`. This is
+Mathlib's convergence of $`s` along {name}`Filter.atTop` to {name}`Filter.atBot`, the notion
+used in Theorem 6.4.2 (2) and in case (2)(i) of the general definition of the limit
+superior. -/
+theorem tendsto_atBot_iff_forall_exists_tail :
+    Tendsto s atTop atBot ↔ ∀ r : ℝ, ∃ n, ∀ m, n ≤ m → s m < r := by
+  rw [tendsto_atBot]
+  constructor
+  · intro h r
+    obtain ⟨n, hn⟩ := eventually_atTop.1 (h (r - 1))
+    exact ⟨n, fun m hm => by linarith [hn m hm]⟩
+  · intro h r
+    obtain ⟨n, hn⟩ := h r
+    exact eventually_atTop.2 ⟨n, fun m hm => (hn m hm).le⟩
+
+/-- **Theorem 6.4.2 (2)**, for the book's definition: for each real $`r` some standard tail of
+$`s` lies below $`r` if and only if all extended terms of $`s` are negative unlimited. -/
+theorem forall_exists_tail_lt_iff_forall_unlimited_negUnlimited :
+    (∀ r : ℝ, ∃ n, ∀ m, n ≤ m → s m < r) ↔
+      ∀ N ∈ unlimitedHyperNat, NegUnlimited (hyperSeq s N) := by
+  rw [← tendsto_atBot_iff_forall_exists_tail, tendsto_atBot_iff_forall_unlimited_negUnlimited]
+
+/-- **Theorem 6.4.2 (1)**, for the book's definition: for each real $`r` some standard tail of
+$`s` lies above $`r` if and only if all extended terms of $`s` are positive unlimited. -/
+theorem forall_exists_tail_gt_iff_forall_unlimited_posUnlimited :
+    (∀ r : ℝ, ∃ n, ∀ m, n ≤ m → r < s m) ↔
+      ∀ N ∈ unlimitedHyperNat, PosUnlimited (hyperSeq s N) := by
+  rw [← tendsto_atTop_iff_forall_exists_tail, tendsto_atTop_iff_forall_unlimited_posUnlimited]
+
 end Boundedness
 
 /-!
@@ -928,7 +989,8 @@ theorem mapClusterPt_iff_exists_unlimited_infClose :
 /-- **Section 6.6.** The set $`C_s` of cluster points of a real sequence $`s`. -/
 def clusterSet (s : ℕ → ℝ) : Set ℝ := {L | MapClusterPt L atTop s}
 
-/-- Membership in the set of cluster points, in nonstandard terms. -/
+/-- **Theorem 6.6.1**, as membership in $`C_s`: a real number belongs to the set of cluster
+points of $`s` exactly when some extended term of $`s` is infinitely close to it. -/
 theorem mem_clusterSet_iff :
     L ∈ clusterSet s ↔ ∃ N ∈ unlimitedHyperNat, hyperSeq s N ≊ (L : ℝ*) :=
   mapClusterPt_iff_exists_unlimited_infClose
@@ -965,8 +1027,15 @@ theorem clusterSet_eq_image_sh (hb : ∃ b : ℝ, ∀ n, |s n| < b) :
   · rintro ⟨N, hN, rfl⟩
     exact ⟨N, hN, hl N hN, rfl⟩
 
-/-- **Theorem 6.6.2 (Bolzano-Weierstrass).** Every bounded sequence of real numbers has a
-cluster point: the shadow of any extended term. -/
+/-- **Section 6.8, opening**, in terms of the extended tail: for a bounded sequence the set of
+cluster points is the image of the extended tail under the shadow map. -/
+theorem clusterSet_eq_sh_image_extendedTail (hb : ∃ b : ℝ, ∀ n, |s n| < b) :
+    clusterSet s = sh '' extendedTail s := by
+  rw [clusterSet_eq_image_sh hb, extendedTail, image_image]
+
+/-- **Theorem 6.6.2 (Bolzano-Weierstrass).** A real sequence whose terms are bounded in
+absolute value has at least one cluster point, namely the shadow of any of its extended
+terms. -/
 theorem exists_mapClusterPt_of_bounded (hb : ∃ b : ℝ, ∀ n, |s n| < b) :
     ∃ L : ℝ, MapClusterPt L atTop s :=
   ⟨_, sh_hyperSeq_mem_clusterSet omega_mem_unlimitedHyperNat
