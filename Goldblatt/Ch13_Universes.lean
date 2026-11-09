@@ -137,8 +137,6 @@ book's proof begins ({name}`Goldblatt.NonstandardFramework.internal_sep_of_inter
 hyperfinite set as the sum of the set of its values, which is the intended sum only for
 injective functions. The sum of a hyperfinite set of hyperreals is defined here
 ({name}`Goldblatt.RealFramework.hsum`), but the sum of a function and the exercises of
-Section 13.20 about it are not formalized. The same holds for two illustrations: the
-example at the end of Section 13.8 of a function whose transform does not extend it, and the
-remark in Section 13.9 that an initial segment with unlimited end point is not a standard
-set.
+Section 13.20 about it are not formalized. The same holds for one illustration, the example
+at the end of Section 13.8 of a function whose transform does not extend it.
 -/

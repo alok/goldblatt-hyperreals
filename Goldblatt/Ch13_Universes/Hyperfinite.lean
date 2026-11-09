@@ -366,6 +366,39 @@ standard set $`{}^*\mathcal P(\mathbb N)`. -/
 theorem seg_mem_star_powerset (hn : n ∈ F.star F.N) : F.seg n ∈ F.star (powerset F.N) :=
   (F.mem_star_powerset_iff F.isSetOf_N).2 ⟨sep_subset, F.internal_seg hn⟩
 
+/-- **Section 13.9.** If $`n \in {}^*\mathbb N - \mathbb N`, then the internal set
+$`\{1, \dots, n\}` is not a standard set: a set $`A` whose transform contains every positive
+natural number is unbounded in $`\mathbb N`, so by transfer $`{}^*A` is unbounded in
+$`{}^*\mathbb N`, while $`\{1, \dots, n\}` is bounded by $`n`. -/
+theorem not_standard_seg (hn : n ∈ F.star F.N) (hnN : n ∉ F.N) : ¬ F.Standard (F.seg n) := by
+  rintro ⟨A, hA, hseg⟩
+  have hmemA : ∀ k : ℕ, F.nat (k + 1) ∈ A := fun k => by
+    have h1 : F.nat (k + 1) ∈ F.seg n := mem_sep.2 ⟨F.N_subset_star (F.mem_N.2 ⟨k + 1, rfl⟩),
+      F.pair_nat_mem_star_Le.2 (Nat.le_add_left 1 k), F.nat_le_of_nonstandard hn hnN (k + 1)⟩
+    rw [hseg, ← F.star_nat (k + 1)] at h1
+    exact (F.star_mem_star_iff (F.nat_mem_U _) hA).1 h1
+  have h := F.transfer
+    (.conj (.all 0 (.const F.N) (.ex 1 (.const A) (.conj
+        (.elem (.opair (.var 0) (.var 1)) (.const F.Le)) (.neg (.equal (.var 0) (.var 1))))))
+      (.all 0 (.const F.N) (.all 1 (.const F.N) (.imp
+        (.conj (.elem (.opair (.var 0) (.var 1)) (.const F.Le))
+          (.elem (.opair (.var 1) (.var 0)) (.const F.Le))) (.equal (.var 0) (.var 1))))))
+    (by simp [IsSentence, F.isSetOf_N.1, hA, F.isSetOf_Le.1])
+  sat_simp at h
+  obtain ⟨h1, h2⟩ := h.1 ⟨fun x _ hx => by
+      obtain ⟨k, rfl⟩ := F.mem_N.1 hx
+      exact ⟨F.nat (k + 1), F.nat_mem_U _, hmemA k, F.pair_nat_mem_Le.2 (Nat.le_succ k),
+        fun h => by have := F.nat_injective h; omega⟩,
+    fun x _ hx y _ hy hxy => by
+      obtain ⟨i, rfl⟩ := F.mem_N.1 hx
+      obtain ⟨j, rfl⟩ := F.mem_N.1 hy
+      rw [le_antisymm (F.pair_nat_mem_Le.1 hxy.1) (F.pair_nat_mem_Le.1 hxy.2)]⟩
+  have hnU := F.star_subset_U' F.isSetOf_N hn
+  obtain ⟨y, hyU, hyA, hny, hne⟩ := h1 n hnU hn
+  rw [← hseg] at hyA
+  obtain ⟨hyN, -, hyn⟩ := mem_sep.1 hyA
+  exact hne (h2 n hnU hn y hyU hyN ⟨hny, hyn⟩)
+
 /-!
 ## 13.9 Intervals of hyperreals
 
