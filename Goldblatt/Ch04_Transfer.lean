@@ -34,7 +34,8 @@ The formalization is split over three pages; this page is the overview and the i
   universal transfer and existential transfer.
 * {lit}`Goldblatt.Ch04_Transfer.Applications` covers the examples: the illustrations of
   Sections 4.3 and 4.4, the six examples of Section 4.1 with Exercise 4.1.1, the examples of
-  Section 4.5 with Exercise 4.5.1, and the three points of Section 4.7. Exercise 4.4.1 is
+  Section 4.5 with Exercise 4.5.1, the substitution example of Section 4.6, and the three points
+  of Section 4.7. Exercise 4.4.1 is
   answered throughout that page, by the lemmas that compute the star-transform of each example.
 
 The order of the parts is the order of logical dependence, not the order of the book: the book
@@ -45,7 +46,8 @@ applying it. The sections below follow the book's numbering and say where each i
 ## 4.1 Transforming Statements
 
 Six statements about the reals and their counterparts about the hyperreals: the
-Eudoxus–Archimedes principle ({name}`Goldblatt.exists_hyperNat_gt`), density of the rationals
+Eudoxus–Archimedes principle ({name}`Goldblatt.exists_hyperNat_gt`, and
+{name}`Goldblatt.exists_hyperNat_gt'` for the book's first formulation), density of the rationals
 ({name}`Goldblatt.exists_hyperRat_btwn`), finiteness
 ({name}`Goldblatt.starSet_of_finite_by_transfer`), finitary set operations
 ({name}`Goldblatt.starSet_union_by_transfer`), discreteness of the natural numbers
@@ -90,7 +92,9 @@ assertion of Exercises 3.10 is proved again by transfer.
 
 The theorem of Łoś, {name}`Goldblatt.Formula.los`, proved by induction on formulas, and the
 almost-all criteria of Chapter 3 recovered as its atomic cases. Part 2, where it precedes
-Section 4.5 because transfer is deduced from it.
+Section 4.5 because transfer is deduced from it. The section's example of substitution
+notation, with the theorem of Łoś applied to it
+({name}`Goldblatt.isTrue_star_sumSquaresFormula_subst_ofSeq`), is in part 3.
 
 ## 4.7 Extending Transfer
 
@@ -99,7 +103,8 @@ constants, which belong to the language of the enlarged structure but are not tr
 ({name}`Goldblatt.omegaBoundSentence_over`, {name}`Goldblatt.omegaBoundSentence_ne_star`,
 {name}`Goldblatt.Formula.consts_star_subset`); and Dedekind completeness, each instance of which
 transfers ({name}`Goldblatt.exists_isLUB_starSet`) while the statement about all sets fails
-({name}`Goldblatt.not_dedekindComplete_hyperreal`). Part 3.
+({name}`Goldblatt.not_dedekindComplete_hyperreal`), so that no formula expresses completeness
+in both structures ({name}`Goldblatt.no_formula_expresses_dedekind`). Part 3.
 
 ## The main results
 

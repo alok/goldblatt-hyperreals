@@ -1,7 +1,7 @@
 import Goldblatt.Ch04_Transfer.Los
 
 /-!
-# 4 (part 3). Transfer at Work: Sections 4.1, 4.3 to 4.5 and 4.7
+# 4 (part 3). Transfer at Work: Sections 4.1 and 4.3 to 4.7
 
 This is the third of three parts of Chapter 4 (the overview is on the chapter page
 {lit}`Goldblatt.Ch04_Transfer`). The worked examples and exercises of the chapter are written
@@ -26,11 +26,11 @@ namespace Goldblatt
 open Set Filter Function Ultrapower Term Formula
 open scoped Hyperreal Lang
 
-/-- The set of natural numbers, as a set of reals. Its enlargement is the set
+/-- **Section 4.1, notation.** The set of natural numbers, as a set of reals. Its enlargement is the set
 {lit}`ℕ*` of hypernatural numbers, by definition. -/
 local notation "ℕᵣ" => (range ((↑) : ℕ → ℝ))
 
-/-- The set of rational numbers, as a set of reals. Its enlargement is {lit}`ℚ*`. -/
+/-- **Section 4.1, notation.** The set of rational numbers, as a set of reals. Its enlargement is {lit}`ℚ*`. -/
 local notation "ℚᵣ" => (range ((↑) : ℚ → ℝ))
 
 /-- **Section 4.1, helper.** A natural number, sent to the reals and then to the hyperreals, is that natural number as a
@@ -185,19 +185,6 @@ theorem not_holds_freeBoundExample'_two (y : ℝ) :
   subst ha
   norm_num at hab
 
-/-- **Section 4.6, substitution notation.** The book's example of the notation
-$`\varphi(x_1, x_2)`: the formula $`(\exists y \in \mathbb Q)(x_1^2 + x_2^2 < y)`, with
-$`x_1, x_2, y` the variables $`1, 2, 0`. -/
-def sumSquaresFormula : Formula ℝ :=
-  ∃' 0 ∈ ℚᵣ, (var 1 *' var 1) +' (var 2 *' var 2) <' var 0
-
-/-- **Section 4.6, substitution notation.** The sentence $`\varphi(\pi, \sqrt 2)` obtained by
-substituting constants for the free variables is
-$`(\exists y \in \mathbb Q)(\pi^2 + (\sqrt 2)^2 < y)`. -/
-theorem isTrue_sumSquaresFormula_subst (a b : ℝ) :
-    ((sumSquaresFormula.subst 1 a).subst 2 b).IsTrue ↔ ∃ y ∈ ℚᵣ, a * a + b * b < y := by
-  simp [sumSquaresFormula, IsTrue, holds_subst]
-
 /-- **Section 4.3.** The domain of the tangent: the reals at which the cosine does not vanish. -/
 def tanDomain : Set ℝ := {x | Real.cos x ≠ 0}
 
@@ -311,6 +298,23 @@ $`{}^*\mathbb N`. -/
 theorem isTrue_star_archimedeanSentence' :
     archimedeanSentence'.star.IsTrue ↔ ∀ x : ℝ*, ∃ m : ℝ*, x < m ∧ m ∈ ℕ* := by
   simp [archimedeanSentence', IsTrue, starSet_univ, hyperNat]
+
+/-- **Section 4.1, example 1.** The first formulation says that every real number is less than
+some real number that is a natural number. -/
+theorem isTrue_archimedeanSentence' :
+    archimedeanSentence'.IsTrue ↔ ∀ x : ℝ, ∃ m : ℝ, x < m ∧ m ∈ ℕᵣ := by
+  simp [archimedeanSentence', IsTrue]
+
+/-- **Section 4.1, example 1.** The first formulation is true of the reals: this is the
+Eudoxus–Archimedes principle. -/
+theorem archimedeanSentence'_isTrue : archimedeanSentence'.IsTrue :=
+  isTrue_archimedeanSentence'.2 fun x =>
+    let ⟨n, hn⟩ := exists_nat_gt x; ⟨n, hn, ⟨n, rfl⟩⟩
+
+/-- **Section 4.1, example 1, and Exercise 4.1.1.** By transfer of the first formulation, every
+hyperreal is less than some hyperreal that is a hypernatural number. -/
+theorem exists_hyperNat_gt' (x : ℝ*) : ∃ m : ℝ*, x < m ∧ m ∈ ℕ* :=
+  isTrue_star_archimedeanSentence'.1 ((transfer _).2 archimedeanSentence'_isTrue) x
 
 /-- **Section 4.1, example 1.** The sentence
 $`(\forall x \in {}^*\mathbb R)(\exists m \in \mathbb N)(x < m)`, in which the first bound has
@@ -942,8 +946,8 @@ theorem omegaBoundSentence_isSentence (s : ℕ → ℝ) : (omegaBoundSentence s)
   simp [omegaBoundSentence, boundedBody, Formula.subst, Formula.star, Formula.lt, rel₂, freeVars,
     Term.star, Term.subst, Term.vars, app₁, papp₁, Fin.exists_fin_two]
 
-/-- **Section 4.5, removing the constant.** The book's step "the constant can be removed in
-favour of an existentially quantified variable": the sentence
+/-- **Section 4.5, removing the constant.** The step of the book's argument that trades the
+nonstandard constant for a quantified variable: the sentence
 $`(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < \omega)` implies
 $`(\exists y \in {}^*\mathbb R)(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < y)`, which is the
 star-transform of the boundedness sentence. This is the truth rule for the existential
@@ -1072,6 +1076,62 @@ theorem starSet_Ioi_zero_by_transfer : ⋆(Ioi (0 : ℝ)) = Ioi (0 : ℝ*) := by
   simpa using key x
 
 /-!
+## 4.6 Justifying Transfer: examples
+
+Section 4.6 of the book introduces the notation $`\varphi(x_1, \dots, x_p)` for a formula with
+its free variables displayed, and $`\varphi(s_1, \dots, s_p)` for the result of substituting
+constants. Its example is formalized here, and the theorem of Łoś
+({name}`Goldblatt.Formula.isTrue_star_subst_ofSeq`) is applied to it: with a hyperreal
+$`[r]` in place of the first variable, the transformed sentence is true exactly when its
+instances at the terms $`r_n` are true for almost all $`n`.
+-/
+
+/-- **Section 4.6, substitution notation.** The book's example of the notation
+$`\varphi(x_1, x_2)`: the formula $`(\exists y \in \mathbb Q)(x_1^2 + x_2^2 < y)`, with
+$`x_1, x_2, y` the variables $`1, 2, 0`. -/
+def sumSquaresFormula : Formula ℝ :=
+  ∃' 0 ∈ ℚᵣ, (var 1 *' var 1) +' (var 2 *' var 2) <' var 0
+
+/-- **Section 4.6, substitution notation.** The sentence $`\varphi(\pi, \sqrt 2)` obtained by
+substituting constants for the free variables is
+$`(\exists y \in \mathbb Q)(\pi^2 + (\sqrt 2)^2 < y)`. -/
+theorem isTrue_sumSquaresFormula_subst (a b : ℝ) :
+    ((sumSquaresFormula.subst 1 a).subst 2 b).IsTrue ↔ ∃ y ∈ ℚᵣ, a * a + b * b < y := by
+  simp [sumSquaresFormula, IsTrue, holds_subst]
+
+/-- **Section 4.6, the theorem of Łoś on the example.** For a sequence $`r` of reals and a real
+$`b`, the sentence $`{}^*\varphi([r], b)`, which says
+$`(\exists y \in {}^*\mathbb Q)([r]^2 + b^2 < y)`, is true if and only if
+$`(\exists y \in \mathbb Q)(r_n^2 + b^2 < y)` for almost all $`n`. This is
+{name}`Goldblatt.Formula.isTrue_star_subst_ofSeq` applied to $`\varphi(x_1, b)`. -/
+theorem isTrue_star_sumSquaresFormula_subst_ofSeq (r : ℕ → ℝ) (b : ℝ) :
+    (((sumSquaresFormula.subst 2 b).star : Formula ℝ*).subst 1 (ofSeq r)).IsTrue ↔
+      ∀ᶠ n in hyperfilter ℕ, ∃ y ∈ ℚᵣ, r n * r n + b * b < y := by
+  rw [isTrue_star_subst_ofSeq]
+  refine eventually_congr (Eventually.of_forall fun n => ?_)
+  simp [sumSquaresFormula, IsTrue, holds_subst]
+
+/-- **Section 4.6, the example read in the hyperreals.** The sentence $`{}^*\varphi(c, b)`,
+for a hyperreal $`c` and a real $`b`, says that $`c^2 + b^2` is less than some hyperrational
+number. -/
+theorem isTrue_star_sumSquaresFormula_subst (c : ℝ*) (b : ℝ) :
+    (((sumSquaresFormula.subst 2 b).star : Formula ℝ*).subst 1 c).IsTrue ↔
+      ∃ y ∈ ⋆ℚᵣ, c * c + (b : ℝ*) * b < y := by
+  rw [Formula.star_subst]
+  simp [sumSquaresFormula, IsTrue, holds_subst]
+  rfl
+
+/-- **Section 4.6, the theorem of Łoś on the example, both sides unfolded.** The square of a
+hyperreal $`[r]` plus $`b^2` is below some hyperrational exactly when $`r_n^2 + b^2` is below
+some rational for almost all $`n`. (Both sides are in fact always true; the point is that the
+equivalence is an instance of the theorem of Łoś.) -/
+theorem exists_hyperRat_gt_sumSquares_iff (r : ℕ → ℝ) (b : ℝ) :
+    (∃ y ∈ ⋆ℚᵣ, ofSeq r * ofSeq r + (b : ℝ*) * b < y) ↔
+      ∀ᶠ n in hyperfilter ℕ, ∃ y ∈ ℚᵣ, r n * r n + b * b < y :=
+  (isTrue_star_sumSquaresFormula_subst (ofSeq r) b).symm.trans
+    (isTrue_star_sumSquaresFormula_subst_ofSeq r b)
+
+/-!
 ## 4.7 Extending Transfer
 
 Section 4.7 of the book makes three points, each of which has a precise counterpart here.
@@ -1097,7 +1157,9 @@ elements, so a statement such as Dedekind completeness, which begins "for every 
 is not a sentence and cannot be transferred. What can be transferred is each of its instances:
 for a fixed set $`A`, "if $`A` is bounded above then it has a least upper bound" is a sentence
 with $`A` as a relation symbol. So every enlargement that is bounded above has a least upper
-bound, while some sets of hyperreals that are bounded above have none. The sets of the second
+bound, while some sets of hyperreals that are bounded above have none. Consequently no formula
+can say "Dedekind complete" of both structures at once
+(the theorem {lit}`Goldblatt.no_formula_expresses_dedekind` below). The sets of the second
 kind are therefore not enlargements; Chapter 11 of the book calls them external.
 -/
 
@@ -1230,6 +1292,24 @@ theorem not_dedekindComplete_hyperreal :
       linarith
     have := hl.2 hub
     linarith
+
+/-- **Section 4.7, Dedekind completeness is not expressible.** No formula of the language of the
+reals expresses Dedekind completeness uniformly, that is, in such a way that the formula says
+"every nonempty set bounded above has a least upper bound" of the reals and its star-transform
+says the same of the hyperreals. By the transfer principle the formula and its transform have
+the same truth value, whereas completeness holds of the reals and fails of the hyperreals
+({name}`Goldblatt.not_dedekindComplete_hyperreal`). The book's remark is that the completeness
+statement, which quantifies over sets, is no sentence of the language; this theorem is the
+provable form of that remark: whatever a formula says, it cannot be completeness on both
+sides. -/
+theorem no_formula_expresses_dedekind :
+    ¬∃ φ : Formula ℝ,
+      (φ.IsTrue ↔ ∀ S : Set ℝ, S.Nonempty → BddAbove S → ∃ l : ℝ, IsLUB S l) ∧
+      ((φ.star : Formula ℝ*).IsTrue ↔
+        ∀ S : Set ℝ*, S.Nonempty → BddAbove S → ∃ l : ℝ*, IsLUB S l) := by
+  rintro ⟨φ, hR, hS⟩
+  obtain ⟨S, hne, hb, hS'⟩ := not_dedekindComplete_hyperreal
+  exact hS' (hS.1 ((transfer φ).2 (hR.2 fun _ h h' => Real.exists_isLUB h h')) S hne hb)
 
 /-- **Section 4.7.** A set of hyperreals that is nonempty and bounded above but has no least
 upper bound is not the enlargement of any set of reals: transfer would give it a least upper
