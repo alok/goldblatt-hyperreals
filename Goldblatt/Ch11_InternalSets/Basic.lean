@@ -442,7 +442,7 @@ theorem internalSet_range_finite {ι : Type*} [Finite ι] (r : ι → ℕ → α
 
 /-- **Section 11.1, second example.** Every finite set of elements of the star type is
 internal. -/
-theorem Set.Finite.isInternalSet {X : Set αS} (hX : X.Finite) : IsInternalSet α X := by
+theorem isInternalSet_of_finite {X : Set αS} (hX : X.Finite) : IsInternalSet α X := by
   induction X, hX using Set.Finite.induction_on with
   | empty => exact isInternalSet_empty
   | insert _ _ ih =>
@@ -502,7 +502,7 @@ theorem isInternal_singleton (x : ℝ*) : IsInternal ({x} : Set ℝ*) := isInter
 /-- **Section 11.1, second example**, for the hyperreals: every finite set of hyperreals is
 internal. -/
 theorem isInternal_of_finite {X : Set ℝ*} (hX : X.Finite) : IsInternal X :=
-  Set.Finite.isInternalSet hX
+  isInternalSet_of_finite hX
 
 end Algebra
 
