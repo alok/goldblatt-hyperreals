@@ -731,6 +731,263 @@ theorem Formula.over_full {S : Type u} (φ : Formula S) : φ.Over (RelStructure.
   | all x P φ ih | ex x P φ ih => exact ⟨mem_univ _, ih⟩
 
 /-!
+### Customary notation
+
+The book writes binary operations infix, writes $`\tau \in P` for an atomic formula with a
+unary relation, and $`\tau_1 = \tau_2`, $`\tau_1 < \tau_2` for the identity and order relations.
+The definitions below provide these shapes of term and formula, with the lemmas that say what
+they name and when they hold; each is a special case of the general function and relation
+symbols.
+-/
+
+/-- A statement about some one-tuple is a statement about some element. -/
+theorem exists_fin_one_pi {S : Type u} {P : (Fin 1 → S) → Prop} :
+    (∃ a, P a) ↔ ∃ a, P fun _ => a :=
+  ⟨fun ⟨a, h⟩ => ⟨a 0, by
+    have e : (fun _ => a 0) = a := funext fun i => by rw [Fin.eq_zero i]
+    rwa [e]⟩, fun ⟨a, h⟩ => ⟨_, h⟩⟩
+
+/-- A statement about some pair, as a two-tuple, is a statement about some two elements. -/
+theorem exists_fin_two_pi {S : Type u} {P : (Fin 2 → S) → Prop} :
+    (∃ a, P a) ↔ ∃ a b, P ![a, b] :=
+  ⟨fun ⟨a, h⟩ => ⟨a 0, a 1, by
+    have e : ![a 0, a 1] = a := by
+      funext i
+      fin_cases i <;> rfl
+    rwa [e]⟩, fun ⟨a, b, h⟩ => ⟨_, h⟩⟩
+
+namespace Term
+
+variable {S : Type u}
+
+/-- **Section 4.3, notation.** The term $`f(\tau)` for a total function $`f` of one argument. -/
+def app₁ (f : S → S) (t : Term S) : Term S :=
+  func univ (fun a => f (a.1 0)) ![t]
+
+/-- **Section 4.3, notation.** The term $`f(\tau_1, \tau_2)` for a total function $`f` of two
+arguments, such as $`\tau_1 + \tau_2`. -/
+def app₂ (f : S → S → S) (t u : Term S) : Term S :=
+  func univ (fun a => f (a.1 0) (a.1 1)) ![t, u]
+
+/-- **Section 4.3, notation.** The term $`f(\tau)` for a partial function $`f` of one argument
+with domain $`A`, such as $`\tan \tau` or $`s_\tau` for a sequence $`s`. -/
+def papp₁ (A : Set S) (f : A → S) (t : Term S) : Term S :=
+  func (unaryRel A) (fun a => f ⟨a.1 0, a.2⟩) ![t]
+
+section generic
+
+variable {v : Valuation S} {t u : Term S} {c : S}
+
+theorem names_func_one {A : Set (Fin 1 → S)} {g : A → S} :
+    (func A g ![t]).Names v c ↔
+      ∃ a, t.Names v a ∧ ∃ h : (fun _ => a) ∈ A, g ⟨fun _ => a, h⟩ = c := by
+  rw [names_func, exists_fin_one_pi]
+  simp only [Fin.forall_fin_one, Matrix.cons_val_zero]
+
+theorem names_func_two {A : Set (Fin 2 → S)} {g : A → S} :
+    (func A g ![t, u]).Names v c ↔
+      ∃ a b, t.Names v a ∧ u.Names v b ∧ ∃ h : ![a, b] ∈ A, g ⟨![a, b], h⟩ = c := by
+  rw [names_func, exists_fin_two_pi]
+  simp only [Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one, and_assoc]
+
+theorem closed_func_one {A : Set (Fin 1 → S)} {g : A → S} :
+    (func A g ![t]).Closed v ↔ t.Closed v := by
+  simp only [closed_func, Fin.forall_fin_one, Matrix.cons_val_zero]
+
+theorem closed_func_two {A : Set (Fin 2 → S)} {g : A → S} :
+    (func A g ![t, u]).Closed v ↔ t.Closed v ∧ u.Closed v := by
+  simp only [closed_func, Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one]
+
+theorem defined_func_one {A : Set (Fin 1 → S)} {g : A → S} :
+    (func A g ![t]).Defined v ↔
+      t.Defined v ∧ (t.Closed v → ∃ a, t.Names v a ∧ (fun _ => a) ∈ A) := by
+  rw [defined_func, Denotes]
+  simp only [names_func_one, Fin.forall_fin_one, Matrix.cons_val_zero]
+  refine and_congr_right fun _ => imp_congr_right fun _ => ?_
+  exact ⟨fun ⟨_, a, ha, h, _⟩ => ⟨a, ha, h⟩, fun ⟨a, ha, h⟩ => ⟨_, a, ha, h, rfl⟩⟩
+
+theorem defined_func_two {A : Set (Fin 2 → S)} {g : A → S} :
+    (func A g ![t, u]).Defined v ↔ t.Defined v ∧ u.Defined v ∧
+      (t.Closed v → u.Closed v → ∃ a b, t.Names v a ∧ u.Names v b ∧ ![a, b] ∈ A) := by
+  rw [defined_func, Denotes]
+  simp only [names_func_two, Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+    and_assoc, and_imp]
+  refine and_congr_right fun _ => and_congr_right fun _ => imp_congr_right fun _ =>
+    imp_congr_right fun _ => ?_
+  exact ⟨fun ⟨_, a, b, ha, hb, h, _⟩ => ⟨a, b, ha, hb, h⟩,
+    fun ⟨a, b, ha, hb, h⟩ => ⟨_, a, b, ha, hb, h, rfl⟩⟩
+
+end generic
+
+section helpers
+
+variable {v : Valuation S} {t u : Term S} {c : S}
+
+@[simp] theorem names_app₁ {f : S → S} :
+    (app₁ f t).Names v c ↔ ∃ a, t.Names v a ∧ f a = c := by
+  simp only [app₁, names_func_one, mem_univ, exists_true_left]
+
+@[simp] theorem names_app₂ {f : S → S → S} :
+    (app₂ f t u).Names v c ↔ ∃ a b, t.Names v a ∧ u.Names v b ∧ f a b = c := by
+  simp only [app₂, names_func_two, mem_univ, exists_true_left, Matrix.cons_val_zero,
+    Matrix.cons_val_one]
+
+@[simp] theorem names_papp₁ {A : Set S} {f : A → S} :
+    (papp₁ A f t).Names v c ↔ ∃ a, t.Names v a ∧ ∃ h : a ∈ A, f ⟨a, h⟩ = c := by
+  simp only [papp₁, names_func_one]
+  rfl
+
+@[simp] theorem closed_app₁ {f : S → S} : (app₁ f t).Closed v ↔ t.Closed v := closed_func_one
+
+@[simp] theorem closed_app₂ {f : S → S → S} :
+    (app₂ f t u).Closed v ↔ t.Closed v ∧ u.Closed v := closed_func_two
+
+@[simp] theorem closed_papp₁ {A : Set S} {f : A → S} : (papp₁ A f t).Closed v ↔ t.Closed v :=
+  closed_func_one
+
+/-- **Section 4.3.** A term built with a total function is defined as soon as its argument
+is. -/
+@[simp] theorem defined_app₁ {f : S → S} : (app₁ f t).Defined v ↔ t.Defined v := by
+  rw [app₁, defined_func_one]
+  refine and_iff_left_of_imp fun hd hc => ?_
+  obtain ⟨a, ha⟩ := hd.denotes hc
+  exact ⟨a, ha, mem_univ _⟩
+
+@[simp] theorem defined_app₂ {f : S → S → S} :
+    (app₂ f t u).Defined v ↔ t.Defined v ∧ u.Defined v := by
+  rw [app₂, defined_func_two, ← and_assoc]
+  refine and_iff_left_of_imp fun hd hc hc' => ?_
+  obtain ⟨a, ha⟩ := hd.1.denotes hc
+  obtain ⟨b, hb⟩ := hd.2.denotes hc'
+  exact ⟨a, b, ha, hb, mem_univ _⟩
+
+/-- **Section 4.3.** A term $`f(\tau)` with $`f` partial is defined when $`\tau` is and, if
+$`\tau` is closed, the element it names lies in the domain of $`f`. -/
+@[simp] theorem defined_papp₁ {A : Set S} {f : A → S} :
+    (papp₁ A f t).Defined v ↔ t.Defined v ∧ (t.Closed v → ∃ a, t.Names v a ∧ a ∈ A) := by
+  rw [papp₁, defined_func_one]
+  rfl
+
+end helpers
+
+end Term
+
+namespace Formula
+
+variable {S : Type u}
+
+/-- **Section 4.3, notation.** The membership formula $`\tau \in A`: the atomic formula of the
+unary relation $`A`. -/
+def mem (t : Term S) (A : Set S) : Formula S := rel (unaryRel A) ![t]
+
+/-- **Section 4.3, notation.** The atomic formula $`P(\tau_1, \tau_2)` of a binary relation,
+written infix for the familiar relations. -/
+def rel₂ (P : S → S → Prop) (t u : Term S) : Formula S := rel {a | P (a 0) (a 1)} ![t, u]
+
+/-- **Section 4.3, notation.** The formula $`\tau_1 = \tau_2`, the atomic formula of the identity
+relation. -/
+def eq (t u : Term S) : Formula S := rel₂ (fun a b => a = b) t u
+
+/-- **Section 4.3, notation.** The formula $`\tau_1 < \tau_2` for terms of the language of the
+reals. -/
+def lt (t u : Term ℝ) : Formula ℝ := rel₂ (fun a b => a < b) t u
+
+/-- **Section 4.3, notation.** The formula $`\tau_1 \le \tau_2` for terms of the language of the
+reals. -/
+def le (t u : Term ℝ) : Formula ℝ := rel₂ (fun a b => a ≤ b) t u
+
+section generic
+
+variable {v : Valuation S} {t u : Term S}
+
+theorem holds_rel_one {P : Set (Fin 1 → S)} :
+    (rel P ![t]).Holds v ↔ ∃ a, t.Names v a ∧ (fun _ => a) ∈ P := by
+  rw [holds_rel, exists_fin_one_pi]
+  simp only [Fin.forall_fin_one, Matrix.cons_val_zero]
+
+theorem holds_rel_two {P : Set (Fin 2 → S)} :
+    (rel P ![t, u]).Holds v ↔ ∃ a b, t.Names v a ∧ u.Names v b ∧ ![a, b] ∈ P := by
+  rw [holds_rel, exists_fin_two_pi]
+  simp only [Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one, and_assoc]
+
+theorem defined_rel_one {P : Set (Fin 1 → S)} : (rel P ![t]).Defined v ↔ t.Defined v := by
+  simp only [defined_rel, Fin.forall_fin_one, Matrix.cons_val_zero]
+
+theorem defined_rel_two {P : Set (Fin 2 → S)} :
+    (rel P ![t, u]).Defined v ↔ t.Defined v ∧ u.Defined v := by
+  simp only [defined_rel, Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one]
+
+end generic
+
+section helpers
+
+variable {v : Valuation S} {t u : Term S}
+
+@[simp] theorem holds_mem {A : Set S} : (mem t A).Holds v ↔ ∃ a, t.Names v a ∧ a ∈ A :=
+  holds_rel_one
+
+@[simp] theorem holds_rel₂ {P : S → S → Prop} :
+    (rel₂ P t u).Holds v ↔ ∃ a b, t.Names v a ∧ u.Names v b ∧ P a b :=
+  holds_rel_two
+
+@[simp] theorem holds_eq : (eq t u).Holds v ↔ ∃ a b, t.Names v a ∧ u.Names v b ∧ a = b :=
+  holds_rel_two
+
+@[simp] theorem holds_lt {t u : Term ℝ} {v : Valuation ℝ} :
+    (lt t u).Holds v ↔ ∃ a b, t.Names v a ∧ u.Names v b ∧ a < b :=
+  holds_rel_two
+
+@[simp] theorem holds_le {t u : Term ℝ} {v : Valuation ℝ} :
+    (le t u).Holds v ↔ ∃ a b, t.Names v a ∧ u.Names v b ∧ a ≤ b :=
+  holds_rel_two
+
+@[simp] theorem defined_mem {A : Set S} : (mem t A).Defined v ↔ t.Defined v := defined_rel_one
+
+@[simp] theorem defined_rel₂ {P : S → S → Prop} :
+    (rel₂ P t u).Defined v ↔ t.Defined v ∧ u.Defined v := defined_rel_two
+
+@[simp] theorem defined_eq : (eq t u).Defined v ↔ t.Defined v ∧ u.Defined v := defined_rel_two
+
+@[simp] theorem defined_lt {t u : Term ℝ} {v : Valuation ℝ} :
+    (lt t u).Defined v ↔ t.Defined v ∧ u.Defined v := defined_rel_two
+
+@[simp] theorem defined_le {t u : Term ℝ} {v : Valuation ℝ} :
+    (le t u).Defined v ↔ t.Defined v ∧ u.Defined v := defined_rel_two
+
+end helpers
+
+end Formula
+
+/-!
+The notation below is available after {lit}`open scoped Goldblatt.Lang`. It writes formulas
+in a shape close to the book's: {lit}`∀' x ∈ P, φ` and {lit}`∃' x ∈ P, φ` for the bounded
+quantifiers, {lit}`⋏`, {lit}`⋎`, {lit}`∼'`, {lit}`⟹`, {lit}`⟺` for the connectives, and primed
+relation and operation signs between terms.
+-/
+
+namespace Lang
+
+@[inherit_doc] scoped notation:50 t:51 " =' " u:51 => Formula.eq t u
+@[inherit_doc] scoped notation:50 t:51 " <' " u:51 => Formula.lt t u
+@[inherit_doc] scoped notation:50 t:51 " ≤' " u:51 => Formula.le t u
+@[inherit_doc] scoped notation:50 t:51 " ∈' " A:51 => Formula.mem t A
+@[inherit_doc] scoped infixr:35 " ⋏ " => Formula.and
+@[inherit_doc] scoped infixr:30 " ⋎ " => Formula.or
+@[inherit_doc] scoped notation:max "∼'" φ:max => Formula.not φ
+@[inherit_doc] scoped infixr:25 " ⟹ " => Formula.imp
+@[inherit_doc] scoped infix:20 " ⟺ " => Formula.iff
+@[inherit_doc] scoped notation:15 "∀' " x:max " ∈ " P:51 ", " φ:15 => Formula.all x P φ
+@[inherit_doc] scoped notation:15 "∃' " x:max " ∈ " P:51 ", " φ:15 => Formula.ex x P φ
+/-- **Section 4.3, notation.** The sum of two terms of the language of the reals. -/
+scoped notation:65 t:65 " +' " u:66 => Term.app₂ (fun a b : ℝ => a + b) t u
+/-- **Section 4.3, notation.** The difference of two terms of the language of the reals. -/
+scoped notation:65 t:65 " -' " u:66 => Term.app₂ (fun a b : ℝ => a - b) t u
+/-- **Section 4.3, notation.** The product of two terms of the language of the reals. -/
+scoped notation:70 t:70 " *' " u:71 => Term.app₂ (fun a b : ℝ => a * b) t u
+
+end Lang
+
+/-!
 ## 4.4 Star-Transforms
 
 The star-transform of a formula of the language of the full structure on a set is a formula of
@@ -833,5 +1090,238 @@ theorem Formula.star_subst (x : ℕ) (s : α) (φ : Formula α) :
     · simp [Formula.subst, Formula.star, h, ih]
 
 end Star
+
+/-!
+### Dropping the stars
+
+The book drops the star from the transforms of familiar symbols: the transform of
+$`\tau_1 = \tau_2` is again an equation, the transform of $`\tau_1 < \tau_2` an inequality, and
+the transform of $`\tau \in A` is $`\tau \in {}^*A`. The lemmas below justify this for the
+notation of Section 4.3: they compute what the star-transforms of those terms name and when
+the star-transforms of those formulas hold, in terms of the extensions and enlargements of
+Chapter 3.
+-/
+
+section StarNotation
+
+variable {α αS : Type u} [StarType α αS]
+
+@[simp] theorem Term.star_var (x : ℕ) : ((Term.var x : Term α).star : Term αS) = .var x := rfl
+
+@[simp] theorem Term.star_const (s : α) : ((Term.const s).star : Term αS) = .const (of s) := rfl
+
+@[simp] theorem Formula.star_and (φ ψ : Formula α) :
+    ((φ.and ψ).star : Formula αS) = φ.star.and ψ.star := rfl
+@[simp] theorem Formula.star_or (φ ψ : Formula α) :
+    ((φ.or ψ).star : Formula αS) = φ.star.or ψ.star := rfl
+@[simp] theorem Formula.star_not (φ : Formula α) : (φ.not.star : Formula αS) = φ.star.not := rfl
+@[simp] theorem Formula.star_imp (φ ψ : Formula α) :
+    ((φ.imp ψ).star : Formula αS) = φ.star.imp ψ.star := rfl
+@[simp] theorem Formula.star_iff (φ ψ : Formula α) :
+    ((φ.iff ψ).star : Formula αS) = φ.star.iff ψ.star := rfl
+@[simp] theorem Formula.star_all (x : ℕ) (P : Set α) (φ : Formula α) :
+    ((Formula.all x P φ).star : Formula αS) = .all x (⋆P) φ.star := rfl
+@[simp] theorem Formula.star_ex (x : ℕ) (P : Set α) (φ : Formula α) :
+    ((Formula.ex x P φ).star : Formula αS) = .ex x (⋆P) φ.star := rfl
+
+theorem Term.star_vec_one (t : Term α) :
+    (fun i => ((![t] : Fin 1 → Term α) i).star : Fin 1 → Term αS) = ![t.star] := by
+  funext i
+  rw [Fin.eq_zero i]
+  rfl
+
+theorem Term.star_vec_two (t u : Term α) :
+    (fun i => ((![t, u] : Fin 2 → Term α) i).star : Fin 2 → Term αS) = ![t.star, u.star] := by
+  funext i
+  fin_cases i <;> rfl
+
+/-- **Section 3.13.** The extension of a total function of one argument, regarded as a partial
+function whose domain is everything, is the extension of Section 3.11. -/
+theorem starMapOnN_univ_one (f : α → α) (a : αS)
+    (h : (fun _ : Fin 1 => a) ∈ starRel (univ : Set (Fin 1 → α))) :
+    starMapOnN univ (fun p : (univ : Set (Fin 1 → α)) => f (p.1 0)) ⟨fun _ => a, h⟩ = ⋆f a := by
+  obtain ⟨r, rfl⟩ := ofSeq_surjective (α := α) a
+  rw [starMap_ofSeq]
+  exact (starMapOnN_ofSeq_eq_ofSeq (r := fun _ => r) h).2
+    (Eventually.of_forall fun n => ⟨mem_univ _, rfl⟩)
+
+theorem vec_two_ofSeq (r s : ℕ → α) :
+    (![ofSeq r, ofSeq s] : Fin 2 → αS) = fun i => ofSeq (![r, s] i) := by
+  funext i
+  fin_cases i <;> rfl
+
+/-- **Exercise 3.12(5).** The extension of a total function of two arguments, regarded as a
+partial function of pairs whose domain is everything, is the two-argument extension of
+Chapter 3. -/
+theorem starMapOnN_univ_two (f : α → α → α) (a b : αS)
+    (h : ![a, b] ∈ starRel (univ : Set (Fin 2 → α))) :
+    starMapOnN univ (fun p : (univ : Set (Fin 2 → α)) => f (p.1 0) (p.1 1)) ⟨![a, b], h⟩ =
+      ⋆f a b := by
+  obtain ⟨r, rfl⟩ := ofSeq_surjective (α := α) a
+  obtain ⟨s, rfl⟩ := ofSeq_surjective (α := α) b
+  rw [starMap₂_ofSeq]
+  have key : ∀ (x : Fin 2 → αS) (hx : x ∈ starRel (univ : Set (Fin 2 → α))),
+      x = (fun i => ofSeq (![r, s] i)) →
+      starMapOnN univ (fun p : (univ : Set (Fin 2 → α)) => f (p.1 0) (p.1 1)) ⟨x, hx⟩ =
+        (ofSeq fun n => f (r n) (s n) : αS) := by
+    rintro x hx rfl
+    exact (starMapOnN_ofSeq_eq_ofSeq hx).2 (Eventually.of_forall fun n => ⟨mem_univ _, rfl⟩)
+  exact key _ h (vec_two_ofSeq r s)
+
+/-- **Section 3.13.** The extension of a partial function of one argument, taken as a function
+of one-tuples, is the extension {name}`Goldblatt.starMapOn` of Section 3.13. -/
+theorem starMapOnN_unaryRel (A : Set α) (f : A → α) (a : αS)
+    (h : (fun _ : Fin 1 => a) ∈ starRel (unaryRel A)) (h' : a ∈ (⋆A : Set αS)) :
+    starMapOnN (unaryRel A) (fun p => f ⟨p.1 0, p.2⟩) ⟨fun _ => a, h⟩ =
+      starMapOn A f ⟨a, h'⟩ := by
+  obtain ⟨r, rfl⟩ := ofSeq_surjective (α := α) a
+  obtain ⟨s, hs⟩ := ofSeq_surjective (α := α) (αS := αS) (starMapOn A f ⟨ofSeq r, h'⟩)
+  rw [← hs]
+  exact (starMapOnN_ofSeq_eq_ofSeq (r := fun _ => r) h).2
+    ((starMapOn_ofSeq_eq_ofSeq h').1 hs.symm)
+
+namespace Term
+
+variable {v : Valuation αS} {t u : Term α} {c : αS}
+
+/-- **Section 4.4.** The transform of $`f(\tau)` names $`{}^*f` of what the transform of $`\tau`
+names. -/
+@[simp] theorem names_star_app₁ {f : α → α} :
+    ((app₁ f t).star : Term αS).Names v c ↔ ∃ a, (t.star : Term αS).Names v a ∧ ⋆f a = c := by
+  simp only [app₁, star, star_vec_one, names_func_one]
+  refine exists_congr fun a => and_congr_right fun _ => ?_
+  constructor
+  · rintro ⟨h, rfl⟩
+    exact (starMapOnN_univ_one f a h).symm
+  · rintro rfl
+    have h : (fun _ : Fin 1 => a) ∈ starRel (univ : Set (Fin 1 → α)) := by
+      rw [starRel_univ]; exact mem_univ _
+    exact ⟨h, starMapOnN_univ_one f a h⟩
+
+/-- **Section 4.4.** The transform of $`f(\tau_1, \tau_2)` names $`{}^*f` of what the transforms
+of $`\tau_1` and $`\tau_2` name. -/
+@[simp] theorem names_star_app₂ {f : α → α → α} :
+    ((app₂ f t u).star : Term αS).Names v c ↔
+      ∃ a b, (t.star : Term αS).Names v a ∧ (u.star : Term αS).Names v b ∧ ⋆f a b = c := by
+  simp only [app₂, star, star_vec_two, names_func_two]
+  refine exists_congr fun a => exists_congr fun b => and_congr_right fun _ =>
+    and_congr_right fun _ => ?_
+  constructor
+  · rintro ⟨h, rfl⟩
+    exact (starMapOnN_univ_two f a b h).symm
+  · rintro rfl
+    have h : ![a, b] ∈ starRel (univ : Set (Fin 2 → α)) := by
+      rw [starRel_univ]; exact mem_univ _
+    exact ⟨h, starMapOnN_univ_two f a b h⟩
+
+/-- **Section 4.4.** The transform of $`f(\tau)`, for a partial function $`f` with domain $`A`,
+names $`{}^*f(a)` when the transform of $`\tau` names an element $`a` of $`{}^*A`. -/
+@[simp] theorem names_star_papp₁ {A : Set α} {f : A → α} :
+    ((papp₁ A f t).star : Term αS).Names v c ↔
+      ∃ a, (t.star : Term αS).Names v a ∧ ∃ h : a ∈ (⋆A : Set αS), starMapOn A f ⟨a, h⟩ = c := by
+  simp only [papp₁, star, star_vec_one, names_func_one]
+  refine exists_congr fun a => and_congr_right fun _ => ?_
+  have hiff : (fun _ : Fin 1 => a) ∈ starRel (unaryRel A) ↔ a ∈ (⋆A : Set αS) := by
+    rw [starRel_unaryRel]; rfl
+  constructor
+  · rintro ⟨h, rfl⟩
+    exact ⟨hiff.1 h, (starMapOnN_unaryRel A f a h (hiff.1 h)).symm⟩
+  · rintro ⟨h, rfl⟩
+    exact ⟨hiff.2 h, starMapOnN_unaryRel A f a (hiff.2 h) h⟩
+
+@[simp] theorem closed_star_app₁ {f : α → α} :
+    ((app₁ f t).star : Term αS).Closed v ↔ (t.star : Term αS).Closed v := by
+  simp only [app₁, star, star_vec_one, closed_func_one]
+
+@[simp] theorem closed_star_app₂ {f : α → α → α} :
+    ((app₂ f t u).star : Term αS).Closed v ↔
+      (t.star : Term αS).Closed v ∧ (u.star : Term αS).Closed v := by
+  simp only [app₂, star, star_vec_two, closed_func_two]
+
+@[simp] theorem closed_star_papp₁ {A : Set α} {f : A → α} :
+    ((papp₁ A f t).star : Term αS).Closed v ↔ (t.star : Term αS).Closed v := by
+  simp only [papp₁, star, star_vec_one, closed_func_one]
+
+@[simp] theorem defined_star_app₁ {f : α → α} :
+    ((app₁ f t).star : Term αS).Defined v ↔ (t.star : Term αS).Defined v := by
+  simp only [app₁, star, star_vec_one, defined_func_one, starRel_univ, mem_univ, and_true]
+  exact and_iff_left_of_imp fun hd hc => hd.denotes hc
+
+@[simp] theorem defined_star_app₂ {f : α → α → α} :
+    ((app₂ f t u).star : Term αS).Defined v ↔
+      (t.star : Term αS).Defined v ∧ (u.star : Term αS).Defined v := by
+  simp only [app₂, star, star_vec_two, defined_func_two, starRel_univ, mem_univ, and_true]
+  rw [← and_assoc]
+  refine and_iff_left_of_imp fun hd hc hc' => ?_
+  obtain ⟨a, ha⟩ := hd.1.denotes hc
+  obtain ⟨b, hb⟩ := hd.2.denotes hc'
+  exact ⟨a, b, ha, hb⟩
+
+@[simp] theorem defined_star_papp₁ {A : Set α} {f : A → α} :
+    ((papp₁ A f t).star : Term αS).Defined v ↔ (t.star : Term αS).Defined v ∧
+      ((t.star : Term αS).Closed v → ∃ a, (t.star : Term αS).Names v a ∧ a ∈ (⋆A : Set αS)) := by
+  simp only [papp₁, star, star_vec_one, defined_func_one, starRel_unaryRel]
+  rfl
+
+end Term
+
+namespace Formula
+
+variable {v : Valuation αS} {t u : Term α}
+
+/-- **Section 4.4.** The transform of $`\tau \in A` is $`{}^*\tau \in {}^*A`. -/
+@[simp] theorem holds_star_mem {A : Set α} :
+    ((mem t A).star : Formula αS).Holds v ↔
+      ∃ a, (t.star : Term αS).Names v a ∧ a ∈ (⋆A : Set αS) := by
+  simp only [mem, star, Term.star_vec_one, holds_rel_one, starRel_unaryRel]
+  rfl
+
+/-- **Section 4.4.** The transform of $`P(\tau_1, \tau_2)` is $`{}^*P({}^*\tau_1, {}^*\tau_2)`. -/
+@[simp] theorem holds_star_rel₂ {P : α → α → Prop} :
+    ((rel₂ P t u).star : Formula αS).Holds v ↔
+      ∃ a b, (t.star : Term αS).Names v a ∧ (u.star : Term αS).Names v b ∧ ⋆P a b := by
+  simp only [rel₂, star, Term.star_vec_two, holds_rel_two, starRel_binary]
+
+/-- **Section 4.4.** The transform of an equation is an equation: the star on the identity
+relation may be dropped. -/
+@[simp] theorem holds_star_eq :
+    ((eq t u).star : Formula αS).Holds v ↔
+      ∃ a b, (t.star : Term αS).Names v a ∧ (u.star : Term αS).Names v b ∧ a = b := by
+  simp only [eq, holds_star_rel₂, starRel₂_eq]
+
+/-- **Section 4.4.** The transform of an inequality between real terms is the same inequality
+between hyperreals: the star on the order relation may be dropped. -/
+@[simp] theorem holds_star_lt {t u : Term ℝ} {v : Valuation ℝ*} :
+    (lt t u).star.Holds v ↔ ∃ a b, t.star.Names v a ∧ u.star.Names v b ∧ a < b := by
+  simp only [lt, holds_star_rel₂, starRel₂_lt]
+
+/-- **Section 4.4.** The transform of a weak inequality between real terms is the same
+inequality between hyperreals. -/
+@[simp] theorem holds_star_le {t u : Term ℝ} {v : Valuation ℝ*} :
+    (le t u).star.Holds v ↔ ∃ a b, t.star.Names v a ∧ u.star.Names v b ∧ a ≤ b := by
+  simp only [le, holds_star_rel₂, starRel₂_le]
+
+@[simp] theorem defined_star_mem {A : Set α} :
+    ((mem t A).star : Formula αS).Defined v ↔ (t.star : Term αS).Defined v := by
+  simp only [mem, star, Term.star_vec_one, defined_rel_one]
+
+@[simp] theorem defined_star_rel₂ {P : α → α → Prop} :
+    ((rel₂ P t u).star : Formula αS).Defined v ↔
+      (t.star : Term αS).Defined v ∧ (u.star : Term αS).Defined v := by
+  simp only [rel₂, star, Term.star_vec_two, defined_rel_two]
+
+@[simp] theorem defined_star_eq :
+    ((eq t u).star : Formula αS).Defined v ↔
+      (t.star : Term αS).Defined v ∧ (u.star : Term αS).Defined v := defined_star_rel₂
+
+@[simp] theorem defined_star_lt {t u : Term ℝ} {v : Valuation ℝ*} :
+    (lt t u).star.Defined v ↔ t.star.Defined v ∧ u.star.Defined v := defined_star_rel₂
+
+@[simp] theorem defined_star_le {t u : Term ℝ} {v : Valuation ℝ*} :
+    (le t u).star.Defined v ↔ t.star.Defined v ∧ u.star.Defined v := defined_star_rel₂
+
+end Formula
+
+end StarNotation
 
 end Goldblatt

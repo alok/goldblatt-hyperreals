@@ -291,12 +291,53 @@ theorem isTrue_star_subst_ofSeq (φ : Formula α) (x : ℕ) (r : ℕ → α) :
   simp only [← SeqValuation.eval_update_some] at h
   exact h
 
+/-- A statement about some tuple that is required to equal a given tuple coordinate by coordinate
+is a statement about that tuple. -/
+theorem exists_tuple_eq_iff {S : Type u} {k : ℕ} {Q : (Fin k → S) → Prop} {c : Fin k → S} :
+    (∃ args, (∀ i, c i = args i) ∧ Q args) ↔ Q c :=
+  ⟨fun ⟨args, h, hq⟩ => by rwa [show c = args from funext h], fun h => ⟨c, fun _ => rfl, h⟩⟩
+
 /-- **Section 4.6, the atomic cases.** The almost-all criterion for an enlarged relation
-(Section 3.14) is the theorem of Łoś for an atomic formula whose terms are variables. -/
-theorem holds_star_rel_var {k : ℕ} (P : Set (Fin k → α)) (r : Fin k → ℕ → α) :
+(Section 3.14) is a case of the theorem of Łoś: apply the theorem to the atomic formula
+$`P(x_1, \dots, x_k)` and the sequences $`r^1, \dots, r^k`. -/
+theorem starRel_ofSeq_by_los {k : ℕ} (P : Set (Fin k → α)) (r : Fin k → ℕ → α) :
     (fun i => (ofSeq (r i) : αS)) ∈ starRel P ↔
-      ∀ᶠ n in hyperfilter ℕ, (fun i => r i n) ∈ P :=
-  starRel_ofSeq
+      ∀ᶠ n in hyperfilter ℕ, (fun i => r i n) ∈ P := by
+  let R : SeqValuation α := fun x => if h : x < k then some (r ⟨x, h⟩) else none
+  have key := holds_star_germ (αS := αS) (rel P fun i : Fin k => Term.var i) R
+  have hg : ∀ i : Fin k, (R.germ : Valuation αS) i = some (ofSeq (r i)) := fun i => by
+    simp [R, SeqValuation.germ]
+  have he : ∀ (n : ℕ) (i : Fin k), R.eval n i = some (r i n) := fun n i => by
+    simp [R, SeqValuation.eval]
+  simp only [star, holds_rel, Term.star_var, Term.names_var, hg, he, Option.some.injEq,
+    exists_tuple_eq_iff] at key
+  exact key
+
+/-- **Section 4.6, the atomic cases.** The criterion for equality, $`[r] = [s]` if and only if
+$`r_n = s_n` for almost all $`n` (Section 3.6), is the theorem of Łoś for the formula
+$`x = y`. -/
+theorem ofSeq_eq_ofSeq_by_los (r s : ℕ → α) :
+    (ofSeq r : αS) = ofSeq s ↔ ∀ᶠ n in hyperfilter ℕ, r n = s n := by
+  have key := holds_star_germ (αS := αS) (eq (Term.var 0) (Term.var 1))
+    (update (update (fun _ => none) 0 (some s)) 1 (some r))
+  simpa [SeqValuation.germ, SeqValuation.eval] using key
+
+/-- **Section 4.6, the atomic cases.** The criterion for membership of an enlargement,
+$`[r] \in {}^*A` if and only if $`r_n \in A` for almost all $`n` (Section 3.9), is the theorem
+of Łoś for the formula $`x \in A`. -/
+theorem ofSeq_mem_starSet_by_los (r : ℕ → α) (A : Set α) :
+    (ofSeq r : αS) ∈ ⋆A ↔ ∀ᶠ n in hyperfilter ℕ, r n ∈ A := by
+  have key := holds_star_germ (αS := αS) (mem (Term.var 0) A) (update (fun _ => none) 0 (some r))
+  simpa [SeqValuation.germ, SeqValuation.eval] using key
+
+/-- **Section 4.6, the atomic cases.** The criterion for the order of the hyperreals,
+$`[r] < [s]` if and only if $`r_n < s_n` for almost all $`n` (Section 3.6), is the theorem of
+Łoś for the formula $`x < y`. -/
+theorem ofSeq_lt_ofSeq_by_los (r s : ℕ → ℝ) :
+    Hyperreal.ofSeq r < Hyperreal.ofSeq s ↔ ∀ᶠ n in hyperfilter ℕ, r n < s n := by
+  have key := holds_star_germ (lt (Term.var 0) (Term.var 1))
+    (update (update (fun _ => none) 0 (some r)) 1 (some s))
+  simpa [SeqValuation.germ, SeqValuation.eval] using key
 
 end Formula
 
