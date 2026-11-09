@@ -443,6 +443,39 @@ theorem of_mem_reach {l : List (ℕ × ZFSet.{u})} (hl : (l.map Prod.fst).Nodup)
     · simp only [List.map_cons, List.mem_cons, not_or] at hy
       rw [h2 y hy.2, Function.update_of_ne hy.1]
 
+/-- The assignments reached through a quantifier block on the variables $`0, \dots, n - 1`
+with bounds $`A_0, \dots, A_{n-1}`: those that give each of these variables a value in
+$`\mathbb U` belonging to its bound and agree with $`v` on all other variables. -/
+theorem mem_reach_ofFn_iff (n : ℕ) (A : Fin n → ZFSet.{u}) :
+    w ∈ reach U (List.ofFn fun i : Fin n => ((i : ℕ), A i)) v ↔
+      (∀ i : Fin n, w i ∈ U ∧ w i ∈ A i) ∧ ∀ y, n ≤ y → w y = v y := by
+  set l := List.ofFn fun i : Fin n => ((i : ℕ), A i) with hl
+  have hfst : l.map Prod.fst = List.ofFn fun i : Fin n => (i : ℕ) := by
+    rw [hl, List.map_ofFn]
+    rfl
+  have hnodup : (l.map Prod.fst).Nodup := by
+    rw [hfst]
+    exact List.nodup_ofFn.2 fun i j h => Fin.ext h
+  have hnot : ∀ y, y ∉ l.map Prod.fst ↔ n ≤ y := by
+    intro y
+    rw [hfst, List.mem_ofFn]
+    constructor
+    · intro h
+      by_contra hlt
+      exact h ⟨⟨y, by omega⟩, rfl⟩
+    · rintro h ⟨i, rfl⟩
+      exact absurd i.2 (by omega)
+  constructor
+  · intro hw
+    obtain ⟨h1, h2⟩ := of_mem_reach hnodup hw
+    exact ⟨fun i => h1 _ (by rw [hl, List.mem_ofFn]; exact ⟨i, rfl⟩),
+      fun y hy => h2 y ((hnot y).2 hy)⟩
+  · rintro ⟨h1, h2⟩
+    refine mem_reach_of (fun p hp => ?_) fun y hy => h2 y ((hnot y).1 hy)
+    rw [hl, List.mem_ofFn] at hp
+    obtain ⟨i, rfl⟩ := hp
+    exact h1 i
+
 theorem admissible_alls {l : List (ℕ × ZFSet.{u})} {φ : Formula.{u}} (hl : ∀ p ∈ l, p.2 ∈ U)
     (hφ : φ.Admissible U (b ∪ {y | y ∈ l.map Prod.fst})) : (alls l φ).Admissible U b := by
   induction l generalizing b with
@@ -482,6 +515,15 @@ theorem star_exs (s : ZFSet.{u} → ZFSet.{u}) (l : List (ℕ × ZFSet.{u})) (φ
 end Formula
 
 attribute [simp] Sat
+
+/-- Unfold the truth definition of an explicitly written formula: evaluates satisfaction,
+values and definedness of terms, transforms, and the assignment at numbered variables. -/
+macro "sat_simp" loc:(Lean.Parser.Tactic.location)? : tactic =>
+  `(tactic| simp only [Formula.Holds, Formula.star, Term.star, Sat, Term.Defined, Term.val,
+    Term.val_opair, Term.defined_opair, Term.star_opair, forall_true_left, true_and, and_true,
+    and_self, implies_true, Function.update_self, Function.update_of_ne, ne_eq,
+    not_false_eq_true, zero_ne_one, one_ne_zero, OfNat.ofNat_ne_zero, OfNat.zero_ne_ofNat,
+    OfNat.ofNat_ne_one, OfNat.one_ne_ofNat, Nat.reduceEqDiff] $[$loc]?)
 
 /-- **Section 13.7, an example.** The sentence $`(\forall x \in \mathcal P(A))
 (\forall y \in x)\,(y \in A)`, used in Section 13.8, is true in every universe containing the

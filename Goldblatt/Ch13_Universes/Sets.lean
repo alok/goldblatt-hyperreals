@@ -169,17 +169,17 @@ theorem isFunc_iff :
     · obtain ⟨b, -, hb⟩ := h3 a ha
       exact ⟨b, hb, fun c hc => h2 a c b hc hb⟩
 
-theorem IsFunc.isFunction (h : IsFunc A B f) : IsFunction f :=
+theorem _root_.ZFSet.IsFunc.isFunction (h : IsFunc A B f) : IsFunction f :=
   let h' := isFunc_iff.1 h
   ⟨h'.1, h'.2.2.1⟩
 
-theorem IsFunc.dom_eq (h : IsFunc A B f) : dom f = A := by
+theorem _root_.ZFSet.IsFunc.dom_eq (h : IsFunc A B f) : dom f = A := by
   obtain ⟨-, h1, -, h3⟩ := isFunc_iff.1 h
   ext a
   rw [mem_dom]
   exact ⟨fun ⟨b, hb⟩ => (h1 a b hb).1, fun ha => let ⟨b, _, hb⟩ := h3 a ha; ⟨b, hb⟩⟩
 
-theorem IsFunc.ran_subset (h : IsFunc A B f) : ran f ⊆ B := by
+theorem _root_.ZFSet.IsFunc.ran_subset (h : IsFunc A B f) : ran f ⊆ B := by
   intro b hb
   obtain ⟨a, ha⟩ := mem_ran.1 hb
   exact (pair_mem_prod.1 (h.1 ha)).2
