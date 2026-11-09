@@ -33,20 +33,73 @@ The formalization is split over three pages; this page is the overview and the i
   Łoś for terms and formulas, and from it the transfer principle, transfer with parameters,
   universal transfer and existential transfer.
 * {lit}`Goldblatt.Ch04_Transfer.Applications` covers the examples: the illustrations of
-  Section 4.3, the six examples of Section 4.1 with Exercise 4.1.1, the examples of Section 4.5
-  with Exercise 4.5.1, and the three points of Section 4.7. Exercise 4.4.1 is answered
-  throughout that page, by the lemmas that compute the star-transform of each example.
+  Sections 4.3 and 4.4, the six examples of Section 4.1 with Exercise 4.1.1, the examples of
+  Section 4.5 with Exercise 4.5.1, and the three points of Section 4.7. Exercise 4.4.1 is
+  answered throughout that page, by the lemmas that compute the star-transform of each example.
 
-## The sections of the chapter
+The order of the parts is the order of logical dependence, not the order of the book: the book
+opens with examples, states transfer, and justifies it last, while here the language comes
+first, then the theorem of Łoś, then transfer, and the examples are proved at the end by
+applying it. The sections below follow the book's numbering and say where each is formalized.
 
-* 4.1 Transforming Statements (part 3). It opens the book's chapter as motivation; here it
-  comes after the theory, because its examples are proved by transfer.
-* 4.2 Relational Structures (part 1).
-* 4.3 The Language of a Relational Structure (part 1; examples in part 3).
-* 4.4 Star-Transforms (part 1; Exercise 4.4.1 in part 3).
-* 4.5 The Transfer Principle (the principle in part 2; the examples in part 3).
-* 4.6 Justifying Transfer (part 2).
-* 4.7 Extending Transfer (part 3).
+## 4.1 Transforming Statements
+
+Six statements about the reals and their counterparts about the hyperreals: the
+Eudoxus–Archimedes principle ({name}`Goldblatt.exists_hyperNat_gt`), density of the rationals
+({name}`Goldblatt.exists_hyperRat_btwn`), finiteness
+({name}`Goldblatt.starSet_of_finite_by_transfer`), finitary set operations
+({name}`Goldblatt.starSet_union_by_transfer`), discreteness of the natural numbers
+({name}`Goldblatt.hyperNat_eq_or_eq_add_one`, {name}`Goldblatt.one_le_of_mem_starSet_posNat`)
+and unbounded sets ({name}`Goldblatt.exists_gt_of_exists_unlimited_mem_starSet`). These same
+theorems answer Exercise 4.1.1. They are in part 3, proved by transfer.
+
+## 4.2 Relational Structures
+
+{name}`Goldblatt.RelStructure`, the full structure {name}`Goldblatt.RelStructure.full` and the
+enlarged structure {name}`Goldblatt.RelStructure.star`, with Exercise 4.2.1
+({name}`Goldblatt.unaryRel_image_of_notMem_star`,
+{name}`Goldblatt.number_systems_ne_starSet`). Part 1.
+
+## 4.3 The Language of a Relational Structure
+
+Terms and formulas ({name}`Goldblatt.Term`, {name}`Goldblatt.Formula`), what a term names
+({name}`Goldblatt.Term.Names`), defined terms and formulas, sentences
+({name}`Goldblatt.Formula.IsSentence`), the truth conditions ({name}`Goldblatt.Formula.Holds`,
+{name}`Goldblatt.Formula.isTrue_all_iff`, {name}`Goldblatt.Formula.isTrue_ex_iff`) and the
+language of a structure ({name}`Goldblatt.Formula.Over`). Part 1; the book's two illustrations,
+of free and bound occurrences ({name}`Goldblatt.freeBoundExample'`) and of an undefined term
+({name}`Goldblatt.isTrue_tanOddSentence`), are in part 3.
+
+## 4.4 Star-Transforms
+
+The transform {name}`Goldblatt.Formula.star`, the fact that it lands in the language of the
+enlarged structure ({name}`Goldblatt.Formula.star_over`), and the lemmas that justify dropping
+the stars from familiar symbols. Part 1. The two transforms the book displays
+({name}`Goldblatt.holds_star_pi_lt_app`, {name}`Goldblatt.holds_star_sin_exp_mem_rat`) and
+Exercise 4.4.1 are in part 3.
+
+## 4.5 The Transfer Principle
+
+{name}`Goldblatt.Formula.transfer`, with {name}`Goldblatt.Formula.universal_transfer` and
+{name}`Goldblatt.Formula.existential_transfer`, in part 2. The examples are in part 3: the field
+axioms, the enlargement of an interval, identities between extended functions, the bounded
+sequence ({name}`Goldblatt.bounded_of_hyperSeq_limited`), and Exercise 4.5.1, for which every
+assertion of Exercises 3.10 is proved again by transfer.
+
+## 4.6 Justifying Transfer
+
+The theorem of Łoś, {name}`Goldblatt.Formula.los`, proved by induction on formulas, and the
+almost-all criteria of Chapter 3 recovered as its atomic cases. Part 2, where it precedes
+Section 4.5 because transfer is deduced from it.
+
+## 4.7 Extending Transfer
+
+Transfer for other structures ({name}`Goldblatt.transfer_complex`); sentences with nonstandard
+constants, which belong to the language of the enlarged structure but are not transforms
+({name}`Goldblatt.omegaBoundSentence_over`, {name}`Goldblatt.omegaBoundSentence_ne_star`,
+{name}`Goldblatt.Formula.consts_star_subset`); and Dedekind completeness, each instance of which
+transfers ({name}`Goldblatt.exists_isLUB_starSet`) while the statement about all sets fails
+({name}`Goldblatt.not_dedekindComplete_hyperreal`). Part 3.
 
 ## The main results
 

@@ -302,7 +302,7 @@ theorem isTrue_star_subst_ofSeq (φ : Formula α) (x : ℕ) (r : ℕ → α) :
   simp only [← SeqValuation.eval_update_some] at h
   exact h
 
-/-- A statement about some tuple that is required to equal a given tuple coordinate by coordinate
+/-- **Section 4.6, helper.** A statement about some tuple that is required to equal a given tuple coordinate by coordinate
 is a statement about that tuple. -/
 theorem exists_tuple_eq_iff {S : Type u} {k : ℕ} {Q : (Fin k → S) → Prop} {c : Fin k → S} :
     (∃ args, (∀ i, c i = args i) ∧ Q args) ↔ Q c :=

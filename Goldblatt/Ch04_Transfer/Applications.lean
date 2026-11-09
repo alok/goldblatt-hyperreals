@@ -33,7 +33,7 @@ local notation "ℕᵣ" => (range ((↑) : ℕ → ℝ))
 /-- The set of rational numbers, as a set of reals. Its enlargement is {lit}`ℚ*`. -/
 local notation "ℚᵣ" => (range ((↑) : ℚ → ℝ))
 
-/-- A natural number, sent to the reals and then to the hyperreals, is that natural number as a
+/-- **Section 4.1, helper.** A natural number, sent to the reals and then to the hyperreals, is that natural number as a
 hyperreal. -/
 theorem coe_natCast_real (n : ℕ) : ((n : ℝ) : ℝ*) = (n : ℝ*) := rfl
 
@@ -104,7 +104,8 @@ end FreeVars
 
 /-- **Section 4.3, free and bound occurrences.** The book's example
 $`(x < 1) \land (\forall x \in \mathbb N)(x > y)`, with $`x` the variable $`0` and $`y` the
-variable $`1`. -/
+variable $`1`. Here $`\mathbb N` is Lean's set of natural numbers, which contains $`0`; the
+variant {lit}`freeBoundExample'` below uses the book's $`\{1, 2, \dots\}`. -/
 def freeBoundExample : Formula ℝ :=
   (var 0 <' const 1) ⋏ (∀' 0 ∈ ℕᵣ, var 1 <' var 0)
 
@@ -120,7 +121,8 @@ theorem freeVars_freeBoundExample : freeBoundExample.freeVars = {0, 1} := by
 
 /-- **Section 4.3.** The formula $`(x < 1) \land (\forall x \in \mathbb N)(x > y)` is true when
 $`x = 0` and $`y = -1`. (The book takes $`x = y = 0`, its natural numbers starting at $`1`;
-Lean's start at $`0`, so $`y` must be smaller.) -/
+Lean's start at $`0`, so $`y` must be smaller. The book's own values are verified for the
+variant with positive naturals in {lit}`holds_freeBoundExample'_zero`.) -/
 theorem holds_freeBoundExample_zero :
     freeBoundExample.Holds (update (update Valuation.empty 0 (some 0)) 1 (some (-1))) := by
   simp only [freeBoundExample, holds_and, holds_lt, holds_all, names_var, names_const,
@@ -134,6 +136,50 @@ $`x = 2`, whatever the value of $`y`. -/
 theorem not_holds_freeBoundExample_two (y : ℝ) :
     ¬freeBoundExample.Holds (update (update Valuation.empty 0 (some 2)) 1 (some y)) := by
   simp only [freeBoundExample, holds_and, holds_lt, names_var, names_const]
+  rintro ⟨⟨a, b, ha, rfl, hab⟩, -⟩
+  simp at ha
+  subst ha
+  norm_num at hab
+
+/-- **Section 4.3.** The book's set of natural numbers $`\{1, 2, 3, \dots\}`, as a set of
+reals. Lean's natural numbers start at $`0`, so this is the set of their successors. -/
+def posNat : Set ℝ := range fun n : ℕ => (n : ℝ) + 1
+
+/-- **Section 4.3.** A real number is a positive natural number exactly when it is a natural
+number and at least $`1`. -/
+theorem mem_posNat_iff (a : ℝ) : a ∈ posNat ↔ a ∈ ℕᵣ ∧ 1 ≤ a := by
+  constructor
+  · rintro ⟨n, rfl⟩
+    exact ⟨⟨n + 1, by push_cast; rfl⟩, by simp⟩
+  · rintro ⟨⟨m, rfl⟩, h⟩
+    have hm : 1 ≤ m := by exact_mod_cast h
+    exact ⟨m - 1, by
+      have : ((m - 1 : ℕ) : ℝ) = (m : ℝ) - 1 := by rw [Nat.cast_sub hm, Nat.cast_one]
+      simp only [this]
+      ring⟩
+
+/-- **Section 4.3, free and bound occurrences, literally.** The book's example
+$`(x < 1) \land (\forall x \in \mathbb N)(x > y)` with the bound read as the book reads it,
+the natural numbers from $`1` on. -/
+def freeBoundExample' : Formula ℝ :=
+  (var 0 <' const 1) ⋏ (∀' 0 ∈ posNat, var 1 <' var 0)
+
+/-- **Section 4.3.** With the natural numbers starting at $`1`, the formula
+$`(x < 1) \land (\forall x \in \mathbb N)(x > y)` is true when $`x = y = 0`, as the book
+says. -/
+theorem holds_freeBoundExample'_zero :
+    freeBoundExample'.Holds (update (update Valuation.empty 0 (some 0)) 1 (some 0)) := by
+  simp only [freeBoundExample', holds_and, holds_lt, holds_all, names_var, names_const, posNat,
+    mem_range, forall_exists_index]
+  refine ⟨⟨0, 1, by simp, rfl, one_pos⟩, ?_⟩
+  rintro _ n rfl -
+  exact ⟨0, n + 1, by simp, by simp, by positivity⟩
+
+/-- **Section 4.3.** With the natural numbers starting at $`1`, the formula is again false when
+$`x = 2`, whatever the value of $`y`. -/
+theorem not_holds_freeBoundExample'_two (y : ℝ) :
+    ¬freeBoundExample'.Holds (update (update Valuation.empty 0 (some 2)) 1 (some y)) := by
+  simp only [freeBoundExample', holds_and, holds_lt, names_var, names_const]
   rintro ⟨⟨a, b, ha, rfl, hab⟩, -⟩
   simp at ha
   subst ha
@@ -384,6 +430,18 @@ theorem isTrue_star_finiteSentence (r : α) (l : List α) :
       ∀ x ∈ (⋆{x | x ∈ r :: l} : Set αS), ∃ b, x = of b ∧ b ∈ r :: l := by
   simp [finiteSentence, IsTrue, holds_star_anyEq, defined_star_anyEq]
 
+/-- **Exercise 3.10(3) by transfer.** The sentence
+$`(\forall x \in \emptyset)\,\lnot(x = x)`, which is true because there is nothing to check. -/
+def emptySentence (α : Type u) : Formula α := ∀' 0 ∈ (∅ : Set α), ∼'(var 0 =' var 0)
+
+/-- **Exercises 4.5.1 and 3.10(3).** By transfer, the enlargement of the empty set is empty: the
+transform of $`(\forall x \in \emptyset)\,\lnot(x = x)` says that no member of
+$`{}^*\emptyset` is equal to itself. -/
+theorem starSet_empty_by_transfer : (⋆(∅ : Set α) : Set αS) = ∅ := by
+  have key := (transfer (αS := αS) (emptySentence α)).2 (by simp [emptySentence, IsTrue])
+  simp [emptySentence, IsTrue] at key
+  exact eq_empty_iff_forall_notMem.2 key
+
 /-- **Section 4.1, example 3, and Exercises 4.1.1, 3.10(1).** By transfer, the enlargement of a
 finite set is the set itself: a finite set of standard elements has no nonstandard members. The
 argument needs the set to be listed by finitely many constants, which is why it says nothing
@@ -397,7 +455,7 @@ theorem starSet_of_finite_by_transfer {A : Set α} (hA : A.Finite) :
   cases L with
   | nil =>
     have : ({x | x ∈ ([] : List α)} : Set α) = ∅ := by ext x; simp
-    rw [this, starSet_empty]
+    rw [this, starSet_empty_by_transfer]
     exact empty_subset _
   | cons r l =>
     intro x hx
@@ -472,6 +530,12 @@ theorem starSet_subset_starSet_by_transfer {A B : Set α} :
   have key := transfer (αS := αS) (subsetSentence A B)
   simpa [subsetSentence, IsTrue, subset_def] using key
 
+/-- **Exercises 4.5.1 and 3.10(2).** $`A = B` if and only if $`{}^*A = {}^*B`, from the
+transferred inclusions in both directions. -/
+theorem starSet_eq_starSet_by_transfer {A B : Set α} : (⋆A : Set αS) = ⋆B ↔ A = B := by
+  rw [subset_antisymm_iff, subset_antisymm_iff, starSet_subset_starSet_by_transfer,
+    starSet_subset_starSet_by_transfer]
+
 /-- **Exercises 4.5.1 and 3.10(5).** By transfer of the atomic sentence $`a \in A`: a standard
 element belongs to $`{}^*A` if and only if it belongs to $`A`. -/
 theorem of_mem_starSet_by_transfer {a : α} {A : Set α} : (of a : αS) ∈ ⋆A ↔ a ∈ A := by
@@ -483,8 +547,10 @@ end SetOperations
 /-!
 ### Example 5: discreteness of the natural numbers
 
-The book's natural numbers start at $`1`; Lean's start at $`0`, so the least-element statement
-below reads $`x \ge 0`.
+The book's natural numbers start at $`1`; Lean's start at $`0`, and the hypernatural numbers
+of Chapter 3 are the enlargement of Lean's. So the least-element statement is given twice: as
+$`x \ge 0` for the hypernaturals of this project, and as the book's $`x \ge 1` for the
+enlargement of the positive naturals {name}`Goldblatt.posNat`.
 -/
 
 /-- **Section 4.1, example 5.** For a natural number $`n`, the sentence
@@ -546,6 +612,37 @@ theorem natCast_lt_of_mem_hyperNat_of_nonstandard {x : ℝ*} (hx : x ∈ ℕ*)
     · exact hns n h
     · exact hns (n + 1) (by rw [h, Nat.cast_succ])
 
+/-- **Section 4.1, example 5.** The sentence
+$`(\forall x \in \mathbb R)(x \in \mathbb N^{\ge 1} \leftrightarrow x \in \mathbb N \land
+1 \le x)`, relating the book's natural numbers to Lean's. -/
+def posNatSentence : Formula ℝ :=
+  ∀' 0 ∈ univ, (var 0 ∈' posNat ⟺ (var 0 ∈' ℕᵣ ⋏ const 1 ≤' var 0))
+
+/-- **Section 4.1, example 5.** By transfer, the enlargement of the book's set of natural numbers
+$`\{1, 2, \dots\}` consists of the hypernatural numbers, in the sense of this project, that are
+at least $`1`. -/
+theorem starSet_posNat_by_transfer : ⋆posNat = {x : ℝ* | x ∈ ℕ* ∧ 1 ≤ x} := by
+  ext x
+  have key := (transfer (αS := ℝ*) posNatSentence).2 (by
+    simpa [posNatSentence, IsTrue] using mem_posNat_iff)
+  simp [posNatSentence, IsTrue, starSet_univ] at key
+  simpa [hyperNat] using key x
+
+/-- **Section 4.1, example 5.** The sentence $`(\forall x \in \mathbb N)(x \ge 1)`, with
+$`\mathbb N` the book's set $`\{1, 2, \dots\}`. -/
+def posNatLeastSentence : Formula ℝ := ∀' 0 ∈ posNat, const 1 ≤' var 0
+
+/-- **Section 4.1, example 5, and Exercise 4.1.1.** The book's statement, literally: by transfer,
+every member of the enlargement of $`\{1, 2, \dots\}` is at least $`1`, that is,
+$`(\forall x \in {}^*\mathbb N)(x \ge 1)`. -/
+theorem one_le_of_mem_starSet_posNat {x : ℝ*} (hx : x ∈ ⋆posNat) : 1 ≤ x := by
+  have key := (transfer (αS := ℝ*) posNatLeastSentence).2 (by
+    simp only [posNatLeastSentence, IsTrue, holds_all, holds_le, names_var, names_const]
+    rintro _ ⟨n, rfl⟩ -
+    exact ⟨1, (n : ℝ) + 1, rfl, by simp, by simp⟩)
+  simp [posNatLeastSentence, IsTrue] at key
+  exact key x hx
+
 /-!
 ### Example 6: unbounded sets of reals
 -/
@@ -580,6 +677,30 @@ theorem exists_nat_gt_by_transfer (r : ℝ) : ∃ n : ℕ, r < n := by
   obtain ⟨_, ⟨n, rfl⟩, hn⟩ :=
     exists_gt_of_exists_unlimited_mem_starSet (A := ℕᵣ) omega_mem_hyperNat real_lt_omega r
   exact ⟨n, hn⟩
+
+/-!
+## 4.4 Star-Transforms: examples
+
+The two transforms displayed in Section 4.4 of the book, computed from the formal definition.
+In both the stars on the order relation and on constants disappear, and what remains is a star
+on the function symbols and on the set $`\mathbb Q`.
+-/
+
+/-- **Section 4.4, first displayed example.** For a function $`f` on the reals, the transform of
+the formula $`\pi < f(x + 1)` is $`\pi < {}^*f(x + 1)`: it holds under a valuation exactly when
+$`x` has a hyperreal value satisfying that inequality. -/
+theorem holds_star_pi_lt_app (f : ℝ → ℝ) (v : Valuation ℝ*) :
+    (const Real.pi <' app₁ f (var 0 +' const 1)).star.Holds v ↔
+      ∃ x, v 0 = some x ∧ (Real.pi : ℝ*) < ⋆f (x + 1) := by
+  simp [starMap₂_add]
+
+/-- **Section 4.4, second displayed example.** The transform of $`\sin e^x \in \mathbb Q` is
+$`\sin e^x \in {}^*\mathbb Q`, where the sine and the exponential are now the extended
+functions. -/
+theorem holds_star_sin_exp_mem_rat (v : Valuation ℝ*) :
+    ((app₁ Real.sin (app₁ Real.exp (var 0))) ∈' ℚᵣ).star.Holds v ↔
+      ∃ x, v 0 = some x ∧ ⋆Real.sin (⋆Real.exp x) ∈ ℚ* := by
+  simp [hyperRat]
 
 /-!
 ## 4.5 The Transfer Principle: examples
@@ -741,63 +862,171 @@ $`n`. -/
 theorem seqFun_natCast (s : ℕ → ℝ) (n : ℕ) : seqFun s ⟨n, n, rfl⟩ = s n := by
   simp [seqFun]
 
+/-- **Section 4.5.** The formula $`(\forall n \in \mathbb N)(|s(n)| < y)`, with $`y` free (the
+variable $`0`): "$`y` bounds the sequence". -/
+noncomputable def boundedBody (s : ℕ → ℝ) : Formula ℝ :=
+  ∀' 1 ∈ ℕᵣ, app₁ (fun a => |a|) (papp₁ ℕᵣ (seqFun s) (var 1)) <' var 0
+
 /-- **Section 4.5.** The sentence
 $`(\exists y \in \mathbb R)(\forall n \in \mathbb N)(|s(n)| < y)`. -/
-noncomputable def boundedSentence (s : ℕ → ℝ) : Formula ℝ :=
-  ∃' 0 ∈ univ, ∀' 1 ∈ ℕᵣ, app₁ (fun a => |a|) (papp₁ ℕᵣ (seqFun s) (var 1)) <' var 0
+noncomputable def boundedSentence (s : ℕ → ℝ) : Formula ℝ := ∃' 0 ∈ univ, boundedBody s
 
 /-- **Section 4.5.** The sentence says that the sequence is bounded. -/
 theorem isTrue_boundedSentence (s : ℕ → ℝ) :
     (boundedSentence s).IsTrue ↔ ∃ y : ℝ, ∀ n : ℕ, |s n| < y := by
-  simp [boundedSentence, IsTrue, seqFun]
+  simp [boundedSentence, boundedBody, IsTrue, seqFun]
 
-/-- **Section 4.5, and Exercise 4.4.1.** The star-transform is
-$`(\exists y \in {}^*\mathbb R)(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < y)`, where
-$`{}^*s` is the hypersequence extending $`s`. -/
-theorem isTrue_star_boundedSentence (s : ℕ → ℝ) :
-    (boundedSentence s).star.IsTrue ↔ ∃ y : ℝ*, ∀ n ∈ ℕ*, |hyperSeq s n| < y := by
+/-- **Section 4.5, and Exercise 4.4.1.** Substituting a hyperreal constant $`y` for the free
+variable of the transform of $`(\forall n \in \mathbb N)(|s(n)| < y)` gives a defined sentence,
+which says $`(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < y)`, where $`{}^*s` is the
+hypersequence extending $`s`. The constant need not be standard. -/
+theorem isTrue_star_boundedBody_subst (s : ℕ → ℝ) (y : ℝ*) :
+    ((boundedBody s).star.subst 0 y).IsDefined ∧
+      (((boundedBody s).star.subst 0 y).IsTrue ↔ ∀ n ∈ ℕ*, |hyperSeq s n| < y) := by
   have hs : ∀ (n : ℝ*) (h : n ∈ ⋆ℕᵣ), starMapOn ℕᵣ (seqFun s) ⟨n, h⟩ = hyperSeq s n :=
     fun n h => starMapOn_range_natCast_eq_hyperSeq s (seqFun s) (seqFun_natCast s) ⟨n, h⟩
-  simp only [boundedSentence, IsTrue, Formula.star_ex, Formula.star_all, holds_ex, holds_all,
-    holds_star_lt, names_star_app₁, names_star_papp₁, Term.star_var, names_var, starSet_univ,
-    mem_univ, true_and, defined_all, defined_star_lt, defined_star_app₁, defined_star_papp₁,
+  simp only [boundedBody, IsTrue, IsDefined, Formula.holds_subst, Formula.defined_subst,
+    Formula.star_all, holds_all,
+    holds_star_lt, names_star_app₁, names_star_papp₁, Term.star_var, names_var,
+    defined_all, defined_star_lt, defined_star_app₁, defined_star_papp₁,
     defined_var, closed_var, starMap_abs]
-  refine exists_congr fun y => ?_
+  refine ⟨by simp, ?_⟩
   constructor
-  · rintro ⟨-, H⟩ n hn
+  · intro H n hn
     obtain ⟨_, _, ⟨_, ⟨a, ha, ha', rfl⟩, rfl⟩, hb, hlt⟩ :=
-      H n hn ⟨fun _ => ⟨n, by simp, hn⟩, trivial⟩
+      H n hn ⟨⟨trivial, fun _ => ⟨n, by simp, hn⟩⟩, trivial⟩
     simp at ha hb
     subst ha hb
     rw [hs] at hlt
     exact hlt
-  · intro H
-    refine ⟨by simp, fun n hn _ => ?_⟩
+  · intro H n hn _
     exact ⟨_, y, ⟨_, ⟨n, by simp, hn, rfl⟩, rfl⟩, by simp, by rw [hs]; exact H n hn⟩
 
+/-- **Section 4.5, and Exercise 4.4.1.** The star-transform of the boundedness sentence is
+$`(\exists y \in {}^*\mathbb R)(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < y)`, where
+$`{}^*s` is the hypersequence extending $`s`. -/
+theorem isTrue_star_boundedSentence (s : ℕ → ℝ) :
+    (boundedSentence s).star.IsTrue ↔ ∃ y : ℝ*, ∀ n ∈ ℕ*, |hyperSeq s n| < y := by
+  rw [boundedSentence, Formula.star_ex, isTrue_ex_iff]
+  simp only [starSet_univ, mem_univ, true_and, (isTrue_star_boundedBody_subst s _).1,
+    (isTrue_star_boundedBody_subst s _).2]
+
+/-- **Sections 4.5 and 4.7.** The sentence
+$`(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < \omega)` of the book's discussion of existential
+transfer. It is obtained exactly as the book obtains it: take the transform of the formula
+$`(\forall n \in \mathbb N)(|s(n)| < y)` and substitute the constant $`\omega` for its free
+variable $`y`. -/
+noncomputable def omegaBoundSentence (s : ℕ → ℝ) : Formula ℝ* :=
+  (boundedBody s).star.subst 0 ω
+
+/-- **Sections 4.5 and 4.7.** The sentence
+$`(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < \omega)` is defined, and it says what it should:
+every term of the hypersequence is smaller in absolute value than $`\omega`. -/
+theorem isTrue_omegaBoundSentence (s : ℕ → ℝ) :
+    (omegaBoundSentence s).IsDefined ∧
+      ((omegaBoundSentence s).IsTrue ↔ ∀ n ∈ ℕ*, |hyperSeq s n| < ω) :=
+  isTrue_star_boundedBody_subst s ω
+
+/-- **Sections 4.5 and 4.7.** The sentence
+$`(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < \omega)` is a sentence of the language of
+$`{}^*\mathfrak R`: its symbols are extensions and enlargements of standard ones, and
+$`\omega`, like every hyperreal, is available as a constant. -/
+theorem omegaBoundSentence_over (s : ℕ → ℝ) :
+    (omegaBoundSentence s).Over (RelStructure.star ℝ) :=
+  ((boundedBody s).star_over).subst 0 ω
+
+/-- **Sections 4.5 and 4.7.** $`(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < \omega)` is a
+sentence: substituting $`\omega` has used up the only free variable. -/
+theorem omegaBoundSentence_isSentence (s : ℕ → ℝ) : (omegaBoundSentence s).IsSentence := by
+  ext x
+  simp [omegaBoundSentence, boundedBody, Formula.subst, Formula.star, Formula.lt, rel₂, freeVars,
+    Term.star, Term.subst, Term.vars, app₁, papp₁, Fin.exists_fin_two]
+
+/-- **Section 4.5, removing the constant.** The book's step "the constant can be removed in
+favour of an existentially quantified variable": the sentence
+$`(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < \omega)` implies
+$`(\exists y \in {}^*\mathbb R)(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < y)`, which is the
+star-transform of the boundedness sentence. This is the truth rule for the existential
+quantifier, with $`\omega` as the witness. -/
+theorem isTrue_star_boundedSentence_of_omegaBoundSentence (s : ℕ → ℝ)
+    (h : (omegaBoundSentence s).IsTrue) : (boundedSentence s).star.IsTrue := by
+  rw [boundedSentence, Formula.star_ex, isTrue_ex_iff]
+  exact ⟨ω, by rw [starSet_univ]; trivial, (isTrue_omegaBoundSentence s).1, h⟩
+
 /-- **Section 4.5, existential transfer.** If the hypersequence extending a real sequence takes
-no unlimited value, then the sequence is bounded. -/
+no unlimited value, then the sequence is bounded. The proof is the book's: the hypothesis makes
+the sentence with the constant $`\omega` true; that sentence is not a transform, but it implies
+the transform of the boundedness sentence, and transfer brings the latter down to the reals. -/
 theorem bounded_of_hyperSeq_limited (s : ℕ → ℝ)
     (h : ∀ N ∈ ℕ*, ∃ r : ℝ, |hyperSeq s N| < (r : ℝ*)) : ∃ b : ℝ, ∀ n : ℕ, |s n| < b := by
-  refine (isTrue_boundedSentence s).1 ((transfer _).1 ((isTrue_star_boundedSentence s).2 ?_))
-  refine ⟨ω, fun N hN => ?_⟩
+  refine (isTrue_boundedSentence s).1 ((transfer _).1
+    (isTrue_star_boundedSentence_of_omegaBoundSentence s ((isTrue_omegaBoundSentence s).2.2 ?_)))
+  intro N hN
   obtain ⟨r, hr⟩ := h N hN
   exact hr.trans (real_lt_omega r)
 
 /-!
 ### Exercise 4.5.1
 
-Which of Exercises 3.10 can be proved by transfer? All but the one about infinite unions.
-Parts (1), (2), (3), (5) and (6) were done above
-({name}`Goldblatt.starSet_of_finite_by_transfer`,
-{name}`Goldblatt.starSet_subset_starSet_by_transfer`,
-{name}`Goldblatt.starSet_union_by_transfer`, {name}`Goldblatt.starSet_inter_by_transfer`,
-{name}`Goldblatt.starSet_diff_by_transfer`, {name}`Goldblatt.of_mem_starSet_by_transfer`,
-{name}`Goldblatt.starSet_Icc_by_transfer`). Part (7), closure of an enlargement under an
-operation, is below. Part (4) is different in kind: a union of infinitely many sets is not
-described by a sentence, which would need an infinite disjunction, and the statement is in fact
-false ({name}`Goldblatt.starSet_iUnion_ne_iUnion_starSet`).
+Which of Exercises 3.10 can be proved by transfer? Every part that asserts something, that is,
+all but part (4), which asks a question whose answer is no. In detail:
+
+* (1), a finite set is its own enlargement: {name}`Goldblatt.starSet_of_finite_by_transfer`.
+* (2), inclusion and equality of sets: {name}`Goldblatt.starSet_subset_starSet_by_transfer` and
+  {name}`Goldblatt.starSet_eq_starSet_by_transfer`.
+* (3), union, intersection, difference and the empty set:
+  {name}`Goldblatt.starSet_union_by_transfer`, {name}`Goldblatt.starSet_inter_by_transfer`,
+  {name}`Goldblatt.starSet_diff_by_transfer`, {name}`Goldblatt.starSet_empty_by_transfer`.
+* (4), countable unions: a union of infinitely many sets is not described by a sentence, which
+  would need an infinite disjunction, and the statement is in fact false
+  ({name}`Goldblatt.starSet_iUnion_ne_iUnion_starSet`).
+* (5), the standard members of an enlargement: {name}`Goldblatt.of_mem_starSet_by_transfer`.
+* (6), closed intervals: {name}`Goldblatt.starSet_Icc_by_transfer`.
+* (7), the hyperintegers are closed under addition, subtraction and multiplication:
+  {lit}`hyperInt_closed_by_transfer` below, a case of the general statement
+  {lit}`starMap₂_mem_starSet_by_transfer` that an enlargement is closed under the
+  extension of any operation under which the set is closed.
+* (8), the enlargement of the positive reals: {lit}`starSet_Ioi_zero_by_transfer`
+  below.
 -/
+
+section Closure
+
+variable {α αS : Type u} [StarType α αS]
+
+/-- **Exercise 3.10(7) by transfer.** For a binary operation $`f` and a set $`A`, the sentence
+$`(\forall x, y \in A)(f(x, y) \in A)`. -/
+def closedSentence₂ (f : α → α → α) (A : Set α) : Formula α :=
+  ∀' 0 ∈ A, ∀' 1 ∈ A, app₂ f (var 0) (var 1) ∈' A
+
+/-- **Exercises 4.5.1 and 3.10(7).** By transfer, if a set is closed under a binary operation
+then its enlargement is closed under the extended operation. -/
+theorem starMap₂_mem_starSet_by_transfer {f : α → α → α} {A : Set α}
+    (hA : ∀ a ∈ A, ∀ b ∈ A, f a b ∈ A) {x y : αS} (hx : x ∈ (⋆A : Set αS))
+    (hy : y ∈ (⋆A : Set αS)) : ⋆f x y ∈ (⋆A : Set αS) := by
+  have key := (transfer (αS := αS) (closedSentence₂ f A)).2 (by
+    simp only [closedSentence₂, IsTrue, holds_all, holds_mem, names_app₂, names_var]
+    intro a ha _ b hb _
+    exact ⟨f a b, ⟨a, b, by simp, by simp, rfl⟩, hA a ha b hb⟩)
+  simp [closedSentence₂, IsTrue] at key
+  exact key x hx y hy
+
+/-- **Exercise 3.10(7) by transfer.** For a unary operation $`f` and a set $`A`, the sentence
+$`(\forall x \in A)(f(x) \in A)`. -/
+def closedSentence₁ (f : α → α) (A : Set α) : Formula α := ∀' 0 ∈ A, app₁ f (var 0) ∈' A
+
+/-- **Exercises 4.5.1 and 3.10(7).** By transfer, if a set is closed under a unary operation
+then its enlargement is closed under the extended operation. -/
+theorem starMap_mem_starSet_by_transfer {f : α → α} {A : Set α} (hA : ∀ a ∈ A, f a ∈ A) {x : αS}
+    (hx : x ∈ (⋆A : Set αS)) : ⋆f x ∈ (⋆A : Set αS) := by
+  have key := (transfer (αS := αS) (closedSentence₁ f A)).2 (by
+    simp only [closedSentence₁, IsTrue, holds_all, holds_mem, names_app₁, names_var]
+    intro a ha _
+    exact ⟨f a, ⟨a, by simp, rfl⟩, hA a ha⟩)
+  simp [closedSentence₁, IsTrue] at key
+  exact key x hx
+
+end Closure
 
 /-- **Exercise 3.10(7) by transfer.** The sentence
 $`(\forall x, y \in A)(x + y \in A)`. -/
@@ -805,7 +1034,7 @@ def addClosedSentence (A : Set ℝ) : Formula ℝ :=
   ∀' 0 ∈ A, ∀' 1 ∈ A, (var 0 +' var 1) ∈' A
 
 /-- **Exercises 4.5.1 and 3.10(7).** By transfer, if a set of reals is closed under addition
-then so is its enlargement. In particular the hyperintegers are closed under addition. -/
+then so is its enlargement. -/
 theorem add_mem_starSet_by_transfer {A : Set ℝ} (hA : ∀ a ∈ A, ∀ b ∈ A, a + b ∈ A) {x y : ℝ*}
     (hx : x ∈ ⋆A) (hy : y ∈ ⋆A) : x + y ∈ ⋆A := by
   have key := (transfer (αS := ℝ*) (addClosedSentence A)).2 (by
@@ -814,6 +1043,33 @@ theorem add_mem_starSet_by_transfer {A : Set ℝ} (hA : ∀ a ∈ A, ∀ b ∈ A
     exact ⟨a + b, ⟨a, b, by simp, by simp, rfl⟩, hA a ha b hb⟩)
   simp [addClosedSentence, IsTrue, starMap₂_add] at key
   exact key x hx y hy
+
+/-- **Exercises 4.5.1 and 3.10(7).** By transfer, the hyperintegers are closed under addition,
+subtraction, multiplication and negation: $`{}^*\mathbb Z` is a subring of the hyperreals. Each
+closure property is the transform of the corresponding property of $`\mathbb Z`. -/
+theorem hyperInt_closed_by_transfer {x y : ℝ*} (hx : x ∈ ℤ*) (hy : y ∈ ℤ*) :
+    x + y ∈ ℤ* ∧ x - y ∈ ℤ* ∧ x * y ∈ ℤ* ∧ -x ∈ ℤ* := by
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · exact starMap₂_mem_starSet_by_transfer (f := fun a b : ℝ => a + b)
+      (by rintro _ ⟨m, rfl⟩ _ ⟨n, rfl⟩; exact ⟨m + n, by push_cast; rfl⟩) hx hy
+  · exact starMap₂_mem_starSet_by_transfer (f := fun a b : ℝ => a - b)
+      (by rintro _ ⟨m, rfl⟩ _ ⟨n, rfl⟩; exact ⟨m - n, by push_cast; rfl⟩) hx hy
+  · exact starMap₂_mem_starSet_by_transfer (f := fun a b : ℝ => a * b)
+      (by rintro _ ⟨m, rfl⟩ _ ⟨n, rfl⟩; exact ⟨m * n, by push_cast; rfl⟩) hx hy
+  · exact starMap_mem_starSet_by_transfer (f := fun a : ℝ => -a)
+      (by rintro _ ⟨m, rfl⟩; exact ⟨-m, by push_cast; rfl⟩) hx
+
+/-- **Exercise 3.10(8) by transfer.** The sentence
+$`(\forall x \in \mathbb R)(x \in \mathbb R^+ \leftrightarrow 0 < x)`. -/
+def positiveSentence : Formula ℝ := ∀' 0 ∈ univ, (var 0 ∈' Ioi 0 ⟺ const 0 <' var 0)
+
+/-- **Exercises 4.5.1 and 3.10(8).** By transfer, the enlargement of the set of positive reals
+is the set of positive hyperreals: $`{}^*(\mathbb R^+) = ({}^*\mathbb R)^+`. -/
+theorem starSet_Ioi_zero_by_transfer : ⋆(Ioi (0 : ℝ)) = Ioi (0 : ℝ*) := by
+  ext x
+  have key := (transfer (αS := ℝ*) positiveSentence).2 (by simp [positiveSentence, IsTrue])
+  simp [positiveSentence, IsTrue, starSet_univ] at key
+  simpa using key x
 
 /-!
 ## 4.7 Extending Transfer
@@ -830,7 +1086,11 @@ a star-transform are standard. A sentence about the hyperreals that mentions a n
 constant, such as $`\omega`, is not a transform. What remains true for such sentences is the
 theorem of Łoś: replace each constant by a representing sequence, and the sentence is true
 exactly when its instances are true at almost all indices
-({name}`Goldblatt.Formula.isTrue_star_subst_ofSeq`).
+({name}`Goldblatt.Formula.isTrue_star_subst_ofSeq`). Such a sentence is still a sentence of the
+language of the enlarged structure, since substituting a constant does not leave that language
+({name}`Goldblatt.Formula.Over.subst`), and it may imply a transform, obtained by quantifying
+the constant away; that is how the book uses them, and the example of Section 4.5 is revisited
+below.
 
 _Quantifying over sets._ The variables of the language range over elements, not over sets of
 elements, so a statement such as Dedekind completeness, which begins "for every set of reals",
@@ -890,21 +1150,20 @@ theorem Formula.consts_star_subset (φ : Formula α) :
 
 end Constants
 
-/-- **Sections 4.5 and 4.7.** The sentence $`(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < \omega)`
-of the book's discussion of existential transfer, written with the hypersequence as a function
-symbol of the full structure on the hyperreals. -/
-noncomputable def omegaBoundSentence (s : ℕ → ℝ) : Formula ℝ* :=
-  ∀' 0 ∈ ℕ*, rel₂ (fun a b => a < b) (app₁ (fun a => |hyperSeq s a|) (var 0)) (const ω)
-
 /-- **Sections 4.5 and 4.7, nonstandard constants.** The sentence
-$`(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < \omega)` is not the star-transform of any formula
-of the language of the reals, because the constant $`\omega` occurs in it. -/
+$`(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < \omega)` belongs to the language of
+$`{}^*\mathfrak R` ({name}`Goldblatt.omegaBoundSentence_over`), but it is not the star-transform
+of any formula of the language of the reals, because the constant $`\omega` occurs in it. So
+the transfer principle does not apply to it directly; one first passes to the existential
+sentence it implies
+({name}`Goldblatt.isTrue_star_boundedSentence_of_omegaBoundSentence`). -/
 theorem omegaBoundSentence_ne_star (s : ℕ → ℝ) (φ : Formula ℝ) :
     φ.star ≠ omegaBoundSentence s := by
   intro h
   have hω : (ω : ℝ*) ∈ (omegaBoundSentence s).consts := by
-    simp only [omegaBoundSentence, Formula.consts, rel₂, mem_iUnion]
-    exact ⟨1, rfl⟩
+    simp only [omegaBoundSentence, boundedBody, Formula.star, Formula.subst, Formula.lt, rel₂,
+      Formula.consts, mem_iUnion, one_ne_zero, ite_false]
+    exact ⟨1, by simp [Term.subst, Term.consts]⟩
   rw [← h] at hω
   obtain ⟨r, hr⟩ := φ.consts_star_subset hω
   exact (real_lt_omega r).ne hr

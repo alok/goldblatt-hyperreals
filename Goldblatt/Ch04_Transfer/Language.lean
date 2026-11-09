@@ -547,9 +547,8 @@ theorem defined_congr {φ : Formula S} {v w : Valuation S} (h : ∀ x ∈ φ.fre
   | not φ ih => exact ih h
   | all x P φ ih | ex x P φ ih => exact ih (update_congr_of_diff h none)
 
-/-- **Section 4.3.** The truth of a formula depends only on the values of its free variables:
-"a formula has no particular meaning until values are assigned to its free variables", and once
-they are, nothing else matters. -/
+/-- **Section 4.3, sentences.** Truth depends only on the values given to the free variables of
+a formula: two valuations that agree on them make the same formulas true. -/
 theorem holds_congr {φ : Formula S} {v w : Valuation S} (h : ∀ x ∈ φ.freeVars, v x = w x) :
     φ.Holds v ↔ φ.Holds w := by
   induction φ generalizing v w with
@@ -706,14 +705,16 @@ theorem holds_subst {x : ℕ} {s : S} {φ : Formula S} {v : Valuation S} :
       simp [subst]
     · simp only [subst, h, ite_false, holds_ex, ih, defined_subst, update_comm h]
 
-/-- **Section 4.3, truth of a universal sentence.** $`(\forall x \in P)\varphi` is true if and
-only if, for all $`s` in $`P`, if the sentence $`\varphi(s)` is defined then it is true. -/
+/-- **Section 4.3, truth of a universal sentence.** A bounded universal sentence
+$`(\forall x \in P)\varphi` is true exactly when every instance $`\varphi(s)`, $`s \in P`, that
+is a defined sentence is true. Undefined instances are passed over. -/
 theorem isTrue_all_iff {x : ℕ} {P : Set S} {φ : Formula S} :
     (all x P φ).IsTrue ↔ ∀ s ∈ P, (φ.subst x s).IsDefined → (φ.subst x s).IsTrue := by
   simp only [IsTrue, IsDefined, holds_all, holds_subst, defined_subst]
 
-/-- **Section 4.3, truth of an existential sentence.** $`(\exists x \in P)\varphi` is true if
-and only if there is some $`s` in $`P` for which $`\varphi(s)` is defined and true. -/
+/-- **Section 4.3, truth of an existential sentence.** A bounded existential sentence
+$`(\exists x \in P)\varphi` is true exactly when some instance $`\varphi(s)` with $`s \in P` is
+both defined and true. -/
 theorem isTrue_ex_iff {x : ℕ} {P : Set S} {φ : Formula S} :
     (ex x P φ).IsTrue ↔ ∃ s ∈ P, (φ.subst x s).IsDefined ∧ (φ.subst x s).IsTrue := by
   simp only [IsTrue, IsDefined, holds_ex, holds_subst, defined_subst]
@@ -764,6 +765,34 @@ theorem Formula.over_full {S : Type u} (φ : Formula S) : φ.Over (RelStructure.
   | not φ ih => exact ih
   | all x P φ ih | ex x P φ ih => exact ⟨mem_univ _, ih⟩
 
+/-- **Section 4.3.** Substituting a constant for a variable keeps a term in the language of a
+structure, since every element of the universe is available as a constant. -/
+theorem Term.Over.subst {S : Type u} {𝔖 : RelStructure S} {t : Term S} (h : t.Over 𝔖) (x : ℕ)
+    (s : S) : (t.subst x s).Over 𝔖 := by
+  induction t with
+  | var y =>
+    by_cases hy : y = x
+    · simp [Term.subst, hy, Term.Over]
+    · simp [Term.subst, hy, Term.Over]
+  | const c => trivial
+  | func A f ts ih => exact ⟨h.1, fun i => ih i (h.2 i)⟩
+
+/-- **Section 4.3.** Substituting a constant for a free variable keeps a formula in the language
+of a structure: $`\varphi(s)` is a formula of the language whenever $`\varphi` is, for any
+element $`s` of the universe. -/
+theorem Formula.Over.subst {S : Type u} {𝔖 : RelStructure S} {φ : Formula S} (h : φ.Over 𝔖)
+    (x : ℕ) (s : S) : (φ.subst x s).Over 𝔖 := by
+  induction φ with
+  | rel P ts => exact ⟨h.1, fun i => (h.2 i).subst x s⟩
+  | and φ ψ ih₁ ih₂ | or φ ψ ih₁ ih₂ | imp φ ψ ih₁ ih₂ | iff φ ψ ih₁ ih₂ =>
+    exact ⟨ih₁ h.1, ih₂ h.2⟩
+  | not φ ih => exact ih h
+  | all y P φ ih | ex y P φ ih =>
+    by_cases hy : y = x
+    · simpa [Formula.subst, hy] using h
+    · simp only [Formula.subst, hy, ite_false]
+      exact ⟨h.1, ih h.2⟩
+
 /-!
 ### Customary notation
 
@@ -774,14 +803,14 @@ they name and when they hold; each is a special case of the general function and
 symbols.
 -/
 
-/-- A statement about some one-tuple is a statement about some element. -/
+/-- **Section 4.3, helper.** A statement about some one-tuple is a statement about some element. -/
 theorem exists_fin_one_pi {S : Type u} {P : (Fin 1 → S) → Prop} :
     (∃ a, P a) ↔ ∃ a, P fun _ => a :=
   ⟨fun ⟨a, h⟩ => ⟨a 0, by
     have e : (fun _ => a 0) = a := funext fun i => by rw [Fin.eq_zero i]
     rwa [e]⟩, fun ⟨a, h⟩ => ⟨_, h⟩⟩
 
-/-- A statement about some pair, as a two-tuple, is a statement about some two elements. -/
+/-- **Section 4.3, helper.** A statement about some pair, as a two-tuple, is a statement about some two elements. -/
 theorem exists_fin_two_pi {S : Type u} {P : (Fin 2 → S) → Prop} :
     (∃ a, P a) ↔ ∃ a b, P ![a, b] :=
   ⟨fun ⟨a, h⟩ => ⟨a 0, a 1, by
