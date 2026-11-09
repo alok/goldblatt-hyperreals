@@ -160,6 +160,13 @@ theorem internalRel_or {R S : ℕ → α → β → Prop} {x : αS} {y : βS} :
   obtain ⟨s, rfl⟩ := ofSeq_surjective (α := β) y
   rw [internalRel_ofSeq, internalRel_ofSeq, internalRel_ofSeq, almostAll_or]
 
+/-- **Section 11.7.** Equality in the ultrapower is the internal relation of the constant
+sequence of the equality of the standard type. -/
+theorem internalRel_eq {x y : αS} : internalRel (fun _ (a b : α) => a = b) x y ↔ x = y := by
+  obtain ⟨r, rfl⟩ := ofSeq_surjective (α := α) x
+  obtain ⟨s, rfl⟩ := ofSeq_surjective (α := α) y
+  rw [internalRel_ofSeq, Ultrapower.ofSeq_eq_ofSeq]
+
 /-- **Internal set definition, sections.** For an internal relation and a fixed parameter
 $`c = [c_n]`, the set $`\{x : R(x, c)\}` is the internal set defined by the sections
 $`\{a : R_n(a, c_n)\}`. -/
@@ -464,6 +471,32 @@ theorem starRealize_not {k : ℕ} (φ : IFormula α k) (v : Fin k → αS) :
     φ.not.starRealize v ↔ ¬ φ.starRealize v :=
   Iff.rfl
 
+/-- The formula that is false at every index. -/
+def falsum {k : ℕ} : IFormula α k := .rel fun _ _ => False
+
+/-- **Section 11.7.** The false formula is false in the ultrapower. -/
+theorem starRealize_falsum {k : ℕ} (v : Fin k → αS) :
+    ¬ (falsum : IFormula α k).starRealize v := by
+  obtain ⟨r, rfl⟩ := exists_rep_fun (α := α) v
+  rw [falsum, starRealize, internalRelN_ofSeq, eventually_const]
+  exact id
+
+/-- The disjunction $`\varphi_1 \vee \dots \vee \varphi_n` of a finite list of formulas; the
+empty disjunction is the false formula. -/
+def disj {k : ℕ} : List (IFormula α k) → IFormula α k
+  | [] => falsum
+  | φ :: l => φ.or (disj l)
+
+/-- **Section 11.7.** A finite disjunction holds in the ultrapower exactly when one of its
+members does. -/
+theorem starRealize_disj {k : ℕ} (l : List (IFormula α k)) (v : Fin k → αS) :
+    (disj l).starRealize v ↔ ∃ φ ∈ l, φ.starRealize v := by
+  induction l with
+  | nil => simp only [disj, starRealize_falsum, List.not_mem_nil, false_and, exists_false]
+  | cons φ l ih =>
+    rw [disj, starRealize_or, ih]
+    simp only [List.mem_cons, exists_eq_or_imp]
+
 /-- **Section 11.7.** In the ultrapower, the atomic formula for membership of variable $`i`
 in $`[A_n]` says that the value of the variable belongs to the internal set. -/
 theorem starRealize_mem {k : ℕ} (i : Fin k) (A : ℕ → Set α) (v : Fin k → αS) :
@@ -708,6 +741,33 @@ theorem starRealize_of_forall_realize {k : ℕ} (Φ : SFormula α m k)
   rw [e, starRealize_internalSet_ofSeq]
   exact Eventually.of_forall fun n => h _ n _
 
+/-- **Theorem 11.7.1** (internal set definition principle), with set symbols. This is the
+statement in the shape the book gives it: for a formula
+$`\varphi(x_0, \dots, x_k, A_1, \dots, A_m)` with set symbols, hyperreals (here, elements
+of the ultrapower) $`c_1, \dots, c_k` and _arbitrary_ internal sets $`X_1, \dots, X_m`, the
+set $`\{b : {}^*\varphi(b, c_1, \dots, c_k, X_1, \dots, X_m)\}` is internal. It follows from
+the version for formulas over internal relations
+({name}`Goldblatt.IFormula.isInternalSet_setOf_starRealize`) by substituting defining
+sequences of the $`X_j` for the set symbols. -/
+theorem isInternalSet_setOf_starRealize {k : ℕ} (Φ : SFormula α m (k + 1))
+    {X : Fin m → Set αS} (hX : ∀ j, IsInternalSet α (X j)) (c : Fin k → αS) :
+    IsInternalSet α {b : αS | Φ.starRealize X (Fin.cons b c)} := by
+  choose A hA using hX
+  have e : X = fun j => (internalSet (A j) : Set αS) := funext hA
+  subst e
+  simp only [starRealize_internalSet]
+  exact IFormula.isInternalSet_setOf_starRealize _ c
+
+/-- **Theorem 11.7.1** (internal set definition principle), with set symbols, in the form in
+which it is applied: a set whose membership condition is the reading in the ultrapower of a
+formula with set symbols, the symbols being read as internal sets, is internal. -/
+theorem isInternalSet_of_forall_iff {k : ℕ} (Φ : SFormula α m (k + 1))
+    {X : Fin m → Set αS} (hX : ∀ j, IsInternalSet α (X j)) (c : Fin k → αS) {Y : Set αS}
+    (h : ∀ x, x ∈ Y ↔ Φ.starRealize X (Fin.cons x c)) : IsInternalSet α Y := by
+  have e : Y = {b : αS | Φ.starRealize X (Fin.cons b c)} := Set.ext h
+  rw [e]
+  exact isInternalSet_setOf_starRealize Φ hX c
+
 /-- The reading of a negation in the ultrapower. -/
 theorem starRealize_not {k : ℕ} (φ : SFormula α m k) (X : Fin m → Set αS) (v : Fin k → αS) :
     φ.not.starRealize X v ↔ ¬ φ.starRealize X v :=
@@ -818,13 +878,16 @@ end Formulas
 /-!
 ### Using the principle
 
-The examples of Section 11.1 can be recovered from the principle, as the book remarks: an
-open interval is defined by the formula $`x_1 < x_0 \wedge x_0 < x_2`. Exercise 11.7.1 asks
+The examples of Section 11.1 can be recovered from the principle, as the book remarks: a
+finite set is defined by a disjunction of equations $`x_0 = x_i`
+({lit}`Goldblatt.isInternalSet_range_of_definition`), and an open interval by the formula
+$`x_1 < x_0 \wedge x_0 < x_2`. Exercise 11.7.1 asks
 for the same to be done for the other intervals, for an initial segment of the hypernaturals
 and for a hyperfinite grid; these are the theorems below whose names end in
 {lit}`_of_definition`, each obtained from {lit}`Goldblatt.IFormula.isInternalSet_of_forall_iff`
-by writing down the defining formula. The least number principle of Section 11.3 is derived
-once more, from the transfer principle for sentences with a set symbol. The first substantial
+by writing down the defining formula. The least number principle of Section 11.3 and the
+order-completeness of Section 11.5 are derived once more, from the transfer principle for
+sentences with a set symbol. The first substantial
 application is the proof that an internal set of real numbers must be finite.
 -/
 
@@ -854,6 +917,39 @@ theorem hyperreal_internalRelN_vec₃ {R : ℕ → (Fin 3 → ℝ) → Prop} {a 
     internalRelN R ![Hyperreal.ofSeq a, Hyperreal.ofSeq b, Hyperreal.ofSeq c] ↔
       ∀ᶠ n in hyperfilter ℕ, R n ![a n, b n, c n] :=
   internalRelN_vec₃
+
+/-- **Section 11.7, first example after the principle.** A finite set
+$`\{c_1, \dots, c_n\}` of elements of the ultrapower is internal because it is defined by
+the formula $`x_0 = x_1 \vee \dots \vee x_0 = x_n` with the parameters $`c_1, \dots, c_n`.
+The disjunction is built by {name}`Goldblatt.IFormula.disj` from the atomic formulas
+$`x_0 = x_i`; for $`n = 0` it is the false formula, which defines the empty set. -/
+theorem isInternalSet_range_of_definition {α αS : Type u} [StarType α αS] {n : ℕ}
+    (c : Fin n → αS) : IsInternalSet α (range c) :=
+  IFormula.isInternalSet_of_forall_iff
+    (IFormula.disj (List.ofFn fun i : Fin n => IFormula.rel₂ 0 i.succ fun _ a b => a = b)) c
+    fun x => by
+      rw [IFormula.starRealize_disj]
+      constructor
+      · rintro ⟨i, rfl⟩
+        exact ⟨_, List.mem_ofFn.2 ⟨i, rfl⟩,
+          (IFormula.starRealize_rel₂ _ _ _ _).2 (internalRel_eq.2 (by simp))⟩
+      · rintro ⟨φ, hφ, h⟩
+        obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hφ
+        have h' := internalRel_eq.1 ((IFormula.starRealize_rel₂ _ _ _ _).1 h)
+        exact ⟨i, by simpa using h'.symm⟩
+
+/-- **Section 11.7, first example after the principle.** Every finite set of elements of the
+ultrapower is internal, by the internal set definition principle. This is
+{name}`Goldblatt.isInternalSet_of_finite` again, now obtained from the principle. -/
+theorem isInternalSet_of_finite_of_definition {α αS : Type u} [StarType α αS] {X : Set αS}
+    (hX : X.Finite) : IsInternalSet α X := by
+  obtain ⟨n, f, rfl⟩ := hX.fin_embedding
+  exact isInternalSet_range_of_definition f
+
+/-- **Section 11.7, first example after the principle.** Every finite set of hyperreals is
+internal, by the internal set definition principle. -/
+theorem isInternal_of_finite_of_definition {X : Set ℝ*} (hX : X.Finite) : IsInternal X :=
+  isInternalSet_of_finite_of_definition hX
 
 /-- **Section 11.7, second example after the principle; Exercise 11.7.1.** The open interval
 $`(a, b)` is internal because it is defined by the formula $`x_1 < x_0 \wedge x_0 < x_2` with
@@ -1010,6 +1106,44 @@ theorem IsInternal.exists_isLeast_of_transfer {X : Set ℝ*} (hX : IsInternal X)
     SFormula.starRealize_rel₂, internalRel_le, internalSet_const_range_natCast] at h
   obtain ⟨a, ha, hmin⟩ := h ⟨hne, hsub⟩
   exact ⟨a, ha, hmin⟩
+
+/-- **Section 11.7, the second sentence discussed in the section; Theorem 11.5.1 by
+transfer.** The sentence
+$$`\bigl[\exists x\,(x \in A) \wedge \exists x\,\forall y\,(y \in A \to y \le x)\bigr] \to
+\exists x\,\bigl[\forall y\,(y \in A \to y \le x) \wedge
+\forall z\,\bigl(\forall y\,(y \in A \to y \le z) \to x \le z\bigr)\bigr]`
+is true for every set $`A` of real numbers, because the real line is order-complete. By the
+transfer principle for sentences with a set symbol
+({name}`Goldblatt.SFormula.starRealize_of_forall_realize`) its transform is true of every
+internal set, and this is internal order-completeness
+({name}`Goldblatt.IsInternal.exists_isLUB`), obtained here without an ultrafilter
+calculation. The sentence displayed in the book has no first conjunct in its antecedent, and
+is then false for the empty set, so that the dagger principle does not apply to it as
+printed (the book restricts to nonempty internal sets afterwards); the conjunct
+$`\exists x\,(x \in A)` is the correction. -/
+theorem IsInternal.exists_isLUB_of_transfer {X : Set ℝ*} (hX : IsInternal X)
+    (hne : X.Nonempty) (hb : BddAbove X) : ∃ b, IsLUB X b := by
+  have h := SFormula.starRealize_of_forall_realize (α := ℝ) (m := 1)
+    (((SFormula.ex (SFormula.mem 0 0)).and
+      (SFormula.ex (SFormula.all ((SFormula.mem 0 0).imp
+        (SFormula.rel₂ 0 1 fun _ x y => x ≤ y))))).imp
+      (SFormula.ex ((SFormula.all ((SFormula.mem 0 0).imp
+          (SFormula.rel₂ 0 1 fun _ x y => x ≤ y))).and
+        (SFormula.all ((SFormula.all ((SFormula.mem 0 0).imp
+          (SFormula.rel₂ 0 1 fun _ x y => x ≤ y))).imp
+            (SFormula.rel₂ 1 0 fun _ x y => x ≤ y))))))
+    (fun S n a => by
+      simp only [SFormula.realize_imp, SFormula.realize_and, SFormula.realize_ex,
+        SFormula.realize_all, SFormula.realize_mem, SFormula.realize_rel₂]
+      rintro ⟨⟨x, hx⟩, ⟨u, hu⟩⟩
+      exact ⟨sSup (S 0), fun y hy => le_csSup ⟨u, hu⟩ hy, fun z hz => csSup_le ⟨x, hx⟩ hz⟩)
+    (X := fun _ => X) (fun _ => hX) Fin.elim0
+  simp only [SFormula.starRealize_imp, SFormula.starRealize_and, SFormula.starRealize_ex,
+    SFormula.starRealize_all, SFormula.starRealize_mem,
+    SFormula.starRealize_rel₂, internalRel_le] at h
+  obtain ⟨u, hu⟩ := hb
+  obtain ⟨b, hb1, hb2⟩ := h ⟨hne, u, fun y hy => hu hy⟩
+  exact ⟨b, fun y hy => hb1 y hy, fun z hz => hb2 z fun y hy => hz hy⟩
 
 /-- **Section 11.7, the formula discussed before the principle.** For an internal set $`X`
 and a hyperreal $`c`, the set of $`b` such that every $`z` strictly between $`b` and $`c`
@@ -1223,6 +1357,32 @@ section is the permanence principle for halos, around an arbitrary hyperreal poi
 -/
 
 section Permanence
+
+/-- **Section 11.9.** A set defined by the transform of a formula, with parameters from
+$`{}^*\mathbb R`, is never a halo: it is internal by the internal set definition principle,
+and a halo is external ({name}`Goldblatt.isExternal_hal`). So a property expressed by such a
+formula cannot hold of exactly the points infinitely close to $`b`. The book states this for
+a formula with one free variable and no parameters, which is the case $`k = 0`. -/
+theorem IFormula.setOf_starRealize_ne_hal {k : ℕ} (φ : IFormula ℝ (k + 1)) (c : Fin k → ℝ*)
+    (b : ℝ*) : {x : ℝ* | φ.starRealize (Fin.cons x c)} ≠ hal b := fun h =>
+  isExternal_hal b (h ▸ IFormula.isInternalSet_setOf_starRealize φ c)
+
+/-- **Section 11.9.** The same for formulas with set symbols read as internal sets: the set
+they define is never a halo. -/
+theorem SFormula.setOf_starRealize_ne_hal {m k : ℕ} (Φ : SFormula ℝ m (k + 1))
+    {X : Fin m → Set ℝ*} (hX : ∀ j, IsInternal (X j)) (c : Fin k → ℝ*) (b : ℝ*) :
+    {x : ℝ* | Φ.starRealize X (Fin.cons x c)} ≠ hal b := fun h =>
+  isExternal_hal b (h ▸ SFormula.isInternalSet_setOf_starRealize Φ hX c)
+
+/-- **Section 11.9.** In particular, if the transform of a formula holds at every point of a
+halo, then it holds at some point outside the halo: the property is permanent. -/
+theorem IFormula.exists_starRealize_not_mem_hal {k : ℕ} (φ : IFormula ℝ (k + 1))
+    (c : Fin k → ℝ*) (b : ℝ*) (h : ∀ x ∈ hal b, φ.starRealize (Fin.cons x c)) :
+    ∃ x, x ∉ hal b ∧ φ.starRealize (Fin.cons x c) := by
+  by_contra hcon
+  refine IFormula.setOf_starRealize_ne_hal φ c b (Subset.antisymm (fun x hx => ?_) h)
+  by_contra hx'
+  exact hcon ⟨x, hx', hx⟩
 
 /-- **Theorem 11.9.1, the atomic formula.** In the ultrapower the atomic formula
 $`|x_0 - x_2| < 1/x_1`, which is the standard ternary relation with these function symbols,

@@ -43,25 +43,77 @@ overview and the index.
   saturation and its corollaries, the nonstandard entities it creates, the size of internal
   sets, the closedness of the shadow of an internal set, and hyper-open sets.
 
-## The sections of the chapter
+## 11.1 Internal Sets
 
-Each section of the book's chapter is a section of one of the three parts, under the same
-number.
+Part 1. The internal set of a sequence of sets, the almost-all criterion for membership, and
+the examples: enlargements, finite sets, intervals, initial segments of the hypernaturals and
+hyperfinite grids.
 
-* 11.1 Internal Sets (part 1).
-* 11.2 Algebra of Internal Sets (part 1).
-* 11.3 Internal Least Number Principle and Induction (part 1).
-* 11.4 The Overflow Principle (part 1).
-* 11.5 Internal Order-Completeness (part 1).
-* 11.6 External Sets (part 1).
-* 11.7 Defining Internal Sets (part 2).
-* 11.8 The Underflow Principle (part 2).
-* 11.9 Internal Sets and Permanence (part 2).
-* 11.10 Saturation of Internal Sets (part 3).
-* 11.11 Saturation Creates Nonstandard Entities (part 3).
-* 11.12 The Size of an Internal Set (part 3).
-* 11.13 Closure of the Shadow of an Internal Set (part 3).
-* 11.14 Interval Topology and Hyper-Open Sets (part 3).
+## 11.2 Algebra of Internal Sets
+
+Part 1. Internal sets are closed under intersection, union and difference, and inclusion and
+equality of internal sets are decided by almost all terms of the defining sequences.
+
+## 11.3 Internal Least Number Principle and Induction
+
+Part 1. A nonempty internal set of hypernaturals has a least member, and induction over the
+hypernaturals holds for internal sets.
+
+## 11.4 The Overflow Principle
+
+Part 1. An internal set that contains all large enough standard natural numbers contains an
+unlimited hypernatural; the set of standard natural numbers is external.
+
+## 11.5 Internal Order-Completeness
+
+Part 1. A nonempty internal set of hyperreals that is bounded above has a least upper bound,
+with the spillover exercises on limited and unlimited members.
+
+## 11.6 External Sets
+
+Part 1. The standard natural numbers, the reals, the limited numbers, the infinitesimals and
+the halos are external, and so are the sets of the section's exercise.
+
+## 11.7 Defining Internal Sets
+
+Part 2. The internal set definition principle and the transfer principle for sentences with
+set symbols, their applications to the examples of 11.1, and the theorem that an internal set
+of reals is finite.
+
+## 11.8 The Underflow Principle
+
+Part 2. An internal set that contains all small enough unlimited hypernaturals contains a
+standard natural number.
+
+## 11.9 Internal Sets and Permanence
+
+Part 2. A set defined by a transformed formula is never a halo, and an internal set that
+includes a halo includes a ball of positive real radius around its centre.
+
+## 11.10 Saturation of Internal Sets
+
+Part 3. Countable saturation: a decreasing sequence of nonempty internal sets has a common
+point; its corollaries and exercises.
+
+## 11.11 Saturation Creates Nonstandard Entities
+
+Part 3. Saturation yields positive infinitesimals and unlimited numbers without an appeal
+to transfer, an infinitesimal above any sequence of infinitesimals, and an unlimited
+hypernatural below any sequence of unlimited hypernaturals.
+
+## 11.12 The Size of an Internal Set
+
+Part 3. An internal set is finite or uncountable.
+
+## 11.13 Closure of the Shadow of an Internal Set
+
+Part 3. The set of shadows of the limited members of an internal set is a closed set of
+reals.
+
+## 11.14 Interval Topology and Hyper-Open Sets
+
+Part 3. Hyper-open sets are unions of open hyperreal intervals and form a base of the
+interval topology, but are not closed under countable unions.
 
 ## Conventions of the formalization
 
@@ -88,7 +140,9 @@ number.
 * The internal set definition principle is proved in full for a small deeply embedded
   first-order language over internal relations, {name}`Goldblatt.IFormula`
   ({name}`Goldblatt.IFormula.starRealize_ofSeq` and
-  {name}`Goldblatt.IFormula.isInternalSet_setOf_starRealize`). The definable sets needed in
+  {name}`Goldblatt.IFormula.isInternalSet_setOf_starRealize`), and in the book's shape, for
+  a formula with set symbols that are read as arbitrary internal sets, as
+  {name}`Goldblatt.SFormula.isInternalSet_setOf_starRealize`. The definable sets needed in
   the proofs of underflow, of permanence for halos and of the closedness of shadows, and the
   sets of Exercise 11.7.1, are obtained from it by writing down the defining formula
   ({name}`Goldblatt.IFormula.isInternalSet_of_forall_iff`). A definable set can also be
@@ -98,8 +152,9 @@ number.
 * The transfer principle for sentences with a set symbol (the statement marked with a dagger
   in Section 11.7) is {name}`Goldblatt.SFormula.starRealize_of_forall_realize`, for a
   language {name}`Goldblatt.SFormula` with set symbols; as an example the internal least
-  number principle is derived from it
-  ({name}`Goldblatt.IsInternal.exists_isLeast_of_transfer`).
+  number principle and internal order-completeness are derived from it
+  ({name}`Goldblatt.IsInternal.exists_isLeast_of_transfer`,
+  {name}`Goldblatt.IsInternal.exists_isLUB_of_transfer`).
 * Two exercises ask for the equivalence of two true statements about internal sets. To give
   such an equivalence content it is proved for an arbitrary class of sets with the one
   closure property the argument uses
@@ -116,5 +171,6 @@ number.
   are to be identified with the definitions of the Chapter 10 page once that page exists.
 * A few general facts about the predicates of Chapter 5 (positive unlimited numbers and
   integer parts) are proved here where they are first needed, for instance
-  {name}`Goldblatt.PosUnlimited.hfloor`; they involve no internal sets.
+  {name}`Goldblatt.PosUnlimited.hfloor`; they involve no internal sets, and belong with
+  Chapter 5 if that chapter is extended.
 -/

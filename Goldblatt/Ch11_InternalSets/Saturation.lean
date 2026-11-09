@@ -827,9 +827,23 @@ theorem intervalOpen_limitedSet : IntervalOpen 𝕃 := by
 
 /-- **Section 11.14.** The set of limited numbers is not hyper-open, because it is external.
 So the class of hyper-open sets is not closed under countable unions, and is not a topology;
-it is a base for the interval topology. -/
+it is a base for the interval topology
+({lit}`Goldblatt.intervalOpen_iff_sUnion_hyperOpen`). -/
 theorem not_hyperOpen_limitedSet : ¬ HyperOpen 𝕃 :=
   fun h => isExternal_limitedSet h.isInternal
+
+/-- **Section 11.14.** The hyper-open sets form a base of the interval topology: a set of
+hyperreals is interval-open if and only if it is a union of hyper-open sets. One direction
+holds because open intervals are hyper-open, the other by Lemma 11.14.1. -/
+theorem intervalOpen_iff_sUnion_hyperOpen {A : Set ℝ*} :
+    IntervalOpen A ↔ ∃ 𝒮 : Set (Set ℝ*), (∀ S ∈ 𝒮, HyperOpen S) ∧ A = ⋃₀ 𝒮 := by
+  constructor
+  · intro h
+    obtain ⟨𝒮, h𝒮, rfl⟩ := intervalOpen_iff_exists_sUnion.1 h
+    exact ⟨𝒮, fun S hS => by obtain ⟨a, b, rfl⟩ := h𝒮 S hS; exact hyperOpen_Ioo a b, rfl⟩
+  · rintro ⟨𝒮, h𝒮, rfl⟩ x ⟨S, hS, hx⟩
+    obtain ⟨a, b, hx', hsub⟩ := (h𝒮 S hS).intervalOpen x hx
+    exact ⟨a, b, hx', hsub.trans (subset_sUnion_of_mem hS)⟩
 
 /-- **Exercise 11.14.2.** The union of two hyper-open sets is hyper-open. -/
 theorem HyperOpen.union {X Y : Set ℝ*} (hX : HyperOpen X) (hY : HyperOpen Y) :
