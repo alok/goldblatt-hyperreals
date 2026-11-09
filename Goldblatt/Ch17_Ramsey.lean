@@ -436,23 +436,35 @@ theorem not_starBlack_iff [DecidableEq α] {c : Finset α → Bool} {π : Ultrap
   rw [h, starSet_compl]
   rfl
 
-/-- **Section 17.3**, the extension of the $`2`-colouring. The enlargements $`{}^*C_b` and
-$`{}^*C_w` of the two colour classes are disjoint and together contain all of
-$`{}^*([A]^{k})`, so they $`2`-colour it. By Exercise 17.3.1
-({lit}`Goldblatt.bijOn_internalElems_starSet_kSubsets`, proved below) the members of
-$`{}^*([A]^{k})` are the $`k`-element subsets of the enlargement of $`A`, so this is the
-book's colouring of $`[{}^*A]^{k}`. In fact the two enlarged classes partition the whole ultrapower of the type of
-finite sets, because here a colouring is a total function. -/
-theorem starSet_black_white (c : Finset α → Bool) (A : Set α) (k : ℕ) :
-    (starSet (kSubsets A k) : Set (Ultrapower (Finset α))) ⊆
-        starSet {u : Finset α | c u = true} ∪ starSet {u : Finset α | c u = false} ∧
+/-- **Section 17.3**, the extension of the $`2`-colouring, in its sharpest form. The
+enlargements $`{}^*C_b` and $`{}^*C_w` of the two colour classes are disjoint and together
+exhaust the ultrapower of the type of finite sets. Nothing about $`A` or $`k` enters: a
+colouring is a total function here, so $`C_w` is the complement of $`C_b`, and enlargement
+commutes with complements. -/
+theorem starSet_black_union_white (c : Finset α → Bool) :
+    (starSet {u : Finset α | c u = true} ∪ starSet {u : Finset α | c u = false} :
+        Set (Ultrapower (Finset α))) = univ ∧
       Disjoint (starSet {u : Finset α | c u = true} : Set (Ultrapower (Finset α)))
         (starSet {u : Finset α | c u = false}) := by
   have h : {u : Finset α | c u = false} = {u : Finset α | c u = true}ᶜ := by
     ext u
     simp
   rw [h, starSet_compl]
-  exact ⟨fun S _ => by rw [union_compl_self]; trivial, disjoint_compl_right⟩
+  exact ⟨union_compl_self _, disjoint_compl_right⟩
+
+/-- **Section 17.3**, the extension of the $`2`-colouring as the book phrases it. The
+enlargements $`{}^*C_b` and $`{}^*C_w` are disjoint and together contain all of
+$`{}^*([A]^{k})`, so they $`2`-colour it. This is an immediate corollary of
+{name}`Goldblatt.starSet_black_union_white`; the inclusion does not depend on $`A` or $`k`.
+By Exercise 17.3.1 ({lit}`Goldblatt.bijOn_internalElems_starSet_kSubsets`, proved below) the
+members of $`{}^*([A]^{k})` are the $`k`-element subsets of the enlargement of $`A`, so this
+is the book's colouring of $`[{}^*A]^{k}`. -/
+theorem starSet_black_white (c : Finset α → Bool) (A : Set α) (k : ℕ) :
+    (starSet (kSubsets A k) : Set (Ultrapower (Finset α))) ⊆
+        starSet {u : Finset α | c u = true} ∪ starSet {u : Finset α | c u = false} ∧
+      Disjoint (starSet {u : Finset α | c u = true} : Set (Ultrapower (Finset α)))
+        (starSet {u : Finset α | c u = false}) :=
+  ⟨fun _ _ => (starSet_black_union_white c).1 ▸ mem_univ _, (starSet_black_union_white c).2⟩
 
 /-- **Section 17.3**, the existential transfer step. Let $`\pi` be a nonstandard member of the
 enlargement of $`A`, and let $`F` be a finite set of standard elements. Then there is a
@@ -1173,8 +1185,10 @@ end ParisHarrington
 /-!
 ## 17.6 Reference
 
-The nonstandard treatment of Ramsey theory followed in this chapter is due to Joram Hirshfeld
-(_Nonstandard combinatorics_, Studia Logica 47), as the book records.
+Steering these inductive constructions by a single nonstandard point is an idea of Joram
+Hirshfeld, whom Section 17.6 of the book credits: J. Hirshfeld, _Nonstandard combinatorics_,
+Studia Logica 47 (1988), 221-232. (The book prints the year as 1980; volume 47 of the journal
+appeared in 1988.)
 -/
 
 end Goldblatt
