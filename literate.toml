@@ -1,2 +1,70 @@
 docstrings_as_text = true
 hide_commands = ["set_option", "open", "universe", "variable"]
+landing_page = "Goldblatt"
+show_imports = false
+# Sub-pages in book order (full module names; `order` applies at every depth).
+order = [
+  "Goldblatt.Ch03_Ultrapower.Construction",
+  "Goldblatt.Ch03_Ultrapower.Enlargement",
+  "Goldblatt.Ch03_Ultrapower.Extension",
+  "Goldblatt.Ch05_GreatAndSmall.Arithmetic",
+  "Goldblatt.Ch05_GreatAndSmall.Shadows",
+  "Goldblatt.Ch05_GreatAndSmall.Hypernaturals",
+]
+
+[metadata]
+title = "Lectures on the Hyperreals, formalized"
+description = "A Lean 4 formalization of Goldblatt's Lectures on the Hyperreals, chapter by chapter."
+
+[modules."Goldblatt.Ch01_WhatAreTheHyperreals"]
+title = "1. What Are the Hyperreals?"
+[modules."Goldblatt.Ch02_LargeSets"]
+title = "2. Large Sets"
+[modules."Goldblatt.Ch03_Ultrapower"]
+title = "3. Ultrapower Construction of the Hyperreals"
+[modules."Goldblatt.Ch04_Transfer"]
+title = "4. The Transfer Principle"
+[modules."Goldblatt.Ch05_GreatAndSmall"]
+title = "5. Hyperreals Great and Small"
+[modules."Goldblatt.Ch06_Sequences"]
+title = "6. Convergence of Sequences and Series"
+[modules."Goldblatt.Ch07_Continuity"]
+title = "7. Continuous Functions"
+[modules."Goldblatt.Ch08_Differentiation"]
+title = "8. Differentiation"
+[modules."Goldblatt.Ch09_RiemannIntegral"]
+title = "9. The Riemann Integral"
+[modules."Goldblatt.Ch10_Topology"]
+title = "10. Topology of the Reals"
+[modules."Goldblatt.Ch11_InternalSets"]
+title = "11. Internal and External Sets"
+[modules."Goldblatt.Ch12_InternalFunctions"]
+title = "12. Internal Functions and Hyperfinite Sets"
+[modules."Goldblatt.Ch13_Universes"]
+title = "13. Universes and Frameworks"
+[modules."Goldblatt.Ch14_Enlargements"]
+title = "14. The Existence of Nonstandard Entities"
+[modules."Goldblatt.Ch15_Saturation"]
+title = "15. Permanence, Comprehensiveness, Saturation"
+[modules."Goldblatt.Ch16_LoebMeasure"]
+title = "16. Loeb Measure"
+[modules."Goldblatt.Ch17_Ramsey"]
+title = "17. Ramsey Theory"
+[modules."Goldblatt.Ch18_Completion"]
+title = "18. Completion by Enlargement"
+[modules."Goldblatt.Ch19_HyperfiniteApproximation"]
+title = "19. Hyperfinite Approximation"
+
+# Sub-pages (a parent title would otherwise be inherited by prefix match).
+[modules."Goldblatt.Ch03_Ultrapower.Construction"]
+title = "3.1–3.8 The ordered field"
+[modules."Goldblatt.Ch03_Ultrapower.Enlargement"]
+title = "3.9–3.10 Enlarging sets"
+[modules."Goldblatt.Ch03_Ultrapower.Extension"]
+title = "3.11–3.16 Extending functions and relations"
+[modules."Goldblatt.Ch05_GreatAndSmall.Arithmetic"]
+title = "5.1–5.3 Size classes and their arithmetic"
+[modules."Goldblatt.Ch05_GreatAndSmall.Shadows"]
+title = "5.4–5.9 Halos, galaxies and shadows"
+[modules."Goldblatt.Ch05_GreatAndSmall.Hypernaturals"]
+title = "5.10–5.12 Hypernaturals and primes"
