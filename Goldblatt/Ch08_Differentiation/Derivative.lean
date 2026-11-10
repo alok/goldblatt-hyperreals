@@ -8,7 +8,7 @@ import Goldblatt.Ch07_Continuity
 /-!
 # 8 (part 1). The Derivative of a Function of One Variable: Sections 8.1 to 8.6
 
-This is the first of three parts of Chapter 8 (the overview is on the chapter page
+This is the first of four parts of Chapter 8 (the overview is on the chapter page
 {lit}`Goldblatt.Ch08_Differentiation`). It characterises the derivative as the common shadow
 of all Newton quotients with a nonzero infinitesimal increment, introduces increments and
 differentials and proves the incremental equation, and then uses these to prove, with
@@ -35,9 +35,9 @@ and a total function is defined everywhere. One-sided derivatives are expressed 
 {name}`HasDerivWithinAt`.
 
 This preliminary section is not a numbered section of the book. It collects a few transfer
-facts that are used repeatedly: the extension of a composite, the transfer of a statement
-"$`g` maps $`A` into $`B`", the transfer of strict monotonicity, and the fact that a real
-open interval around $`x` contains the whole halo of $`x`.
+facts that are used repeatedly: the extension of a composite, the transfer of strict
+monotonicity, and the fact that a real open interval around $`x` contains the whole halo of
+$`x`.
 -/
 
 section Tools
@@ -49,13 +49,6 @@ extensions: $`{}^*(g \circ f)(z) = {}^*g({}^*f(z))`. -/
 theorem starMap_comp_apply (g f : ℝ → ℝ) (z : ℝ*) : ⋆(fun t : ℝ => g (f t)) z = ⋆g (⋆f z) := by
   obtain ⟨r, rfl⟩ := hyperreal_exists_rep z
   rfl
-
-/-- **Chapter 8, transfer tool.** If $`g` maps $`A` into $`B`, then $`{}^*g` maps the
-enlargement of $`A` into the enlargement of $`B`. -/
-theorem starMap_mem_starSet_of_mapsTo (h : ∀ t ∈ A, g t ∈ B) (hz : z ∈ ⋆A) : ⋆g z ∈ ⋆B := by
-  obtain ⟨r, rfl⟩ := hyperreal_exists_rep z
-  rw [starMap_hyperreal_ofSeq, hyperreal_ofSeq_mem_starSet]
-  exact (hyperreal_ofSeq_mem_starSet.1 hz).mono fun n hn => h _ hn
 
 /-- **Chapter 8, transfer tool.** If $`f` is strictly increasing on $`A`, then
 $`f(r) < {}^*f(z)` for every real $`r \in A` and every $`z \in {}^*A` with $`r < z`. -/
@@ -864,7 +857,7 @@ theorem hasDerivAt_inverse_of_strictMonoOn (hf : ContinuousOn f (Ioo a b))
     coe_add_infinitesimal_mem_starSet_Ioo hy hΔy
   set u : ℝ* := ⋆g ((f x : ℝ*) + Δy) with hu
   have hu12 : u ∈ ⋆(Ioo x₁ x₂) :=
-    starMap_mem_starSet_of_mapsTo (fun t ht => (hstd t ht).1) hmem
+    starMap_mem_starSet (fun t ht => (hstd t ht).1) hmem
   have hfu : ⋆f u = (f x : ℝ*) + Δy := by
     have := starMap_congr_of_mem (f := fun t => f (g t)) (g := fun t => t)
       (fun t ht => (hstd t ht).2) hmem

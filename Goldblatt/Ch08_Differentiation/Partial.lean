@@ -3,7 +3,7 @@ import Goldblatt.Ch08_Differentiation.Derivative
 /-!
 # 8 (part 2). Partial Derivatives: Sections 8.7 and 8.8
 
-This is the second of three parts of Chapter 8 (the overview is on the chapter page
+This is the second of four parts of Chapter 8 (the overview is on the chapter page
 {lit}`Goldblatt.Ch08_Differentiation`). It treats real functions of two variables: infinite
 closeness in the hyperreal plane, continuity at a real point of the plane, smoothness, the
 increment and the total differential, and the incremental equation for two variables (Theorem
