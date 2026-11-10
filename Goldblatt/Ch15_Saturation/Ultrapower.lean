@@ -31,11 +31,6 @@ theorem pick_mem {S : ZFSet.{u}} (h : S ≠ ∅) : pick S ∈ S := by
   simp only [pick, hex, ↓reduceDIte]
   exact Classical.choose_spec hex
 
-/-- The values of a function from $`A` to $`B` belong to $`B`. -/
-theorem _root_.ZFSet.IsFunc.app_mem {A B f a : ZFSet.{u}} (hf : IsFunc A B f) (ha : a ∈ A) :
-    app f a ∈ B :=
-  (pair_mem_prod.1 (hf.1 (hf.isFunction.pair_app_mem (hf.dom_eq.symm ▸ ha)))).2
-
 namespace BoundedUltrapower
 
 variable {I : Type v} [Small.{u} I] {𝓕 : Ultrafilter I} {X : ZFSet.{u}}

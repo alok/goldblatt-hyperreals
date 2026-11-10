@@ -61,6 +61,11 @@ theorem isFunc_update (hg : IsFunc X Y g) (hx : x ∈ X) (hy : y ∈ Y) :
       · exact huniq w' (mem_sdiff.1 h).1
       · exact absurd (pair_inj.1 (mem_singleton.1 h)).1 hzx
 
+/-- The values of a function from $`A` to $`B` belong to $`B`. -/
+theorem _root_.ZFSet.IsFunc.app_mem {A B f a : ZFSet.{u}} (hf : IsFunc A B f) (ha : a ∈ A) :
+    app f a ∈ B :=
+  (pair_mem_prod.1 (hf.1 (hf.isFunction.pair_app_mem (hf.dom_eq.symm ▸ ha)))).2
+
 /-- **The membership relation on a set.** The set of pairs $`(x, S)` with $`x \in S` and
 $`S \subseteq T`. Its transform lets membership in a variable internal subset of $`{}^*T`
 be handled with the operations on relations. -/
@@ -605,6 +610,209 @@ theorem exists_unlimited_lt_of_countable_of_isEnlargement (hSC : F.SequentiallyC
     (h : ∀ x ∈ X, x ∈ F.star F.N ∧ x ∉ F.N) :
     ∃ K, K ∈ F.star F.N ∧ K ∉ F.N ∧ ∀ x ∈ X, F.Lt K x :=
   exists_unlimited_lt_of_countable hSC (exists_nonstandard_nat hE) X hX h
+
+/-!
+### A second proof by Robinson's sequential lemma
+
+The book gives another proof of Theorem 15.4.3 from Robinson's sequential lemma. For an
+internal hypersequence $`s` let $`\underline s_n = \min\{s_m : m \le n\}`. The hypersequence
+$`\underline s` is internal and decreasing. If $`s_n` is an unlimited hypernatural for all
+standard $`n`, then so is $`\underline s_n`, its reciprocal is infinitesimal, and by
+Robinson's lemma the reciprocal of $`\underline s_K` is infinitesimal for some unlimited
+$`K`. Then $`\underline s_K` is unlimited and at most $`s_n` for every $`n \le K`, in
+particular for every standard $`n`.
+-/
+
+/-- **Exercise 15.4.4, first part.** For an internal hypersequence
+$`s : {}^*\mathbb N \to {}^*\mathbb R`, the hypersequence
+$`\underline s_n = \min\{s_m : m \le n\}` is internal: there is an internal
+$`t : {}^*\mathbb N \to {}^*\mathbb R` such that, for every hypernatural $`n`, $`t_n` is
+$`s_m` for some $`m \le n` and $`t_n \le s_m` for all $`m \le n`. This is the transfer of
+the corresponding statement for sequences of real numbers. -/
+theorem exists_internal_running_min (hs : F.Internal s)
+    (hsf : IsFunc (F.star F.N) (F.star F.R) s) :
+    ∃ t, F.Internal t ∧ IsFunc (F.star F.N) (F.star F.R) t ∧ ∀ n ∈ F.star F.N,
+      (∃ m ∈ F.star F.N, pair m n ∈ F.star F.Le ∧ app t n = app s m) ∧
+      ∀ m ∈ F.star F.N, pair m n ∈ F.star F.Le → pair (app t n) (app s m) ∈ F.star F.Le := by
+  have hFN := F.hU.isSetOf_funs F.isSetOf_N F.isSetOf_R
+  have h := F.transfer
+    (.all 0 (.const (funs F.N F.R)) (.ex 1 (.const (funs F.N F.R)) (.all 2 (.const F.N) (.conj
+      (.ex 3 (.const F.N) (.conj (.elem (.opair (.var 3) (.var 2)) (.const F.Le))
+        (.ex 4 (.const F.R) (.conj (.elem (.opair (.var 2) (.var 4)) (.var 1))
+          (.elem (.opair (.var 3) (.var 4)) (.var 0))))))
+      (.all 3 (.const F.N) (.imp (.elem (.opair (.var 3) (.var 2)) (.const F.Le))
+        (.all 4 (.const F.R) (.all 5 (.const F.R) (.imp
+          (.conj (.elem (.opair (.var 2) (.var 4)) (.var 1))
+            (.elem (.opair (.var 3) (.var 5)) (.var 0)))
+          (.elem (.opair (.var 4) (.var 5)) (.const F.Le)))))))))))
+    (by simp [Formula.IsSentence, hFN.1, F.isSetOf_N.1, F.isSetOf_R.1, F.isSetOf_Le.1])
+  sat_simp at h
+  have h' := h.1 (by
+    intro σ _ hσ
+    have hσf : IsFunc F.N F.R σ := mem_funs.1 hσ
+    have hσN : ∀ k : ℕ, F.nat k ∈ F.N := fun k => F.mem_N.2 ⟨k, rfl⟩
+    have hval : ∀ k : ℕ, app σ (F.nat k) = F.real (F.toReal (app σ (F.nat k))) := fun k => by
+      obtain ⟨r, hr⟩ := F.mem_R.1 (hσf.app_mem (hσN k))
+      rw [hr, F.toReal_real]
+    have hσmem : ∀ k : ℕ, pair (F.nat k) (F.real (F.toReal (app σ (F.nat k)))) ∈ σ := fun k => by
+      rw [← hval k]
+      exact hσf.isFunction.pair_app_mem (hσf.dom_eq.symm ▸ hσN k)
+    set val : ℕ → ℝ := fun k => F.toReal (app σ (F.nat k)) with hvaldef
+    set τ : ℕ → ℝ := fun k =>
+      (Finset.range (k + 1)).inf' ⟨0, Finset.mem_range.2 (Nat.succ_pos k)⟩ val with hτ
+    set T := ZFSet.range (fun k : ℕ => pair (F.nat k) (F.real (τ k))) with hT
+    have hmem : ∀ {p}, p ∈ T ↔ ∃ k : ℕ, p = pair (F.nat k) (F.real (τ k)) := fun {p} => by
+      rw [hT, mem_range]
+      exact ⟨fun ⟨n, h⟩ => ⟨n, h.symm⟩, fun ⟨n, h⟩ => ⟨n, h.symm⟩⟩
+    have hTf : IsFunc F.N F.R T := by
+      refine ⟨fun p hp => ?_, fun z hz => ?_⟩
+      · obtain ⟨k, rfl⟩ := hmem.1 hp
+        exact pair_mem_prod.2 ⟨hσN k, F.mem_R.2 ⟨_, rfl⟩⟩
+      · obtain ⟨k, rfl⟩ := F.mem_N.1 hz
+        refine ⟨F.real (τ k), hmem.2 ⟨k, rfl⟩, fun w hw => ?_⟩
+        obtain ⟨j, hj⟩ := hmem.1 hw
+        obtain ⟨h1, h2⟩ := pair_inj.1 hj
+        rw [h2, F.nat_injective h1]
+    refine ⟨T, (F.hU.isSetOf_of_isFunc F.isSetOf_N F.isSetOf_R hTf).1, mem_funs.2 hTf, ?_⟩
+    intro n _ hn
+    obtain ⟨k, rfl⟩ := F.mem_N.1 hn
+    constructor
+    · obtain ⟨m, hm, hmin⟩ := Finset.exists_mem_eq_inf' (H := ⟨0, Finset.mem_range.2
+        (Nat.succ_pos k)⟩) val
+      refine ⟨F.nat m, F.nat_mem_U m, hσN m,
+        F.pair_nat_mem_Le.2 (Nat.lt_succ_iff.1 (Finset.mem_range.1 hm)),
+        F.real (τ k), F.real_mem_U _, F.mem_R.2 ⟨_, rfl⟩, hmem.2 ⟨k, rfl⟩, ?_⟩
+      have : τ k = val m := hmin
+      rw [this]
+      exact hσmem m
+    · intro m' _ hm' hle y _ _ z _ _ hyz
+      obtain ⟨m, rfl⟩ := F.mem_N.1 hm'
+      have hmk := F.pair_nat_mem_Le.1 hle
+      have hy : y = F.real (τ k) := hTf.isFunction.2 _ _ _ hyz.1 (hmem.2 ⟨k, rfl⟩)
+      have hz : z = F.real (val m) := hσf.isFunction.2 _ _ _ hyz.2 (hσmem m)
+      rw [hy, hz, F.pair_mem_Le]
+      exact Finset.inf'_le val (Finset.mem_range.2 (Nat.lt_succ_of_le hmk)))
+  have hNU := F.star_subset_U' F.isSetOf_N
+  have hRU := F.star_subset_U' F.isSetOf_R
+  obtain ⟨t, -, htFN, ht⟩ := h' s hs.mem_U' ((F.mem_star_funs_iff F.isSetOf_N F.isSetOf_R).2
+    ⟨hsf, hs⟩)
+  obtain ⟨htf, htint⟩ := (F.mem_star_funs_iff F.isSetOf_N F.isSetOf_R).1 htFN
+  refine ⟨t, htint, htf, fun n hn => ?_⟩
+  obtain ⟨⟨m, -, hm, hmn, y, -, -, hny, hmy⟩, hall⟩ := ht n (hNU hn) hn
+  refine ⟨⟨m, hm, hmn, ?_⟩, fun m' hm' hm'n => ?_⟩
+  · rw [htf.isFunction.app_eq hny, hsf.isFunction.app_eq hmy]
+  · have h1 := htf.isFunction.pair_app_mem (htf.dom_eq.symm ▸ hn)
+    have h2 := hsf.isFunction.pair_app_mem (hsf.dom_eq.symm ▸ hm')
+    exact hall m' (hNU hm') hm' hm'n _ (hRU (htf.app_mem hn)) (htf.app_mem hn) _
+      (hRU (hsf.app_mem hm')) (hsf.app_mem hm') ⟨h1, h2⟩
+
+/-- **Exercise 15.4.4, second part.** Let $`s : {}^*\mathbb N \to {}^*\mathbb R` be an
+internal hypersequence such that $`s_n` is an unlimited hypernatural for all standard $`n`.
+Then there is an unlimited hypernatural number less than every $`s_n`, $`n` standard. The
+proof applies Robinson's sequential lemma to the reciprocals of the running minima
+$`\underline s_n`. The reciprocal is taken of $`\max(\underline s_n, 1)`, so that it is
+defined and positive also at the unlimited indices, where nothing is known in advance about
+$`\underline s_n`. -/
+theorem exists_unlimited_lt_of_internal_seq (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
+    (hs : F.Internal s) (hsf : IsFunc (F.star F.N) (F.star F.R) s)
+    (h : ∀ n : ℕ, app s (F.nat n) ∈ F.star F.N ∧ app s (F.nat n) ∉ F.N) :
+    ∃ K, K ∈ F.star F.N ∧ K ∉ F.N ∧ ∀ n : ℕ, F.Lt K (app s (F.nat n)) := by
+  have hU' := F.isUniverse'
+  obtain ⟨hNint, hNset⟩ := F.star_N_spec
+  obtain ⟨hRint, hRset⟩ := F.star_R_spec
+  obtain ⟨t, htint, htf, ht⟩ := exists_internal_running_min hs hsf
+  obtain ⟨htset, htrel, htfun, htdom⟩ := isFunc_spec hNset hRset htf
+  set φ : ℝ → ℝ := fun x => 1 / max x 1 with hφ
+  obtain ⟨hGint, hGset, hGrel⟩ :=
+    star_rel_spec (F := F.toNonstandardFramework) (Code.isSetOf_rel F.cR F.cR _)
+      (Code.relIn_rel F.cR F.cR fun a b => b = φ a)
+  have hGf := Code.isFunc_star_graph F.cR F.cR φ
+  have hrsub : relComp t (F.star (Code.graph F.cR F.cR φ)) ⊆
+      ZFSet.prod (F.star F.N) (F.star F.R) := fun p hp => by
+    obtain ⟨a, b, c, rfl, hab, hbc⟩ := mem_relComp.1 hp
+    exact pair_mem_prod.2 ⟨(pair_mem_prod.1 (htf.1 hab)).1,
+      F.mem_star_R_iff.2 (Code.mem_of_pair_mem_star_rel F.cR F.cR hbc).2⟩
+  have hrfun : IsFunction (relComp t (F.star (Code.graph F.cR F.cR φ))) :=
+    ⟨fun p hp => let ⟨a, _, c, hpe, _, _⟩ := mem_relComp.1 hp; ⟨a, c, hpe⟩,
+      fun a b c hb hc => by
+        obtain ⟨w, hw, hwb⟩ := pair_mem_relComp.1 hb
+        obtain ⟨w', hw', hwc⟩ := pair_mem_relComp.1 hc
+        obtain rfl := htfun.2 _ _ _ hw hw'
+        exact hGf.isFunction.2 _ _ _ hwb hwc⟩
+  have hrmem : ∀ n ∈ F.star F.N, pair n (Code.ap F.cR F.cR φ (app t n)) ∈
+      relComp t (F.star (Code.graph F.cR F.cR φ)) := fun n hn =>
+    pair_mem_relComp.2 ⟨app t n, htfun.pair_app_mem (htdom.symm ▸ hn),
+      Code.pair_ap_mem F.cR F.cR (F.mem_star_R_iff.1 (htf.app_mem hn))⟩
+  have htstd : ∀ n : ℕ, F.PosUnlimited (app t (F.nat n)) := by
+    intro n
+    obtain ⟨⟨m, hm, hmn, he⟩, -⟩ := ht (F.nat n) (F.N_subset_star (F.mem_N.2 ⟨n, rfl⟩))
+    obtain ⟨j, rfl⟩ := F.mem_N.1 (mem_N_of_le_nat hm hmn)
+    rw [he]
+    exact posUnlimited_of_nonstandard (h j).1 (h j).2
+  obtain ⟨K₀, hK₀, hK₀N, hall⟩ := robinson_function hω
+    (F.internal_relComp htint htset htrel hGint hGset hGrel)
+    (hU'.isSetOf_of_subset_prod hNset hRset hrsub)
+    (hU'.relIn_of_subset_prod hNset hRset hrsub) hrfun (by
+      intro n
+      have hnN : F.nat n ∈ F.star F.N := F.N_subset_star (F.mem_N.2 ⟨n, rfl⟩)
+      have hmem := hrmem (F.nat n) hnN
+      refine ⟨mem_dom.2 ⟨_, hmem⟩, ?_⟩
+      show F.Infinitesimal (app (relComp t (F.star (Code.graph F.cR F.cR φ))) (F.nat n))
+      rw [hrfun.app_eq hmem, infinitesimal_iff]
+      intro ε hε
+      have h1 := real_lt_iff.1 (htstd n (1 / ε + 1))
+      refine Code.mem_right_of_rel F.cR F.cR ?_ (Code.rel_of_mem_left F.cR F.cR h1
+        (Code.pair_ap_mem F.cR F.cR (g := φ) (F.mem_star_R_iff.1 (htf.app_mem hnN))))
+      rintro a b ⟨ha, hb⟩
+      have ha' : 1 / ε + 1 < a := ha
+      have hpos : 0 < 1 / ε := one_div_pos.2 hε
+      have ha1 : max a 1 = a := max_eq_left (by linarith)
+      show |b| < ε
+      rw [hb, hφ]
+      simp only [ha1]
+      have hapos : 0 < a := by linarith
+      rw [abs_of_pos (one_div_pos.2 hapos), div_lt_iff₀ hapos]
+      have := (div_lt_iff₀ hε).1 (by linarith : 1 / ε < a)
+      linarith [mul_comm a ε])
+  have hK₀R := F.star_N_subset_star_R hK₀
+  have hinf : F.Infinitesimal (app (relComp t (F.star (Code.graph F.cR F.cR φ))) K₀) :=
+    (hall K₀ hK₀ (F.le_refl hK₀R)).2
+  rw [hrfun.app_eq (hrmem K₀ hK₀)] at hinf
+  have htK : F.PosUnlimited (app t K₀) := by
+    intro q
+    have h1 := infinitesimal_iff.1 hinf (1 / (|q| + 1)) (by positivity)
+    have h2 := (Code.rel_swap F.cR F.cR).1
+      (Code.pair_ap_mem F.cR F.cR (g := φ) (F.mem_star_R_iff.1 (htf.app_mem hK₀)))
+    rw [real_lt_iff]
+    refine Code.mem_right_of_rel F.cR F.cR ?_ (Code.rel_of_mem_left F.cR F.cR h1 h2)
+    rintro b a ⟨hb, hab⟩
+    have hb' : |b| < 1 / (|q| + 1) := hb
+    show q < a
+    have hmpos : (0 : ℝ) < max a 1 := _root_.lt_of_lt_of_le one_pos (le_max_right a 1)
+    have hqpos : (0 : ℝ) < |q| + 1 := by positivity
+    rw [hab, hφ] at hb'
+    simp only [abs_of_pos (one_div_pos.2 hmpos)] at hb'
+    have h3 : |q| + 1 < max a 1 := by
+      rw [div_lt_div_iff₀ hmpos hqpos] at hb'
+      linarith
+    have h4 : a = max a 1 := by
+      rcases _root_.le_total a 1 with h5 | h5
+      · rw [max_eq_right h5] at h3
+        linarith [abs_nonneg q]
+      · exact (max_eq_left h5).symm
+    linarith [le_abs_self q]
+  have hBint : F.Internal (F.star F.N ∩ relPreimage (F.star (F.rr (· < ·))) {app t K₀}) :=
+    F.internal_inter hNint hNset (internal_relPreimage_star (Code.isSetOf_rel _ _ _)
+      (Code.relIn_rel _ _ _) (F.internal_singleton (internal_of_mem_star_R (htf.app_mem hK₀))))
+  obtain ⟨K, hK, hKN, hKB⟩ := exists_nonstandard_mem hω hBint (by
+    intro m hm
+    obtain ⟨k, rfl⟩ := F.mem_N.1 hm
+    exact mem_inter.2 ⟨F.N_subset_star hm, mem_relPreimage.2 ⟨_, mem_singleton.2 rfl, htK k⟩⟩)
+  obtain ⟨w, hw, hKw⟩ := mem_relPreimage.1 (mem_inter.1 hKB).2
+  rw [mem_singleton.1 hw] at hKw
+  refine ⟨K, hK, hKN, fun n => ?_⟩
+  have hnN : F.nat n ∈ F.star F.N := F.N_subset_star (F.mem_N.2 ⟨n, rfl⟩)
+  exact lt_of_lt_of_le hKw ((ht K₀ hK₀).2 (F.nat n) hnN (F.nat_le_of_nonstandard hK₀ hK₀N n))
 
 end RealFramework
 
