@@ -1726,65 +1726,6 @@ theorem hyperfinite_internalPowerset' (hA : F.Hyperfinite A) :
   let ⟨T, hT, hAT⟩ := hA
   ⟨powerset T, F.hU.isSetOf_powerset hT, (F.hyperfinite_internalPowerset hT hAT).1⟩
 
-/-!
-## 13.19 Hyperfinite Summation
-
-Summation of finite sets of real numbers is a function from $`\mathcal P_F(\mathbb R)` to
-$`\mathbb R` in the universe. Its transform is an internal function from
-$`{}^*\mathcal P_F(\mathbb R)` to $`{}^*\mathbb R`, and this gives a meaning to the sum of
-every hyperfinite set of hyperreals.
-
-The book then defines the sum of an internal function $`f` over a hyperfinite set $`B` as
-the sum of the hyperfinite set $`f(B)`. Read literally, that is the sum of the _set_ of
-values, which counts a value taken several times only once, so it is the intended sum only
-when $`f` is injective on $`B`; the properties listed in Section 13.20 fail for it otherwise
-(additivity already fails for two constant functions). The sum of a function over a
-hyperfinite set has to be obtained instead by transferring the summation operator on pairs
-of a function and a finite set. That development, and with it the exercises of Section
-13.20, is not formalized here.
--/
-
-/-- **Section 13.19.** The summation function $`\mathcal P_F(\mathbb R) \to \mathbb R`,
-$`B \mapsto \sum B`, as a set of pairs in the universe. -/
-def sumFn : ZFSet.{u} :=
-  ZFSet.range fun Z : (finPow F.R : ZFSet.{u}) =>
-    pair (Z : ZFSet.{u}) (F.real (∑ᶠ r ∈ {r : ℝ | F.real r ∈ (Z : ZFSet.{u})}, r))
-
-theorem isFunc_sumFn : IsFunc (finPow F.R) F.R F.sumFn :=
-  isFunc_graph _ _ _ fun _ => F.mem_R.2 ⟨_, rfl⟩
-
-/-- **Section 13.19, hyperfinite sums.** The sum $`\sum B` of a hyperfinite set
-$`B \subseteq {}^*\mathbb R`: the value at $`B` of the transform of the summation
-function. -/
-def hsum (B : ZFSet.{u}) : ZFSet.{u} := app (F.star F.sumFn) B
-
-/-- **Section 13.19.** Summation transforms to an internal function from
-$`{}^*\mathcal P_F(\mathbb R)` to $`{}^*\mathbb R`. -/
-theorem isFunc_star_sumFn :
-    IsFunc (F.star (finPow F.R)) (F.star F.R) (F.star F.sumFn) ∧ F.Internal (F.star F.sumFn) :=
-  ⟨F.isFunc_star (F.hU.isSetOf_finPow F.isSetOf_R) F.isSetOf_R F.isFunc_sumFn,
-    F.internal_star (F.hU.isSetOf_of_isFunc (F.hU.isSetOf_finPow F.isSetOf_R) F.isSetOf_R
-      F.isFunc_sumFn).1⟩
-
-/-- **Section 13.19.** The sum of a hyperfinite set of hyperreals is a hyperreal. -/
-theorem hsum_mem (hB : F.Hyperfinite B) (hBR : B ⊆ F.star F.R) : F.hsum B ∈ F.star F.R := by
-  have hf := F.isFunc_star_sumFn.1
-  have hBF := hB.mem_star_finPow F.isSetOf_R hBR
-  exact (pair_mem_prod.1 (hf.1 (hf.isFunction.pair_app_mem (hf.dom_eq ▸ hBF)))).2
-
-/-- **Section 13.19.** On a finite set of real numbers the hyperfinite sum is the ordinary
-sum. -/
-theorem hsum_of_finite {Z : ZFSet.{u}} (hZ : Z ∈ finPow F.R) :
-    F.hsum Z = F.real (∑ᶠ r ∈ {r : ℝ | F.real r ∈ Z}, r) := by
-  have hZX : Z ⊆ F.X := fun y hy => F.R_subset_base ((mem_finPow.1 hZ).1 hy)
-  have hstar : F.star Z = Z := F.star_eq_self_of_finite_subset_base hZX (mem_finPow.1 hZ).2
-  have h := F.star_app (F.hU.isSetOf_finPow F.isSetOf_R) F.isSetOf_R F.isFunc_sumFn hZ
-  rw [hstar] at h
-  rw [hsum, ← h]
-  have : app F.sumFn Z = F.real (∑ᶠ r ∈ {r : ℝ | F.real r ∈ Z}, r) :=
-    app_graph (finPow F.R) F.R _ (fun _ => F.mem_R.2 ⟨_, rfl⟩) ⟨Z, hZ⟩
-  rw [this, F.star_real]
-
 end RealFramework
 
 end Goldblatt
