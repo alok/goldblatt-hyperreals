@@ -182,6 +182,8 @@ sequence $`(\mu_n(B_n))`. (At a set that is not internal the value is zero.) -/
 noncomputable def μ (X : Set βS) : HyperENNReal :=
   if h : IsInternalSet β X then Germ.ofFun fun n => I.m n (h.choose n) else 0
 
+/-- **Section 16.5.** The internal measure of $`[B_n]` is the class of the sequence
+$`(\mu_n(B_n))`, whatever sequence defines the set. -/
 theorem μ_internalSet (B : ℕ → Set β) :
     I.μ (internalSet B : Set βS) = Germ.ofFun fun n => I.m n (B n) := by
   have h : IsInternalSet β (internalSet B : Set βS) := ⟨B, rfl⟩
@@ -355,8 +357,10 @@ noncomputable def toLoebPremeasure : LoebPremeasure βS where
   exists_upper _ r hA hmono hr := I.exists_upper r hA hmono hr
   exists_between _ _ hC hD hCmono hDanti hCD := I.exists_between hC hD hCmono hDanti hCD
 
+/-- The ring of the Loeb premeasure of an internal measure is its internal ring. -/
 @[simp] theorem toLoebPremeasure_ring : (I.toLoebPremeasure (βS := βS)).ring = I.sets := rfl
 
+/-- The function of the Loeb premeasure of an internal measure is $`\mu_L`. -/
 @[simp] theorem toLoebPremeasure_μL : (I.toLoebPremeasure (βS := βS)).μL = I.μL := rfl
 
 /-- **Section 16.2, example 4.** $`\mu_L` is countably additive on the internal ring: it is a

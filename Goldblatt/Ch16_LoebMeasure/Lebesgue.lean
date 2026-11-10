@@ -39,6 +39,8 @@ with $`|k| \le N^2`. -/
 noncomputable def gridFinset (N : ℕ) : Finset ℝ :=
   (Finset.Icc (-((N : ℤ) ^ 2)) ((N : ℤ) ^ 2)).image fun k : ℤ => (k : ℝ) / N
 
+/-- **Section 16.8.** A real number is in the finite grid of mesh $`1/N` if and only if it is
+$`k/N` for an integer $`k` with $`|k| \le N^2`. -/
 theorem mem_gridFinset {N : ℕ} {x : ℝ} :
     x ∈ gridFinset N ↔ ∃ k : ℤ, |k| ≤ (N : ℤ) ^ 2 ∧ x = (k : ℝ) / N := by
   simp only [gridFinset, Finset.mem_image, Finset.mem_Icc, abs_le]
@@ -158,6 +160,8 @@ noncomputable def gridMeasure : InternalMeasure ℝ :=
 /-- **Section 16.8.** The Loeb measure space $`(S, \mathcal A(\mu_L), \mu_L)` of the grid. -/
 noncomputable def gridLoeb : LoebPremeasure ℝ* := (gridMeasure ν).toLoebPremeasure
 
+/-- **Section 16.8.** The $`n`-th term of the grid measure is the number of points of the
+$`n`-th grid in the set, divided by $`\nu_n`. -/
 theorem gridMeasure_m (n : ℕ) (B : Set ℝ) :
     (gridMeasure ν).m n B =
       ((↑(gridFinset (ν n)) ∩ B : Set ℝ).ncard : ℝ≥0∞) * ((ν n : ℕ) : ℝ≥0∞)⁻¹ :=
@@ -286,9 +290,11 @@ theorem mem_shInv_iff_exists_infClose {B : Set ℝ} {s : ℝ*} :
   · rintro ⟨hs, r, hr, hsr⟩
     exact ⟨hs, limited_of_infClose_coe hsr, by rwa [sh_eq_of_infClose hsr]⟩
 
+/-- **Section 16.8.** $`\operatorname{sh}^{-1}(\emptyset) = \emptyset`. -/
 theorem shInv_empty : shInv ν ∅ = ∅ := by
   ext s; simp [shInv]
 
+/-- **Section 16.8.** The inverse shadow is monotone. -/
 theorem shInv_mono {A B : Set ℝ} (h : A ⊆ B) : shInv ν A ⊆ shInv ν B :=
   fun _ hs => ⟨hs.1, hs.2.1, h hs.2.2⟩
 
@@ -299,11 +305,14 @@ theorem shInv_diff (A B : Set ℝ) : shInv ν (A \ B) = shInv ν A \ shInv ν B 
   simp only [shInv, mem_ofPred_eq, Set.mem_sdiff]
   tauto
 
+/-- **Section 16.8.** The inverse shadow commutes with intersections. -/
 theorem shInv_inter (A B : Set ℝ) : shInv ν (A ∩ B) = shInv ν A ∩ shInv ν B := by
   ext s
   simp only [shInv, mem_ofPred_eq, mem_inter_iff]
   tauto
 
+/-- **Section 16.8.** The inverse shadow of a complement is the complement relative to the set of
+limited grid points. -/
 theorem shInv_compl (B : Set ℝ) : shInv ν Bᶜ = shInv ν univ \ shInv ν B := by
   rw [← shInv_diff, compl_eq_univ_sdiff]
 
@@ -401,6 +410,8 @@ noncomputable def shadowMeasure : Measure ℝ :=
         (fun i j hij => Set.disjoint_left.2 fun s hs hs' =>
           Set.disjoint_left.1 (hd hij) hs.2.2 hs'.2.2))
 
+/-- **Section 16.8.** The value of $`\nu` at a Borel set is the Loeb measure of its inverse
+shadow. -/
 theorem shadowMeasure_apply {B : Set ℝ} (hB : MeasurableSet B) :
     shadowMeasure ν B = (gridLoeb ν).outer (shInv ν B) :=
   Measure.ofMeasurable_apply _ hB

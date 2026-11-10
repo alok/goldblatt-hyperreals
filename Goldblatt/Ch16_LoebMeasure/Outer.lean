@@ -38,9 +38,11 @@ variable {S : Type u} {𝒜 : Set (Set S)} {μ : Set S → ℝ≥0∞}
 noncomputable def ringExtend (𝒜 : Set (Set S)) (μ : Set S → ℝ≥0∞) (B : Set S) : ℝ≥0∞ :=
   ⨅ _ : B ∈ 𝒜, μ B
 
+/-- On the ring the extended function is $`\mu`. -/
 theorem ringExtend_of_mem {B : Set S} (hB : B ∈ 𝒜) : ringExtend 𝒜 μ B = μ B := by
   simp [ringExtend, hB]
 
+/-- Off the ring the extended function is $`\infty`. -/
 theorem ringExtend_of_notMem {B : Set S} (hB : B ∉ 𝒜) : ringExtend 𝒜 μ B = ∞ := by
   simp [ringExtend, hB]
 

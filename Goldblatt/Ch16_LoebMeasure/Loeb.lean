@@ -157,18 +157,22 @@ theorem isComplete_loebMeasure : @Measure.IsComplete T P.loebSpace P.loebMeasure
 theorem loebMeasurable_of_null {B : Set T} (hB : P.outer B = 0) : P.LoebMeasurable B :=
   isCaratheodory_of_null hB
 
+/-- **Section 16.5.** The Loeb measurable sets are closed under intersections. -/
 theorem LoebMeasurable.inter {P : LoebPremeasure T} {A B : Set T} (hA : P.LoebMeasurable A)
     (hB : P.LoebMeasurable B) : P.LoebMeasurable (A ∩ B) :=
   P.outer.isCaratheodory_inter hA hB
 
+/-- **Section 16.5.** The Loeb measurable sets are closed under unions. -/
 theorem LoebMeasurable.union {P : LoebPremeasure T} {A B : Set T} (hA : P.LoebMeasurable A)
     (hB : P.LoebMeasurable B) : P.LoebMeasurable (A ∪ B) :=
   P.outer.isCaratheodory_union hA hB
 
+/-- **Section 16.5.** The Loeb measurable sets are closed under differences. -/
 theorem LoebMeasurable.diff {P : LoebPremeasure T} {A B : Set T} (hA : P.LoebMeasurable A)
     (hB : P.LoebMeasurable B) : P.LoebMeasurable (A \ B) :=
   P.outer.isCaratheodory_sdiff hA hB
 
+/-- **Section 16.5.** The Loeb measurable sets are closed under countable unions. -/
 theorem LoebMeasurable.iUnion {P : LoebPremeasure T} {A : ℕ → Set T}
     (hA : ∀ n, P.LoebMeasurable (A n)) : P.LoebMeasurable (⋃ n, A n) :=
   P.outer.isCaratheodory_iUnion hA
