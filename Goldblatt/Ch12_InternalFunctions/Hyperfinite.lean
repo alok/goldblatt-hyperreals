@@ -73,7 +73,8 @@ theorem not_isHyperfiniteSet_internalSet_iff {A : ℕ → Set α} :
   rfl
 
 /-- **Section 12.3.** A hyperfinite set is defined by a sequence _all_ of whose terms are
-finite ("we may as well assume that all the sets are finite"). -/
+finite: the defining sequence can always be changed on a negligible set of indices so that
+every term is finite. -/
 theorem IsHyperfiniteSet.exists_rep_finite {X : Set αS} (h : IsHyperfiniteSet α X) :
     ∃ A : ℕ → Set α, X = internalSet A ∧ ∀ n, (A n).Finite := by
   obtain ⟨A, rfl, hA⟩ := h
@@ -448,7 +449,12 @@ theorem internalSet_image_Iio_subset_starSet (x : ℕ → α) :
   internalSet_subset_starSet_iff.2 (Eventually.of_forall fun _ => image_subset_range _ _)
 
 /-- **Section 12.3, second example.** If the sequence $`(x_n)` has no repetitions, the
-hyperfinite set $`[\{x_0, \dots, x_{n-1}\}]` has internal cardinality $`\omega`. -/
+hyperfinite set $`[\{x_0, \dots, x_{n-1}\}]` has internal cardinality $`\omega`.
+
+The book asserts internal size $`\omega` for the approximating set without assuming that the
+enumeration has no repetitions. That is a correction: the claim needs the extra hypothesis and
+fails without it, for instance when $`B` is finite, where the approximating set is $`B` itself
+and has finite size. -/
 theorem internalCard_internalSet_image_Iio {x : ℕ → α} (hx : Function.Injective x) :
     internalCard α (internalSet (fun n => x '' Iio n) : Set αS) = ω := by
   rw [internalCard_internalSet]
@@ -458,7 +464,9 @@ theorem internalCard_internalSet_image_Iio {x : ℕ → α} (hx : Function.Injec
   simp
 
 /-- **Section 12.3, second example.** Every countable set $`B` has a hyperfinite
-approximation: a hyperfinite set $`A` with $`B \subseteq A \subseteq {}^*B`. -/
+approximation: a hyperfinite set $`A` with $`B \subseteq A \subseteq {}^*B`. No claim is
+made about the internal size of $`A`; the book's value $`\omega` holds only for an enumeration
+without repetitions, see {name}`Goldblatt.internalCard_internalSet_image_Iio`. -/
 theorem exists_isHyperfiniteSet_between {B : Set α} (hB : B.Countable) :
     ∃ A : Set αS, IsHyperfiniteSet α A ∧ of '' B ⊆ A ∧ A ⊆ ⋆B := by
   rcases B.eq_empty_or_nonempty with rfl | hne

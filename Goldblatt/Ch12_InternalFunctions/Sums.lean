@@ -272,17 +272,29 @@ end HyperfiniteSums
 section RealRiemannSums
 
 /-- **Section 12.7 (and 9.1).** The number $`N` of points $`a + k\varepsilon` below $`b`: the
-least natural number with $`a + N\varepsilon \ge b`. -/
+least natural number with $`a + N\varepsilon \ge b`.
+
+This is a definition of Section 9.1, placed here provisionally because the chapter on the
+Riemann integral is not among the modules this chapter may import. Once that chapter exists,
+either it should reuse this name or the present section should be rebased on its definition
+through a bridging lemma. -/
 noncomputable def partitionCard (a b e : ℝ) : ℕ := ⌈(b - a) / e⌉₊
 
 /-- **Section 12.7 (and 9.1).** The $`k`-th point of the partition of $`[a, b]` into
 subintervals of width $`\varepsilon` with a possibly smaller last subinterval: $`a +
-k\varepsilon`, cut off at $`b`. -/
+k\varepsilon`, cut off at $`b`.
+
+Like {name}`Goldblatt.partitionCard`, this is a Section 9.1 definition placed here
+provisionally. -/
 noncomputable def partitionPoint (a b e : ℝ) (k : ℕ) : ℝ := min (a + k * e) b
 
 /-- **Section 12.7 (and 9.1).** The ordinary Riemann sum $`S_a^b(f, \varepsilon)` of the
 partition of $`[a, b]` into subintervals of width $`\varepsilon`, with a possibly smaller last
-subinterval: the sum of the terms $`f(x_k)(x_{k+1} - x_k)`. -/
+subinterval: the sum of the terms $`f(x_k)(x_{k+1} - x_k)`.
+
+Like {name}`Goldblatt.partitionCard`, this is a Section 9.1 definition placed here
+provisionally; a later formalization of Chapter 9 should reuse it or be linked to it by a
+bridging lemma, so that the two chapters do not carry divergent copies. -/
 noncomputable def riemannSum (f : ℝ → ℝ) (a b e : ℝ) : ℝ :=
   ∑ k ∈ Finset.range (partitionCard a b e),
     f (partitionPoint a b e k) * (partitionPoint a b e (k + 1) - partitionPoint a b e k)
@@ -438,14 +450,46 @@ theorem abs_riemannSum_sub_integral_lt {f : ℝ → ℝ} {a b : ℝ} (hab : a < 
     _ = δ / 2 := by field_simp
     _ < δ := by linarith
 
-/-- **Section 12.7, the standard fact.** For a continuous function on $`[a, b]`, the sum
+/-- **Section 12.7 (and 9.2).** The ordinary Riemann sums $`S_a^b(f, \varepsilon)` of $`f`
+_converge_ to the real number $`I` as the width $`\varepsilon` tends to $`0` through positive
+values. This is the conclusion of the analysis of Section 9.2 for a function that is Riemann
+integrable on $`[a, b]` with integral $`I`, and it is the only fact about integrability that
+Section 12.7 uses. It is stated here as a predicate, to be discharged by Chapter 9 for
+integrable functions; the theorem {lit}`riemannSumsConverge_integral_of_continuousOn` below
+discharges it for continuous functions. -/
+def RiemannSumsConverge (f : ℝ → ℝ) (a b I : ℝ) : Prop :=
+  ∀ δ : ℝ, 0 < δ → ∃ η > 0, ∀ e, 0 < e → e < η → |riemannSum f a b e - I| < δ
+
+/-- **Section 12.7 (and 9.2).** The Riemann sums of a function continuous on $`[a, b]` converge
+to its integral. -/
+theorem riemannSumsConverge_integral_of_continuousOn {f : ℝ → ℝ} {a b : ℝ} (hab : a < b)
+    (hf : ContinuousOn f (Icc a b)) : RiemannSumsConverge f a b (∫ x in a..b, f x) :=
+  fun _ hδ => abs_riemannSum_sub_integral_lt hab hf hδ
+
+/-- The limit of the Riemann sums is unique. -/
+theorem RiemannSumsConverge.unique {f : ℝ → ℝ} {a b I J : ℝ} (hI : RiemannSumsConverge f a b I)
+    (hJ : RiemannSumsConverge f a b J) : I = J := by
+  by_contra hne
+  have hpos : 0 < |I - J| / 2 := half_pos (abs_pos.2 (sub_ne_zero.2 hne))
+  obtain ⟨η₁, hη₁, H₁⟩ := hI _ hpos
+  obtain ⟨η₂, hη₂, H₂⟩ := hJ _ hpos
+  have he : 0 < min η₁ η₂ / 2 := half_pos (lt_min hη₁ hη₂)
+  have h1 := H₁ _ he (by linarith [min_le_left η₁ η₂])
+  have h2 := H₂ _ he (by linarith [min_le_right η₁ η₂])
+  have h3 : |I - J| ≤ |riemannSum f a b (min η₁ η₂ / 2) - I| +
+      |riemannSum f a b (min η₁ η₂ / 2) - J| := by
+    rw [abs_sub_comm (riemannSum f a b (min η₁ η₂ / 2)) I]
+    exact abs_sub_le _ _ _
+  linarith
+
+/-- **Section 12.7, the standard fact.** For a function that is bounded on $`[a, b]`, the sum
 $`\bigl(\sum_{x \in P_\varepsilon} f(x)\bigr)\varepsilon` differs from the ordinary Riemann
 sum $`S_a^b(f, \varepsilon)` by at most a constant multiple of $`\varepsilon`: the two sums
 differ only in the width given to the last subinterval. -/
 theorem abs_uniformSum_sub_riemannSum_le {f : ℝ → ℝ} {a b : ℝ} (hab : a < b)
-    (hf : ContinuousOn f (Icc a b)) :
+    (hf : ∃ M : ℝ, ∀ x ∈ Icc a b, |f x| ≤ M) :
     ∃ M : ℝ, ∀ e, 0 < e → |uniformSum f a b e - riemannSum f a b e| ≤ M * e := by
-  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn hf
+  obtain ⟨M, hM⟩ := hf
   refine ⟨|M|, fun e he => ?_⟩
   set n := partitionCard a b e with hn
   set y : ℕ → ℝ := partitionPoint a b e with hy
@@ -461,7 +505,7 @@ theorem abs_uniformSum_sub_riemannSum_le {f : ℝ → ℝ} {a b : ℝ} (hab : a 
     have h1 : 0 ≤ e - (y (k + 1) - y k) := sub_nonneg.2 (partitionPoint_succ_sub_le he k)
     rw [← mul_sub, abs_mul, abs_of_nonneg h1]
     exact mul_le_mul_of_nonneg_right
-      (((Real.norm_eq_abs _).symm.le.trans (hM _ hmem)).trans (le_abs_self M)) h1
+      ((hM _ hmem).trans (le_abs_self M)) h1
   have hy0 : y 0 = a := partitionPoint_zero hab.le
   have hyn : y n = b := partitionPoint_partitionCard he
   have hceil : (n : ℝ) * e - (b - a) ≤ e := by
@@ -645,30 +689,63 @@ theorem abs_ofSeq_sub_coe_lt_iff {s : ℕ → ℝ} {c δ : ℝ} :
   rw [ofSeq_sub, abs_ofSeq, ofSeq_lt_ofSeq_iff]
   rfl
 
-/-- **Section 12.7 (and 9.2).** For a continuous function $`f` on $`[a, b]` and a positive
-infinitesimal $`\Delta x`, the extended ordinary Riemann sum $`S_a^b(f, \Delta x)` is
-infinitely close to the integral of $`f`. Given a real tolerance, the real Riemann sums are
-within it of the integral for all small enough real widths; almost all terms of a sequence
-representing $`\Delta x` are that small. -/
-theorem infClose_starMap_riemannSum_integral {f : ℝ → ℝ} {a b : ℝ} (hab : a < b)
-    (hf : ContinuousOn f (Icc a b)) {Δ : ℝ*} (hΔ : PosInfinitesimal Δ) :
-    (⋆(riemannSum f a b) : ℝ* → ℝ*) Δ ≊ ((∫ x in a..b, f x : ℝ) : ℝ*) := by
+/-- **Section 12.7 (and 9.2), the nonstandard step.** If the Riemann sums of $`f` over
+$`[a, b]` converge to $`I`, then for every positive infinitesimal $`\Delta x` the extended
+ordinary Riemann sum $`S_a^b(f, \Delta x)` is infinitely close to $`I`. Given a real tolerance,
+the real Riemann sums are within it of $`I` for all small enough real widths, and almost all
+terms of a sequence representing $`\Delta x` are that small. -/
+theorem RiemannSumsConverge.infClose_starMap_riemannSum {f : ℝ → ℝ} {a b I : ℝ}
+    (hI : RiemannSumsConverge f a b I) {Δ : ℝ*} (hΔ : PosInfinitesimal Δ) :
+    (⋆(riemannSum f a b) : ℝ* → ℝ*) Δ ≊ (I : ℝ*) := by
   obtain ⟨e, rfl⟩ := hyperreal_exists_rep Δ
   rw [infClose_iff_abs_lt]
   intro δ hδ
-  obtain ⟨η, hη, H⟩ := abs_riemannSum_sub_integral_lt hab hf hδ
+  obtain ⟨η, hη, H⟩ := hI δ hδ
   rw [starMap_hyperreal_ofSeq, abs_ofSeq_sub_coe_lt_iff]
   have h1 : Hyperreal.ofSeq e < Hyperreal.ofSeq fun _ => η := hΔ.2 η hη
   filter_upwards [ofSeq_pos_iff.1 hΔ.1, ofSeq_lt_ofSeq_iff.1 h1] with n h2 h3 using H _ h2 h3
 
-/-- **Section 12.7.** For a continuous function $`f` on $`[a, b]` and a positive infinitesimal
+/-- **Section 12.7 (and 9.2), nonstandard characterization.** The Riemann sums of $`f` over
+$`[a, b]` converge to $`I` if and only if the extended Riemann sum $`S_a^b(f, \Delta x)` is
+infinitely close to $`I` for every positive infinitesimal $`\Delta x`. For the converse, if the
+real sums did not converge there would be a tolerance $`\delta` and widths $`\varepsilon_n <
+1/(n+1)` whose sums stay $`\delta` away from $`I`; the class of $`(\varepsilon_n)` is then a
+positive infinitesimal at which the extended sum is not infinitely close to $`I`. -/
+theorem riemannSumsConverge_iff_forall_infClose {f : ℝ → ℝ} {a b I : ℝ} :
+    RiemannSumsConverge f a b I ↔
+      ∀ Δ : ℝ*, PosInfinitesimal Δ → (⋆(riemannSum f a b) : ℝ* → ℝ*) Δ ≊ (I : ℝ*) := by
+  refine ⟨fun hI Δ hΔ => hI.infClose_starMap_riemannSum hΔ, fun H => ?_⟩
+  by_contra hcon
+  unfold RiemannSumsConverge at hcon
+  push Not at hcon
+  obtain ⟨δ, hδ, hbad⟩ := hcon
+  have hch : ∀ n : ℕ, ∃ e : ℝ, 0 < e ∧ e < 1 / ((n : ℝ) + 1) ∧ δ ≤ |riemannSum f a b e - I| :=
+    fun n => hbad _ (by positivity)
+  choose e he0 he1 he2 using hch
+  have hΔ : PosInfinitesimal (Hyperreal.ofSeq e) := by
+    refine ⟨ofSeq_pos_iff.2 (Eventually.of_forall he0), fun r hr => ?_⟩
+    change Hyperreal.ofSeq e < Hyperreal.ofSeq fun _ => r
+    rw [ofSeq_lt_ofSeq_iff]
+    obtain ⟨m, hm⟩ := exists_nat_one_div_lt hr
+    refine eventually_hyperfilter_of_forall_ge m fun n hn => (he1 n).trans_le (le_trans ?_ hm.le)
+    have hmn : (m : ℝ) ≤ n := Nat.cast_le.2 hn
+    exact one_div_le_one_div_of_le (by positivity) (by linarith)
+  have h := H _ hΔ
+  rw [infClose_iff_abs_lt] at h
+  have h' := h δ hδ
+  rw [starMap_hyperreal_ofSeq, abs_ofSeq_sub_coe_lt_iff] at h'
+  obtain ⟨n, hn⟩ := h'.exists
+  exact absurd hn (not_lt.2 (he2 n))
+
+/-- **Section 12.7.** For a function $`f` bounded on $`[a, b]` and a positive infinitesimal
 $`\Delta x`, the extended ordinary Riemann sum $`S_a^b(f, \Delta x)` is infinitely close to the
 hyperfinite sum $`\bigl(\sum_{x \in P} f(x)\bigr)\Delta x`. The book writes an equality here;
 the two differ in the width of the last subinterval, which is $`\Delta x` in the hyperfinite
 sum and $`b - x_{N-1}` in the Riemann sum of Section 9.1, so in general they are only
-infinitely close. -/
+infinitely close. Boundedness, which every Riemann integrable function has, is what makes the
+difference infinitesimal. -/
 theorem infClose_starMap_riemannSum_hsum_mul {f : ℝ → ℝ} {a b : ℝ} (hab : a < b)
-    (hf : ContinuousOn f (Icc a b)) {Δ : ℝ*} (hΔ : PosInfinitesimal Δ) :
+    (hf : ∃ M : ℝ, ∀ x ∈ Icc a b, |f x| ≤ M) {Δ : ℝ*} (hΔ : PosInfinitesimal Δ) :
     (⋆(riemannSum f a b) : ℝ* → ℝ*) Δ ≊
       hsum ((⋆f : ℝ* → ℝ*) : ℝ* →. ℝ*) (hpartition a b Δ) * Δ := by
   rw [← starMap_uniformSum_eq_hsum_mul f a b hΔ.1]
@@ -688,31 +765,80 @@ theorem infClose_starMap_riemannSum_hsum_mul {f : ℝ → ℝ} {a b : ℝ} (hab 
     _ ≤ |M| * e n := mul_le_mul_of_nonneg_right (le_abs_self M) h2.le
     _ < δ := by nlinarith
 
-/-- **Section 12.7, the integral as a hyperfinite sum.** For a continuous function $`f` on
-$`[a, b]` and a positive infinitesimal $`\Delta x`, the hyperfinite Riemann sum
+/-- **Section 12.7, the integral as a hyperfinite sum.** Let $`f` be bounded on $`[a, b]` with
+Riemann sums converging to $`I`. Then for every positive infinitesimal $`\Delta x` the
+hyperfinite Riemann sum $`\sum_{x \in P} f(x)\,\Delta x` over the hyperfinite partition $`P` is
+infinitely close to $`I`. -/
+theorem RiemannSumsConverge.infClose_hsum_hpartition {f : ℝ → ℝ} {a b I : ℝ} (hab : a < b)
+    (hf : ∃ M : ℝ, ∀ x ∈ Icc a b, |f x| ≤ M) (hI : RiemannSumsConverge f a b I) {Δ : ℝ*}
+    (hΔ : PosInfinitesimal Δ) :
+    hsum ((fun x => (⋆f : ℝ* → ℝ*) x * Δ : ℝ* → ℝ*) : ℝ* →. ℝ*) (hpartition a b Δ) ≊
+      (I : ℝ*) := by
+  rw [hsum_starMap_mul_hpartition f a b hΔ.1]
+  exact (infClose_starMap_riemannSum_hsum_mul hab hf hΔ).symm.trans
+    (hI.infClose_starMap_riemannSum hΔ)
+
+/-- **Section 12.7, the integral as a hyperfinite sum, general form.** Let $`f` be bounded on
+$`[a, b]`, $`a < b`, with Riemann sums $`S_a^b(f, \varepsilon)` converging to the real number
+$`I` as $`\varepsilon \to 0^+`. Then for any positive infinitesimal $`\Delta x`,
+$$`I = \operatorname{sh}\bigl(S_a^b(f, \Delta x)\bigr)
+  = \operatorname{sh}\Bigl(\sum_{x \in P} f(x)\,\Delta x\Bigr).`
+The book states this for a function Riemann integrable on $`[a, b]`, with $`I` its integral.
+Such a function is bounded, and Section 9.2 shows that its Riemann sums converge to the
+integral; those two facts are the hypotheses here, since Chapter 9 is not available to this
+chapter. Everything the present section adds to them is proved. -/
+theorem RiemannSumsConverge.eq_sh_hsum_hpartition {f : ℝ → ℝ} {a b I : ℝ} (hab : a < b)
+    (hf : ∃ M : ℝ, ∀ x ∈ Icc a b, |f x| ≤ M) (hI : RiemannSumsConverge f a b I) {Δ : ℝ*}
+    (hΔ : PosInfinitesimal Δ) :
+    I = sh ((⋆(riemannSum f a b) : ℝ* → ℝ*) Δ) ∧
+      I = sh (hsum ((fun x => (⋆f : ℝ* → ℝ*) x * Δ : ℝ* → ℝ*) : ℝ* →. ℝ*)
+        (hpartition a b Δ)) :=
+  ⟨(sh_eq_of_infClose (hI.infClose_starMap_riemannSum hΔ)).symm,
+    (sh_eq_of_infClose (hI.infClose_hsum_hpartition hab hf hΔ)).symm⟩
+
+/-- A function continuous on $`[a, b]` is bounded there. -/
+theorem exists_abs_le_of_continuousOn_Icc {f : ℝ → ℝ} {a b : ℝ}
+    (hf : ContinuousOn f (Icc a b)) : ∃ M : ℝ, ∀ x ∈ Icc a b, |f x| ≤ M := by
+  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn hf
+  exact ⟨M, fun x hx => (Real.norm_eq_abs _).symm.le.trans (hM x hx)⟩
+
+/-- **Section 12.7 (and 9.2).** For a continuous function $`f` on $`[a, b]` and a positive
+infinitesimal $`\Delta x`, the extended ordinary Riemann sum $`S_a^b(f, \Delta x)` is
+infinitely close to the integral of $`f`. A special case of
+{name}`Goldblatt.RiemannSumsConverge.infClose_starMap_riemannSum`. -/
+theorem infClose_starMap_riemannSum_integral {f : ℝ → ℝ} {a b : ℝ} (hab : a < b)
+    (hf : ContinuousOn f (Icc a b)) {Δ : ℝ*} (hΔ : PosInfinitesimal Δ) :
+    (⋆(riemannSum f a b) : ℝ* → ℝ*) Δ ≊ ((∫ x in a..b, f x : ℝ) : ℝ*) :=
+  (riemannSumsConverge_integral_of_continuousOn hab hf).infClose_starMap_riemannSum hΔ
+
+/-- **Section 12.7, the integral as a hyperfinite sum, continuous case.** For a continuous
+function $`f` on $`[a, b]` and a positive infinitesimal $`\Delta x`, the hyperfinite Riemann sum
 $`\sum_{x \in P} f(x)\,\Delta x` over the hyperfinite partition $`P` is infinitely close to the
-integral of $`f` over $`[a, b]`. -/
+integral of $`f` over $`[a, b]`. A special case of
+{name}`Goldblatt.RiemannSumsConverge.infClose_hsum_hpartition`. -/
 theorem infClose_hsum_hpartition_integral {f : ℝ → ℝ} {a b : ℝ} (hab : a < b)
     (hf : ContinuousOn f (Icc a b)) {Δ : ℝ*} (hΔ : PosInfinitesimal Δ) :
     hsum ((fun x => (⋆f : ℝ* → ℝ*) x * Δ : ℝ* → ℝ*) : ℝ* →. ℝ*) (hpartition a b Δ) ≊
-      ((∫ x in a..b, f x : ℝ) : ℝ*) := by
-  rw [hsum_starMap_mul_hpartition f a b hΔ.1]
-  exact (infClose_starMap_riemannSum_hsum_mul hab hf hΔ).symm.trans
-    (infClose_starMap_riemannSum_integral hab hf hΔ)
+      ((∫ x in a..b, f x : ℝ) : ℝ*) :=
+  (riemannSumsConverge_integral_of_continuousOn hab hf).infClose_hsum_hpartition hab
+    (exists_abs_le_of_continuousOn_Icc hf) hΔ
 
-/-- **Section 12.7, the integral as a hyperfinite sum.** For a continuous function $`f` on
-$`[a, b]` and any positive infinitesimal $`\Delta x`,
+/-- **Section 12.7, the integral as a hyperfinite sum, continuous case.** For a continuous
+function $`f` on $`[a, b]` and any positive infinitesimal $`\Delta x`,
 $$`\int_a^b f(x)\,dx = \operatorname{sh}\bigl(S_a^b(f, \Delta x)\bigr)
-  = \operatorname{sh}\Bigl(\sum_{x \in P} f(x)\,\Delta x\Bigr).`
-The book states this for Riemann integrable functions, relying on the analysis of Section 9.2;
-it is proved here for continuous functions, with Mathlib's integral. -/
+  = \operatorname{sh}\Bigl(\sum_{x \in P} f(x)\,\Delta x\Bigr),`
+with Mathlib's interval integral on the left. This is the corollary of the general form
+{name}`Goldblatt.RiemannSumsConverge.eq_sh_hsum_hpartition` in the one case where the
+convergence of the Riemann sums is proved in this chapter
+({name}`Goldblatt.abs_riemannSum_sub_integral_lt`); the book's statement for all Riemann
+integrable functions is the general form together with Section 9.2. -/
 theorem integral_eq_sh_hsum_hpartition {f : ℝ → ℝ} {a b : ℝ} (hab : a < b)
     (hf : ContinuousOn f (Icc a b)) {Δ : ℝ*} (hΔ : PosInfinitesimal Δ) :
     ∫ x in a..b, f x = sh ((⋆(riemannSum f a b) : ℝ* → ℝ*) Δ) ∧
       ∫ x in a..b, f x =
         sh (hsum ((fun x => (⋆f : ℝ* → ℝ*) x * Δ : ℝ* → ℝ*) : ℝ* →. ℝ*) (hpartition a b Δ)) :=
-  ⟨(sh_eq_of_infClose (infClose_starMap_riemannSum_integral hab hf hΔ)).symm,
-    (sh_eq_of_infClose (infClose_hsum_hpartition_integral hab hf hΔ)).symm⟩
+  (riemannSumsConverge_integral_of_continuousOn hab hf).eq_sh_hsum_hpartition hab
+    (exists_abs_le_of_continuousOn_Icc hf) hΔ
 
 /-- **Section 12.7, non-vacuity.** The integral of the identity function over $`[0, 1]` is the
 shadow of the hyperfinite sum $`\sum_{x \in P} x\,\varepsilon` over the partition of width the

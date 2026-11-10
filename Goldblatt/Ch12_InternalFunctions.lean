@@ -73,8 +73,9 @@ it into itself is onto; a function that is not internal.
 ## 12.7 Integrals as Hyperfinite Sums
 
 Part 3. The sum of an internal function over a hyperfinite set and its properties; the
-hyperfinite partition of an interval; the integral of a continuous function as the shadow of a
-hyperfinite Riemann sum.
+hyperfinite partition of an interval; the integral as the shadow of a hyperfinite Riemann sum,
+for every bounded function whose Riemann sums converge, and in particular for continuous
+functions.
 
 ## Conventions of the formalization
 
@@ -101,17 +102,31 @@ hyperfinite Riemann sum.
   {name}`Goldblatt.internalSum_internalPFun`.
 * Lean's natural numbers start at $`0`. The book's segment $`\{1, \dots, N\}` is kept in
   Theorem 12.5.1, and the examples are given both from $`1` and from $`0`.
-* Four statements of the book are corrected or sharpened, each with a note in the docstring.
+* Five statements of the book are corrected or sharpened, each with a note in the docstring.
   Exercises 12.2(7) and 12.4(1) need a nonempty set. The uniform partition of Section 12.3 has
-  $`N + 1` points only if its end points are distinct. The example of a function that is not
+  $`N + 1` points only if its end points are distinct. The hyperfinite approximation of a
+  countable set in Section 12.3 has internal size $`\omega` only when the enumeration has no
+  repetitions ({name}`Goldblatt.internalCard_internalSet_image_Iio`); for a finite set it does
+  not. The example of a function that is not
   internal in Section 12.6 is argued in the book from the pigeonhole principle applied to the
   set of all hypernaturals, which is not hyperfinite; the proof here applies the principle to
   an initial segment. In Section 12.7 the hyperfinite sum over the partition and the extended
   Riemann sum of Section 9.1 are infinitely close but in general not equal, because they give
   different widths to the last subinterval.
 * The final theorem of Section 12.7 is stated in the book for Riemann integrable functions and
-  rests on Chapter 9. Here it is proved for continuous functions, with Mathlib's interval
-  integral; the standard ingredient is the convergence of Riemann sums of a continuous function
-  ({name}`Goldblatt.abs_riemannSum_sub_integral_lt`), and the nonstandard step is
-  {name}`Goldblatt.infClose_starMap_riemannSum_integral`.
+  rests on Chapter 9, which this chapter cannot import. The general form here,
+  {name}`Goldblatt.RiemannSumsConverge.eq_sh_hsum_hpartition`, takes as hypotheses exactly what
+  Chapter 9 supplies for an integrable function: boundedness on the interval and convergence of
+  the Riemann sums of Section 9.1 to the integral ({name}`Goldblatt.RiemannSumsConverge`). The
+  nonstandard content is proved in full from these, including the characterization
+  {name}`Goldblatt.riemannSumsConverge_iff_forall_infClose` of the convergence by positive
+  infinitesimal widths. The statement for Riemann integrable functions is therefore discharged
+  once Chapter 9 proves the convergence for them; until then it is fully proved only for
+  continuous functions with Mathlib's interval integral
+  ({name}`Goldblatt.integral_eq_sh_hsum_hpartition`), through the standard fact
+  {name}`Goldblatt.abs_riemannSum_sub_integral_lt`.
+* The partition and Riemann sum of Section 9.1 ({name}`Goldblatt.partitionCard`,
+  {name}`Goldblatt.partitionPoint`, {name}`Goldblatt.riemannSum`) are defined on the third page
+  provisionally, for the same reason; a formalization of Chapter 9 should reuse them or bridge
+  to them.
 -/
