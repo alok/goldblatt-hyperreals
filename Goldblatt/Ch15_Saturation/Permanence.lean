@@ -1,13 +1,13 @@
 import Goldblatt.Ch15_Saturation.Hyperreals
 
 /-!
-# 15 (part 3). Permanence and Robinson's sequential lemma: Sections 15.1 to 15.3
+# 15 (part 3). Permanence and Robinson's sequential lemma: Sections 15.1 and 15.2
 
-This is the third of five parts of Chapter 15 (the overview is on the chapter page
+This is the third of seven parts of Chapter 15 (the overview is on the chapter page
 {lit}`Goldblatt.Ch15_Saturation`). It proves the permanence principles of Section 15.1 for
-internal properties in an arbitrary framework over the real numbers, derives Robinson's
-sequential lemma and its variants (Section 15.2), and uses the lemma to show that a uniform
-limit of continuous functions is continuous (Section 15.3).
+internal properties in an arbitrary framework over the real numbers, and derives Robinson's
+sequential lemma and its variants (Section 15.2). The application to uniformly convergent
+sequences of functions (Section 15.3) is in part 4.
 
 Throughout, the framework is assumed to have a nonstandard hypernatural number, the standing
 assumption of the chapter; it appears as the hypothesis {lit}`hω`.

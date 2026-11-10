@@ -3,7 +3,7 @@ import Goldblatt.Ch14_Enlargements
 /-!
 # 15 (part 1). Standard relations and the hyperreal order
 
-This is the first of five parts of Chapter 15 (the overview is on the chapter page
+This is the first of seven parts of Chapter 15 (the overview is on the chapter page
 {lit}`Goldblatt.Ch15_Saturation`). It contains no numbered item of the book. It prepares the
 ground for Sections 15.1 to 15.4, whose statements speak of infinitesimal, limited and
 unlimited members of the transform of the real numbers inside an arbitrary nonstandard

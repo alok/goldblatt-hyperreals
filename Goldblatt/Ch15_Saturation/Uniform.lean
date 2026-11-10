@@ -3,7 +3,7 @@ import Goldblatt.Ch15_Saturation.Permanence
 /-!
 # 15 (part 4). Uniformly converging sequences of functions: Section 15.3
 
-This is the fourth of six parts of Chapter 15 (the overview is on the chapter page
+This is the fourth of seven parts of Chapter 15 (the overview is on the chapter page
 {lit}`Goldblatt.Ch15_Saturation`). It carries out, in an arbitrary framework over the real
 numbers with a nonstandard hypernatural number, the proof by Robinson's sequential lemma that
 a uniform limit of continuous functions is continuous, and proves the characterization of

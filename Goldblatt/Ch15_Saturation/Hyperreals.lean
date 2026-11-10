@@ -3,7 +3,7 @@ import Goldblatt.Ch15_Saturation.Codes
 /-!
 # 15 (part 2). Infinitesimal, limited and unlimited numbers in a framework
 
-This is the second of five parts of Chapter 15 (the overview is on the chapter page
+This is the second of seven parts of Chapter 15 (the overview is on the chapter page
 {lit}`Goldblatt.Ch15_Saturation`). Like part 1 it contains no numbered item of the book. It
 defines, for a framework whose individuals include the real numbers, the notions that the
 statements of Sections 15.1 to 15.4 use: the strict order of the hyperreals, infinitesimal,
@@ -440,6 +440,25 @@ theorem notMem_N_iff_posUnlimited (hn : n ∈ F.star F.N) : n ∉ F.N ↔ F.PosU
 theorem nat_lt_of_nonstandard (hn : n ∈ F.star F.N) (hnN : n ∉ F.N) (k : ℕ) :
     F.Lt (F.nat k) n :=
   posUnlimited_of_nonstandard hn hnN k
+
+/-!
+## Existence
+
+The notions of this page are not vacuous: in an enlargement there are nonzero infinitesimals
+and positive unlimited numbers (Section 14.1), and an unlimited hypernatural number.
+-/
+
+/-- **Section 14.1.** In an enlargement there is a nonzero infinitesimal. -/
+theorem exists_infinitesimal_ne_zero (hE : F.IsEnlargement) :
+    ∃ b, F.Infinitesimal b ∧ b ≠ F.real 0 := by
+  obtain ⟨b, -, hb0, hb⟩ := exists_nonzero_infinitesimal hE
+  exact ⟨b, fun r hr => ⟨lt_iff.2 ⟨(hb r hr).1.1, (hb r hr).1.2.symm⟩,
+    lt_iff.2 ⟨(hb r hr).2.1, (hb r hr).2.2⟩⟩, hb0⟩
+
+/-- **Section 14.1.** In an enlargement there is a positive unlimited hyperreal. -/
+theorem exists_posUnlimited (hE : F.IsEnlargement) : ∃ b, F.PosUnlimited b := by
+  obtain ⟨b, -, hb⟩ := exists_pos_unlimited hE
+  exact ⟨b, posUnlimited_iff.2 hb⟩
 
 end RealFramework
 

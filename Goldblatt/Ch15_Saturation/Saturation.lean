@@ -183,7 +183,9 @@ The book states this without proof, with the remark that it is shown by using sp
 of ultrafilters. The proof requires an ultrafilter that is countably incomplete and
 $`\kappa^+`-good, and the theorem that the ultrapower modulo such an ultrafilter is
 $`\kappa^+`-saturated; neither the existence of good ultrafilters nor that theorem is
-available in Mathlib. The statement is recorded here and is not proved. The case
+available in Mathlib. The statement is recorded here, in the form of the enlargement theorem
+of Chapter 14 (the target universe is the superstructure over $`{}^*X`), and is not proved.
+The case
 $`\kappa = \aleph_1` over the real numbers is proved:
 {lit}`Goldblatt.exists_realFramework_countablySaturated`. -/
 theorem exists_saturated_enlargement {X : ZFSet.{u}} (hX : IsBaseSet X) (κ : Cardinal.{u}) :
@@ -274,6 +276,127 @@ theorem fip_star_R_sdiff_singleton (F : RealFramework.{u}) :
       (∀ t : Finset ZFSet.{u}, ∃ x, ∀ r ∈ t, x ∈ F.star F.R \ {r}) ∧
       ¬ ∃ x, ∀ r ∈ F.star F.R, x ∈ F.star F.R \ {r} :=
   fip_sdiff_singleton F.star_R_spec F.infinite_star_R
+
+/-- Every hypernatural number has a greater hypernatural number. -/
+theorem exists_nat_gt {n : ZFSet.{u}} (hn : n ∈ F.star F.N) : ∃ m ∈ F.star F.N, F.Lt n m := by
+  have h1 : n ∈ F.star (F.cR.set {a : ℝ | ∃ b : ℝ, (∃ j : ℕ, b = j) ∧ a < b}) :=
+    F.cR.star_set_mono (by
+      rintro a ⟨k, rfl⟩
+      exact ⟨((k + 1 : ℕ) : ℝ), ⟨k + 1, rfl⟩, by push_cast; linarith⟩) (F.mem_star_N_iff.1 hn)
+  obtain ⟨m, hm⟩ := (Code.mem_star_set_exists F.cR F.cR).1 h1
+  refine ⟨m, F.mem_star_N_iff.2 (Code.mem_right_of_rel F.cR F.cR (fun a b hab => ?_) hm),
+    Code.rel_mono F.cR F.cR (fun a b hab => hab.2) hm⟩
+  obtain ⟨j, hj⟩ := hab.1
+  exact ⟨j, hj.symm⟩
+
+/-- **Section 15.4, an instance of the uncountability of infinite internal sets.** In a
+countably saturated framework, every hypernatural $`K` has uncountably many hypernaturals
+greater than it: the internal set $`\{n \in {}^*\mathbb N : K < n\}` is uncountable. -/
+theorem not_countable_gt (hS : F.CountablySaturated) {K : ZFSet.{u}} (hK : K ∈ F.star F.N) :
+    ¬ ({n | n ∈ F.star F.N ∧ F.Lt K n} : Set ZFSet.{u}).Countable := by
+  classical
+  obtain ⟨hNint, hNset⟩ := F.star_N_spec
+  have hA : F.InternalSet (F.star F.N ∩ relImage (F.star (F.rr (· < ·))) {K}) :=
+    ⟨F.internal_inter hNint hNset (internal_relImage_star (Code.isSetOf_rel _ _ _)
+      (Code.relIn_rel _ _ _) (F.internal_singleton (F.internal_of_mem_star F.isSetOf_N hK))),
+      F.isUniverse'.isSetOf_inter hNset⟩
+  have hset : ((F.star F.N ∩ relImage (F.star (F.rr (· < ·))) {K} : ZFSet.{u}) :
+      Set ZFSet.{u}) = {n | n ∈ F.star F.N ∧ F.Lt K n} := by
+    ext n
+    show n ∈ F.star F.N ∩ relImage (F.star (F.rr (· < ·))) {K} ↔ _
+    rw [mem_inter, mem_relImage]
+    refine and_congr_right fun _ => ⟨?_, fun h => ⟨K, mem_singleton.2 rfl, h⟩⟩
+    rintro ⟨w, hw, hwn⟩
+    rwa [mem_singleton.1 hw] at hwn
+  rw [← hset]
+  refine hS.not_countable_of_infinite hA ?_
+  rw [hset]
+  choose next hnext using fun p : {n // n ∈ F.star F.N} => exists_nat_gt p.2
+  let f : ℕ → {n // n ∈ F.star F.N} := fun k =>
+    Nat.rec ⟨K, hK⟩ (fun _ p => ⟨next p, (hnext p).1⟩) k
+  have hstep : ∀ k, F.Lt (f k).1 (f (k + 1)).1 := fun k => (hnext (f k)).2
+  have hmono : ∀ i j, i < j → F.Lt (f i).1 (f j).1 := by
+    intro i j hij
+    induction hij with
+    | refl => exact hstep i
+    | step _ ih => exact ih.trans (hstep _)
+  refine Set.infinite_of_injective_forall_mem (f := fun k => (f (k + 1)).1) ?_ fun k =>
+    ⟨(f (k + 1)).2, hmono 0 (k + 1) (Nat.succ_pos k)⟩
+  intro i j hij
+  by_contra hne
+  rcases Nat.lt_or_gt_of_ne hne with h | h
+  · have := hmono (i + 1) (j + 1) (by omega)
+    rw [show (f (i + 1)).1 = (f (j + 1)).1 from hij] at this
+    exact lt_irrefl' this
+  · have := hmono (j + 1) (i + 1) (by omega)
+    rw [show (f (i + 1)).1 = (f (j + 1)).1 from hij] at this
+    exact lt_irrefl' this
+
+/-- **Section 15.4, a second instance.** In a countably saturated framework, an unlimited
+hypernatural $`K` has uncountably many hypernaturals less than it: the internal set
+$`\{n \in {}^*\mathbb N : n < K\}` is uncountable, while its limited part $`\mathbb N` is
+countable. So $`K` has uncountably many unlimited hypernaturals below it. -/
+theorem not_countable_lt_unlimited (hS : F.CountablySaturated) {K : ZFSet.{u}}
+    (hK : K ∈ F.star F.N) (hKN : K ∉ F.N) :
+    ¬ ({n | n ∈ F.star F.N ∧ F.Lt n K} : Set ZFSet.{u}).Countable := by
+  obtain ⟨hNint, hNset⟩ := F.star_N_spec
+  have hA : F.InternalSet (F.star F.N ∩ relPreimage (F.star (F.rr (· < ·))) {K}) :=
+    ⟨F.internal_inter hNint hNset (internal_relPreimage_star (Code.isSetOf_rel _ _ _)
+      (Code.relIn_rel _ _ _) (F.internal_singleton (F.internal_of_mem_star F.isSetOf_N hK))),
+      F.isUniverse'.isSetOf_inter hNset⟩
+  have hset : ((F.star F.N ∩ relPreimage (F.star (F.rr (· < ·))) {K} : ZFSet.{u}) :
+      Set ZFSet.{u}) = {n | n ∈ F.star F.N ∧ F.Lt n K} := by
+    ext n
+    show n ∈ F.star F.N ∩ relPreimage (F.star (F.rr (· < ·))) {K} ↔ _
+    rw [mem_inter, mem_relPreimage]
+    refine and_congr_right fun _ => ⟨?_, fun h => ⟨K, mem_singleton.2 rfl, h⟩⟩
+    rintro ⟨w, hw, hwn⟩
+    rwa [mem_singleton.1 hw] at hwn
+  rw [← hset]
+  refine hS.not_countable_of_infinite hA ?_
+  rw [hset]
+  exact Set.infinite_of_injective_forall_mem F.nat_injective fun k =>
+    ⟨F.N_subset_star (F.mem_N.2 ⟨k, rfl⟩), nat_lt_of_nonstandard hK hKN k⟩
+
+/-- **Section 15.4.** In a countably saturated framework an unlimited hypernatural $`K`
+has uncountably many _unlimited_ hypernaturals less than it. -/
+theorem not_countable_unlimited_lt (hS : F.CountablySaturated) {K : ZFSet.{u}}
+    (hK : K ∈ F.star F.N) (hKN : K ∉ F.N) :
+    ¬ ({n | n ∈ F.star F.N ∧ n ∉ F.N ∧ F.Lt n K} : Set ZFSet.{u}).Countable := fun hc =>
+  not_countable_lt_unlimited hS hK hKN ((hc.union F.countable_N).mono fun n hn => by
+    by_cases hnN : n ∈ F.N
+    · exact Or.inr hnN
+    · exact Or.inl ⟨hn.1, hnN, hn.2⟩)
+
+/-!
+## Countably saturated frameworks over the reals: summary of consequences
+
+Part V of the book works in a countably saturated enlargement. For a framework over the real
+numbers, countable saturation alone yields an unlimited hypernatural number, sequential and
+countable comprehensiveness, and Robinson's theorem; they are collected here in the form in
+which they are used.
+-/
+
+/-- A countably saturated framework over the reals is sequentially comprehensive. -/
+theorem sequentiallyComprehensive_of_countablySaturated (hS : F.CountablySaturated) :
+    F.SequentiallyComprehensive :=
+  sequentiallyComprehensive_of_countablyComprehensive hS.countablyComprehensive
+
+/-- **Section 15.4.** In a countably saturated framework over the reals, every sequence
+$`(s_n : n \in \mathbb N)` of members of an internal set $`B` extends to an internal
+hypersequence $`(s_n : n \in {}^*\mathbb N)` of members of $`B`. -/
+theorem exists_internal_extension_of_countablySaturated (hS : F.CountablySaturated)
+    {B : ZFSet.{u}} (hB : F.InternalSet B) (s : ℕ → ZFSet.{u}) (hs : ∀ n, s n ∈ B) :
+    ∃ g, F.Internal g ∧ IsFunc (F.star F.N) B g ∧ ∀ n : ℕ, app g (F.nat n) = s n :=
+  (sequentiallyComprehensive_of_countablySaturated hS).exists_seq hB s hs
+
+/-- **Theorem 15.4.3, in a countably saturated framework.** Every countable set of
+unlimited hypernaturals has an unlimited hypernatural below all its members. -/
+theorem exists_unlimited_lt_of_countable_of_countablySaturated (hS : F.CountablySaturated)
+    (X : Set ZFSet.{u}) (hX : X.Countable) (h : ∀ x ∈ X, x ∈ F.star F.N ∧ x ∉ F.N) :
+    ∃ K, K ∈ F.star F.N ∧ K ∉ F.N ∧ ∀ x ∈ X, F.Lt K x :=
+  exists_unlimited_lt_of_countable (sequentiallyComprehensive_of_countablySaturated hS)
+    (exists_nonstandard_nat_of_countablySaturated hS) X hX h
 
 end RealFramework
 

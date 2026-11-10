@@ -1,13 +1,13 @@
 import Goldblatt.Ch15_Saturation.Comprehensive
 
 /-!
-# 15 (part 6). The ultrapower is comprehensive, and saturation: Sections 15.4 and 15.5
+# 15 (part 6). The ultrapower is comprehensive: Section 15.4, continued
 
-This is the last of six parts of Chapter 15 (the overview is on the chapter page
+This is the sixth of seven parts of Chapter 15 (the overview is on the chapter page
 {lit}`Goldblatt.Ch15_Saturation`). It proves that the bounded ultrapower of Chapter 14 is a
 comprehensive framework, by the construction of Section 15.4, with the two parts of Exercise
-15.4.1 about that construction; concludes that comprehensive, countably saturated
-enlargements exist; and treats the saturation properties of Section 15.5.
+15.4.1 about that construction, and concludes that comprehensive, countably saturated
+enlargements exist.
 -/
 
 noncomputable section

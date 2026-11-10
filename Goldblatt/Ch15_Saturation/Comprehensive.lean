@@ -3,7 +3,7 @@ import Goldblatt.Ch15_Saturation.Uniform
 /-!
 # 15 (part 5). Comprehensiveness and countable saturation: Section 15.4
 
-This is the fifth of six parts of Chapter 15 (the overview is on the chapter page
+This is the fifth of seven parts of Chapter 15 (the overview is on the chapter page
 {lit}`Goldblatt.Ch15_Saturation`). It defines comprehensive, countably comprehensive and
 sequentially comprehensive frameworks and countable saturation, proves that the three
 conditions of Theorem 15.4.2 are equivalent, and proves Robinson's theorem on countable sets
