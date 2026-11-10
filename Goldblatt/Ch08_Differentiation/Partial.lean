@@ -271,11 +271,12 @@ theorem exists_infClose_partial_snd_increment
       filter_upwards [hu, hv] with n h1 h2 using (hc n h1 h2).2
     exact key
 
-/-- **Theorem 8.7.1 (Incremental Equation for Two Variables).** If $`f` is smooth at the
-real point $`(a, b)` and $`\Delta x`, $`\Delta y` are infinitesimal, then
+/-- **Theorem 8.7.1 (Incremental Equation for Two Variables).** Near a real point $`(a, b)`
+of smoothness, the increment of $`f` is the total differential up to an error that is
+infinitely small compared with the increments of the variables: for any two infinitesimals
+$`\Delta x` and $`\Delta y` there are infinitesimals $`\varepsilon` and $`\delta` with
 $$`{}^*f(a + \Delta x, b + \Delta y) - f(a, b) =
-  f_x(a, b)\,\Delta x + f_y(a, b)\,\Delta y + \varepsilon\,\Delta x + \delta\,\Delta y`
-for some infinitesimals $`\varepsilon` and $`\delta`. -/
+  f_x(a, b)\,\Delta x + f_y(a, b)\,\Delta y + \varepsilon\,\Delta x + \delta\,\Delta y.` -/
 theorem SmoothAt.incremental_equation (h : SmoothAt f fx fy a b) (hx : Infinitesimal Δx)
     (hy : Infinitesimal Δy) :
     ∃ η δ : ℝ*, Infinitesimal η ∧ Infinitesimal δ ∧

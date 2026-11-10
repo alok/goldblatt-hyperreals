@@ -42,9 +42,9 @@ section WellInside
 
 variable {f : ℝ → ℝ} {a b c : ℝ} {x y z Δ : ℝ*}
 
-/-- **Section 8.11, well inside.** The hyperreal $`x` is _well inside_ the interval
-$`(y, z)` if $`y < x < z` and $`x` is not infinitely close to either of the end points
-$`y` and $`z`. -/
+/-- **Section 8.11, well inside.** The relation "$`x` is _well inside_ $`(y, z)`" between
+three hyperreals: $`x` lies strictly between $`y` and $`z` and stays at a non-infinitesimal
+distance from both. -/
 def WellInside (x y z : ℝ*) : Prop := y < x ∧ x < z ∧ ¬ x ≊ y ∧ ¬ x ≊ z
 
 /-- **Section 8.11.** A hyperreal $`x` is well inside $`(y, z)` if and only if
@@ -154,11 +154,12 @@ theorem exists_mem_uIcc_starMap_sub_eq {f' : ℝ → ℝ} {J : Set ℝ} (hJ : J.
       filter_upwards [hr, hs] with n h1 h2 using (hu n h1 h2).2
     exact key
 
-/-- **Theorem 8.11.1, the book's half.** Let $`f` be differentiable on the real interval
-$`(a, b)`. If the incremental equation
-$`{}^*f(x + \Delta x) = {}^*f(x) + {}^*f'(x)\,\Delta x + \varepsilon\,\Delta x` holds, with
-some infinitesimal $`\varepsilon`, for each hyperreal $`x` well inside the enlarged interval
-and each infinitesimal $`\Delta x`, then $`f'` is continuous on $`(a, b)`. -/
+/-- **Theorem 8.11.1, the book's half.** For $`f` differentiable on the real interval
+$`(a, b)`, the derivative $`f'` is continuous on $`(a, b)` as soon as the incremental
+equation $`{}^*f(x + \Delta x) = {}^*f(x) + {}^*f'(x)\,\Delta x + \varepsilon\,\Delta x`,
+with $`\varepsilon` infinitesimal depending on $`x` and $`\Delta x`, is valid for all
+infinitesimal increments at every hyperreal point whose halo lies in the enlarged
+interval. -/
 theorem continuousOn_deriv_of_incremental_equation (hf : DifferentiableOn ℝ f (Ioo a b))
     (h : ∀ x : ℝ*, WellInside x a b → ∀ Δ : ℝ*, Infinitesimal Δ →
       ∃ η : ℝ*, Infinitesimal η ∧ ⋆f (x + Δ) = ⋆f x + ⋆(deriv f) x * Δ + η * Δ) :
@@ -216,9 +217,10 @@ section Exercises
 
 variable {f : ℝ → ℝ} {a b : ℝ} {x Δ N : ℝ*}
 
-/-- **Exercise 8.12(1)(a).** Let $`f` be differentiable with $`f'` continuous on
-$`(a, b)`, let $`x` be well inside the enlarged interval and let $`\Delta x` be a nonzero
-infinitesimal. Then
+/-- **Exercise 8.12(1)(a).** When $`f'` exists and is continuous on $`(a, b)`, Newton
+quotients compute the extended derivative also at nonreal points, provided they are well
+inside the enlarged interval: at such a point $`x`, for every nonzero infinitesimal
+$`\Delta x`,
 $$`{}^*f'(x) \simeq \frac{{}^*f(x + \Delta x) - {}^*f(x)}{\Delta x}.` -/
 theorem starMap_deriv_infClose_newtonQuotient (hf : DifferentiableOn ℝ f (Ioo a b))
     (hc : ContinuousOn (deriv f) (Ioo a b)) (hx : WellInside x a b) (hΔ : Infinitesimal Δ)
@@ -240,9 +242,9 @@ theorem starMap_deriv_infClose_newtonQuotient (hf : DifferentiableOn ℝ f (Ioo 
   have hux : u ≊ x := infClose_of_mem_uIcc hu (InfClose.refl _) hxΔ
   exact (hcont.starMap_infClose hxs).trans (hcont.starMap_infClose (hux.trans hxs)).symm
 
-/-- **Exercise 8.12(1)(b).** Let $`f` be differentiable with $`f'` continuous on
-$`(a, b)`, let $`x` be well inside the enlarged interval and let $`\Delta x` be
-infinitesimal. Then for some infinitesimal $`\varepsilon`,
+/-- **Exercise 8.12(1)(b).** When $`f'` exists and is continuous on $`(a, b)`, the
+incremental equation is valid at every hyperreal $`x` well inside the enlarged interval: each
+infinitesimal $`\Delta x` comes with an infinitesimal $`\varepsilon` such that
 $$`{}^*f(x + \Delta x) = {}^*f(x) + {}^*f'(x)\,\Delta x + \varepsilon\,\Delta x.` -/
 theorem exists_incremental_equation_of_wellInside (hf : DifferentiableOn ℝ f (Ioo a b))
     (hc : ContinuousOn (deriv f) (Ioo a b)) (hx : WellInside x a b) (hΔ : Infinitesimal Δ) :
@@ -254,11 +256,12 @@ theorem exists_incremental_equation_of_wellInside (hf : DifferentiableOn ℝ f (
   field_simp
   ring
 
-/-- **Theorem 8.11.1.** Let $`f` be differentiable on an interval $`(a, b)` of the real
-line. Then the derivative $`f'` is continuous on $`(a, b)` if and only if for each hyperreal
-$`x` that is well inside the enlarged interval and each infinitesimal $`\Delta x`,
-$$`{}^*f(x + \Delta x) = {}^*f(x) + {}^*f'(x)\,\Delta x + \varepsilon\,\Delta x`
-for some infinitesimal $`\varepsilon`. -/
+/-- **Theorem 8.11.1.** For $`f` differentiable on a real interval $`(a, b)`, continuity of
+$`f'` on $`(a, b)` is equivalent to the validity of the incremental equation
+$$`{}^*f(x + \Delta x) = {}^*f(x) + {}^*f'(x)\,\Delta x + \varepsilon\,\Delta x,
+  \qquad \varepsilon \simeq 0,`
+with the extensions of $`f` and $`f'`, for all infinitesimal $`\Delta x` at every hyperreal
+$`x` whose halo lies in the enlarged interval (that is, {name}`Goldblatt.WellInside` it). -/
 theorem continuousOn_deriv_iff_incremental_equation (hf : DifferentiableOn ℝ f (Ioo a b)) :
     ContinuousOn (deriv f) (Ioo a b) ↔
       ∀ x : ℝ*, WellInside x a b → ∀ Δ : ℝ*, Infinitesimal Δ →

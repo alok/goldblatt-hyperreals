@@ -57,7 +57,8 @@ index.
   polynomials and remainders, the two convergence criteria, Taylor's formula with Lagrange's
   remainder and with the remainder of Exercise 8.10.2, its transfer to hypernatural orders,
   the Maclaurin series of the cosine and (Exercise 8.9.1) of the exponential function,
-  Theorem 8.10.1 and Exercise 8.10.2.
+  Theorem 8.10.1 and Exercise 8.10.2, and the example of a function whose Maclaurin series
+  converges to a different function.
 * {lit}`Goldblatt.Ch08_Differentiation.IncrementalEquation` covers Sections 8.11 and 8.12:
   points well inside an interval, Theorem 8.11.1, and the two exercises of Section 8.12.
 
@@ -89,9 +90,10 @@ number.
 * The results of Sections 8.3, 8.4 and 8.6 are theorems of Mathlib. They are proved here from
   Theorem 8.1.1 by the book's infinitesimal arguments, without Mathlib's rules. Mathlib's
   rules are used only for bookkeeping that the book treats as known: differentiating a
-  function minus a polynomial in Sections 8.5 and 8.9, the partial derivatives of the
-  example of a smooth function in Section 8.7, and the derivative of the example in
-  Exercise 8.12(2) away from the origin.
+  function minus a polynomial in Sections 8.5 and 8.9, the iterated derivatives of the
+  exponential function and the smoothness of the example of a flat function in Section 8.9,
+  the partial derivatives of the example of a smooth function in Section 8.7, and the
+  derivative of the example in Exercise 8.12(2) away from the origin.
 * Rolle's theorem is stated for $`f(a) = f(b)`; the book states the case
   $`f(a) = f(b) = 0`.
 * In Section 8.6 the inverse is a total function $`g` with $`g(f(t)) = t` on the interval.
@@ -111,7 +113,14 @@ number.
 * Functions with hypernatural index (derivatives, Taylor polynomials and remainders of
   unlimited order) are values of {name}`Goldblatt.hyperFunSeq` from Section 7.12.
 * The example of a function whose Taylor series converges to a different function, quoted in
-  Section 8.9 as well known, is not formalized.
+  Section 8.9 as well known, is {name}`Goldblatt.flatExp`. It is placed after Section 8.10
+  because the proof that its derivatives vanish at the origin
+  ({name}`Goldblatt.iteratedDeriv_eq_zero_of_abs_le_pow`) uses Exercise 8.10.2. That the
+  function is infinitely differentiable is taken from Mathlib.
+* The derivatives of the cosine of all orders, and their bound by $`1`, are obtained by
+  induction from Exercise 8.1.2. For the exponential function (Exercise 8.9.1) the fact that
+  it is its own derivative of every order is taken from Mathlib; the book treats the
+  derivative of the exponential function as known.
 
 ## Names for later chapters
 
@@ -125,7 +134,8 @@ equation is {name}`HasDerivAt.incremental_equation`; increments and differential
 The mean value theorem is {name}`Goldblatt.exists_deriv_eq_slope_of_continuousOn`, and in
 the form suited to transfer {name}`Goldblatt.exists_sub_eq_deriv_mul_sub`; its transfer to
 two hyperreal points is {name}`Goldblatt.exists_mem_uIcc_starMap_sub_eq`. Rolle's theorem is
-{name}`Goldblatt.exists_deriv_eq_zero_of_eq`.
+{name}`Goldblatt.exists_deriv_eq_zero_of_eq`, and for end points in either order
+{name}`Goldblatt.exists_deriv_eq_zero_between`.
 
 Taylor polynomials, terms and remainders are {name}`Goldblatt.taylorPoly`,
 {name}`Goldblatt.taylorTerm` and {name}`Goldblatt.taylorRem`. Taylor's formula is

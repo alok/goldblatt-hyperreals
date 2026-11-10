@@ -695,6 +695,27 @@ theorem exists_deriv_eq_zero_of_eq (hab : a < b) (hf : ContinuousOn f (Icc a b))
   have h2 := hcd ((a + b) / 2) (hsub hm)
   linarith
 
+/-- **Section 8.5 (Rolle's Theorem)**, for end points in either order: if $`f` is
+differentiable at every point between the distinct numbers $`p` and $`q` inclusive and
+$`f(p) = f(q)`, then $`f'` vanishes at some point strictly between them. This is the form
+used for Taylor's formula in Section 8.9. -/
+theorem exists_deriv_eq_zero_between {g g' : ℝ → ℝ} {p q : ℝ} (hpq : p ≠ q)
+    (hd : ∀ t ∈ uIcc p q, HasDerivAt g (g' t) t) (h : g p = g q) :
+    ∃ c, min p q < c ∧ c < max p q ∧ g' c = 0 := by
+  have hcont : ContinuousOn g (uIcc p q) := fun t ht =>
+    (continuousAt_of_hasDerivAt (hd t ht)).continuousWithinAt
+  rcases lt_or_gt_of_ne hpq with hlt | hgt
+  · rw [uIcc_of_le hlt.le] at hd hcont
+    obtain ⟨c, hc, hc0⟩ := exists_deriv_eq_zero_of_eq hlt hcont
+      (fun t ht => hd t (Ioo_subset_Icc_self ht)) h
+    exact ⟨c, by rw [min_eq_left hlt.le]; exact hc.1, by rw [max_eq_right hlt.le]; exact hc.2,
+      hc0⟩
+  · rw [uIcc_of_ge hgt.le] at hd hcont
+    obtain ⟨c, hc, hc0⟩ := exists_deriv_eq_zero_of_eq hgt hcont
+      (fun t ht => hd t (Ioo_subset_Icc_self ht)) h.symm
+    exact ⟨c, by rw [min_eq_right hgt.le]; exact hc.1, by rw [max_eq_left hgt.le]; exact hc.2,
+      hc0⟩
+
 /-- **Section 8.5 (Mean Value Theorem).** Let $`f` be continuous on $`[a, b]` and
 differentiable on $`(a, b)`, with $`a < b`. Then for some $`x \in (a, b)`,
 $$`f'(x) = \frac{f(b) - f(a)}{b - a}.`
@@ -792,10 +813,10 @@ end CriticalPoint
 /-!
 ## 8.6 Inverse Function Theorem
 
-Let $`f` be continuous and strictly monotone on an open interval $`(a, b)`, and let $`g` be
-its inverse function. If $`f` is differentiable at a point $`x` of the interval with
-$`f'(x) \ne 0`, then $`g` is differentiable at $`y = f(x)` and $`g'(y) = 1/f'(x)`. One cannot
-simply differentiate the identity $`g(f(x)) = x` by the chain rule, since the
+The theorem of this section computes the derivative of an inverse function: where a
+continuous strictly monotone function $`f` on an open interval has a nonzero derivative, its
+inverse $`g` has the reciprocal derivative at the corresponding value, $`g'(f(x)) = 1/f'(x)`.
+One cannot simply differentiate the identity $`g(f(x)) = x` by the chain rule, since the
 differentiability of $`g` is the thing to be proved.
 
 The infinitesimal proof takes a nonzero infinitesimal $`\Delta y` and shows first that
@@ -944,11 +965,10 @@ theorem hasDerivAt_inverse_of_strictAntiOn (hf : ContinuousOn f (Ioo a b))
   convert h2 using 1
   field_simp
 
-/-- **Section 8.6 (Inverse Function Theorem).** Let $`f` be continuous and strictly monotone
-(increasing or decreasing) on $`(a, b)`, and let $`g` be the inverse function of $`f`, in the
-sense that $`g(f(t)) = t` for all $`t` in $`(a, b)`. If $`f` is differentiable at $`x` in
-$`(a, b)` with $`f'(x) = L \ne 0`, then $`g` is differentiable at $`y = f(x)`, with
-$`g'(y) = 1/L`. -/
+/-- **Section 8.6 (Inverse Function Theorem).** Suppose $`g` undoes $`f` on $`(a, b)`, that
+is $`g(f(t)) = t` there, where $`f` is continuous on $`(a, b)` and either strictly increasing
+or strictly decreasing on it. At a point $`x` of $`(a, b)` where $`f` has a nonzero
+derivative $`L`, the function $`g` has derivative $`1/L` at $`f(x)`. -/
 theorem hasDerivAt_inverse (hf : ContinuousOn f (Ioo a b))
     (hmono : StrictMonoOn f (Ioo a b) ∨ StrictAntiOn f (Ioo a b))
     (hg : ∀ t ∈ Ioo a b, g (f t) = t) (hx : x ∈ Ioo a b)
