@@ -35,7 +35,8 @@ is split over five pages; this page is the overview and the index.
   relations and Theorem 14.2.1.
 * {lit}`Goldblatt.Ch14_Enlargements.Collapse` begins Section 14.3: functions of bounded rank
   from an index set to a superstructure, the individuals of the ultrapower, and the collapsing
-  map $`f \mapsto [f]` with its two basic properties.
+  map $`f \mapsto [f]` with its two basic properties; the rank of a function is treated here,
+right after the definition of bounded rank.
 * {lit}`Goldblatt.Ch14_Enlargements.Los` proves the theorem of Łoś by induction on formulas,
   relative to the terms of the formula.
 * {lit}`Goldblatt.Ch14_Enlargements.Terms` treats tuples and function values, concludes that
@@ -54,11 +55,15 @@ Part 1. The finite intersection property ({name}`Goldblatt.FIP`) and the enlarge
 infinitesimals as the common members of the transformed intervals
 ({name}`Goldblatt.RealFramework.forall_mem_star_posIntervals_iff`,
 {name}`Goldblatt.RealFramework.exists_pos_infinitesimal`) and nonzero infinitesimals from
-punctured intervals ({name}`Goldblatt.RealFramework.exists_nonzero_infinitesimal`); unlimited
-hyperreals ({name}`Goldblatt.RealFramework.exists_pos_unlimited`); nonstandard members of
-infinite sets
+punctured intervals ({name}`Goldblatt.RealFramework.exists_nonzero_infinitesimal`); positive
+unlimited hyperreals as the common members of the transformed rays
+({name}`Goldblatt.RealFramework.forall_mem_star_posRays_iff`,
+{name}`Goldblatt.RealFramework.exists_pos_unlimited`); nonstandard members of infinite sets
 ({name}`Goldblatt.NonstandardFramework.IsEnlargement.exists_mem_star_notMem_im`); hyperfinite
-approximations ({name}`Goldblatt.NonstandardFramework.IsEnlargement.exists_hyperfinite`). The
+approximations from the sets of finite subsets containing a given member
+({name}`Goldblatt.fip_finSupersets`,
+{name}`Goldblatt.NonstandardFramework.hyperfinite_of_forall_mem_star_finSupersets`,
+{name}`Goldblatt.NonstandardFramework.IsEnlargement.exists_hyperfinite`). The
 enlargement theorem announced at the end of the section is proved under 14.3.
 
 ## 14.2 Concurrence and Hyperfinite Approximation
@@ -70,19 +75,23 @@ relations on the positive reals
 {name}`Goldblatt.RealFramework.pos_unlimited_of_bound_ltRel`), the nonidentity relation
 ({name}`Goldblatt.concurrent_neRel_iff`,
 {name}`Goldblatt.NonstandardFramework.mem_star_notMem_im_of_bound_neRel`) and the membership
-relation ({name}`Goldblatt.concurrent_memRel`). Theorem 14.2.1 is
+relation ({name}`Goldblatt.concurrent_memRel`,
+{name}`Goldblatt.NonstandardFramework.mem_star_finPow_of_bound_memRel`). Theorem 14.2.1 is
 {name}`Goldblatt.NonstandardFramework.enlargement_tfae`.
 
 ## 14.3 Enlargements as Ultrapowers
 
-Parts 2 to 5. Functions of bounded rank and their rank
-({name}`Goldblatt.BoundedUltrapower.Bdd`, {name}`Goldblatt.BoundedUltrapower.eventually_rank_eq_rk`),
+Parts 2 to 5. Functions of bounded rank and their rank, both in part 2
+({name}`Goldblatt.BoundedUltrapower.Bdd`, {name}`Goldblatt.BoundedUltrapower.existsUnique_rank`,
+{name}`Goldblatt.BoundedUltrapower.eventually_rank_eq_rk`),
 the collapse $`f \mapsto [f]` ({name}`Goldblatt.BoundedUltrapower.col`,
 {name}`Goldblatt.BoundedUltrapower.col_eq_iff`,
 {name}`Goldblatt.BoundedUltrapower.col_mem_col_iff`), the theorem of Łoś
 ({name}`Goldblatt.BoundedUltrapower.los`), the framework
 ({name}`Goldblatt.BoundedUltrapower.framework`), the ultrafilter on the finite subsets of the
-superstructure ({name}`Goldblatt.BoundedUltrapower.ultra`), the enlargement property
+superstructure ({name}`Goldblatt.BoundedUltrapower.ultra`; each index is in the superstructure
+but the index set is not, {name}`Goldblatt.BoundedUltrapower.index_mem_superstructure`,
+{name}`Goldblatt.BoundedUltrapower.finPow_superstructure_notMem`), the enlargement property
 ({name}`Goldblatt.BoundedUltrapower.isEnlargement_enlargement`), and the enlargement theorem
 ({name}`Goldblatt.exists_enlargement`).
 

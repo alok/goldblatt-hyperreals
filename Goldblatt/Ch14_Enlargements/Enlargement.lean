@@ -33,9 +33,9 @@ of every member of the collection.
 The examples of the section apply the principle to particular collections. Shrinking
 intervals $`(0, r)` give a positive infinitesimal, the rays $`(r, \infty)` give an unlimited
 hyperreal, and the sets $`A - \{a\}` for an infinite set $`A` give a member of $`{}^*A` that
-is not standard. The fourth example, a hyperfinite set between the image of $`A` and
-$`{}^*A`, is the implication from (1) to (3) of Theorem 14.2.1 and is recorded after that
-theorem as {lit}`NonstandardFramework.IsEnlargement.exists_hyperfinite`. The existence
+is not standard. In the fourth example the sets $`A_a` of all finite subsets of $`A` that
+contain $`a` give a hyperfinite set between the image of $`A` and $`{}^*A`
+({lit}`NonstandardFramework.IsEnlargement.exists_hyperfinite`). The existence
 statement announced at the end of the section, the enlargement theorem, is
 {lit}`exists_enlargement` in part 5.
 -/
@@ -68,17 +68,43 @@ theorem finite_ofFinset (s : Finset ZFSet.{u}) : (ofFinset s : Set ZFSet.{u}).Fi
 theorem finite_coe_singleton (a : ZFSet.{u}) : (({a} : ZFSet.{u}) : Set ZFSet.{u}).Finite :=
   (Set.finite_singleton a).subset fun _ hx => mem_singleton.1 hx
 
+/-- **Section 14.1, fourth example: the collection.** For a set $`A` and an entity $`a`, the
+set $`A_a = \{Z \in \mathcal P_F(A) : a \in Z\}` of all finite subsets of $`A` that contain
+$`a`. -/
+def finSupersets (A a : ZFSet.{u}) : ZFSet.{u} := (finPow A).sep fun Z => a ∈ Z
+
+/-- The members of $`A_a` are the finite subsets of $`A` that contain $`a`. -/
+theorem mem_finSupersets {A a Z : ZFSet.{u}} : Z ∈ finSupersets A a ↔ Z ∈ finPow A ∧ a ∈ Z :=
+  mem_sep
+
+/-- **Section 14.1, fourth example.** The collection $`\{A_a : a \in A\}` has the finite
+intersection property: the finite set $`\{a_1, \dots, a_n\}` belongs to
+$`A_{a_1} \cap \dots \cap A_{a_n}`. -/
+theorem fip_finSupersets (A : ZFSet.{u}) :
+    FIP (ZFSet.range fun a : ↥A => finSupersets A a.1) := fun s hs => by
+  choose x hx using fun B : {B // B ∈ ZFSet.range fun a : ↥A => finSupersets A a.1} =>
+    mem_range.1 B.2
+  let g : {B // B ∈ s} → ZFSet.{u} := fun B => (x ⟨B.1, hs B.1 B.2⟩).1
+  refine ⟨ofFinset (s.attach.image g), fun B hB => ?_⟩
+  have e := hx ⟨B, hs B hB⟩
+  simp only at e
+  rw [← e, mem_finSupersets]
+  refine ⟨mem_finPow.2 ⟨fun y hy => ?_, finite_ofFinset _⟩,
+    mem_ofFinset.2 (Finset.mem_image.2 ⟨⟨B, hB⟩, Finset.mem_attach _ _, rfl⟩)⟩
+  obtain ⟨C, -, rfl⟩ := Finset.mem_image.1 (mem_ofFinset.1 hy)
+  exact (x _).2
+
 namespace NonstandardFramework
 
 open Formula Term
 
 variable (F : NonstandardFramework.{u}) {A B R : ZFSet.{u}}
 
-/-- **Section 14.1, enlargements.** A nonstandard framework is an enlargement
-when for every collection $`\mathcal A \in \mathbb U` of sets with the finite intersection
-property there is an entity $`b \in \mathbb U'` that belongs to $`{}^*B` for every
-$`B \in \mathcal A`:
-$$`b \in \bigcap \{{}^*B : B \in \mathcal A\}.`
+/-- **Section 14.1, enlargements.** A framework is an enlargement when finite intersection in
+the standard universe yields actual intersection after transfer: whenever any finitely many
+members of a family $`\mathcal A \in \mathbb U` of sets have a common point, the transforms
+$`{}^*B`, $`B \in \mathcal A`, have a common point $`b` in $`\mathbb U'` all at once, so that
+$`\bigcap \{{}^*B : B \in \mathcal A\}` is not empty.
 The book calls $`\mathbb U'` an enlargement of $`\mathbb U` when some universe embedding has
 this property; here the property is attached to the framework, which carries the embedding. -/
 def IsEnlargement : Prop :=
@@ -120,8 +146,8 @@ theorem IsEnlargement.exists_mem_star_notMem_im (hE : F.IsEnlargement) (hA : IsS
   obtain ⟨a, ha, rfl⟩ := F.mem_im.1 hb
   exact (key a ha).2 rfl
 
-/-- **Section 14.1, third example.** In an
-enlargement every infinite standard set has a nonstandard member. -/
+/-- **Section 14.1, third example.** Nonstandard members exist in $`{}^*A` as soon as the
+standard set $`A` is infinite and the framework is an enlargement. -/
 theorem IsEnlargement.exists_nonstandard_mem_star (hE : F.IsEnlargement) (hA : IsSetOf F.U A)
     (hinf : (A : Set ZFSet.{u}).Infinite) : ∃ b ∈ F.star A, F.Nonstandard b := by
   obtain ⟨b, hb, hbim⟩ := hE.exists_mem_star_notMem_im hA hinf
@@ -137,10 +163,57 @@ theorem IsEnlargement.ssubset_star (hE : F.IsEnlargement) (hAX : A ⊆ F.X)
   rw [F.im_eq_of_subset_base hAX] at hbim
   exact ⟨(F.subset_star_of_subset_base hAX).1, b, hb, hbim⟩
 
+/-- **Section 14.1, fourth example: the intersection.** Let $`A \in \mathbb U` be a nonempty
+set. Any $`B` that belongs to $`{}^*(A_a)` for every $`a \in A` is a hyperfinite subset of
+$`{}^*A` that contains $`{}^*a` for each $`a \in A`: it lies in $`{}^*\mathcal P_F(A)` because
+$`A_a \subseteq \mathcal P_F(A)`, and $`{}^*a \in B` by transfer of
+$`(\forall Z \in A_a)\,(a \in Z)`. This holds in every framework. The book does not say that
+$`A` must be nonempty; for empty $`A` the hypothesis is vacuous. -/
+theorem hyperfinite_of_forall_mem_star_finSupersets (hA : IsSetOf F.U A) (hne : A ≠ ∅)
+    {B : ZFSet.{u}} (h : ∀ a ∈ A, B ∈ F.star (finSupersets A a)) :
+    B ∈ F.star (finPow A) ∧ F.im A ⊆ B ∧ B ⊆ F.star A ∧ F.Hyperfinite B := by
+  have hP := F.hU.isSetOf_finPow hA
+  have hS : ∀ a, IsSetOf F.U (finSupersets A a) := fun a => F.hU.isSetOf_sep hP _
+  obtain ⟨a0, ha0⟩ := (eq_empty_or_nonempty A).resolve_left hne
+  have hBfin : B ∈ F.star (finPow A) :=
+    (F.star_subset_star_iff (hS a0) hP).2 sep_subset (h a0 ha0)
+  refine ⟨hBfin, fun b hb => ?_, (F.internal_subset_of_mem_star_finPow hA hBfin).1, A, hA, hBfin⟩
+  obtain ⟨a, ha, rfl⟩ := F.mem_im.1 hb
+  have ht := F.transfer (.all 0 (.const (finSupersets A a)) (.elem (.const a) (.var 0)))
+    (by simp [IsSentence, (hS a).1, F.hU.subset hA ha])
+  sat_simp at ht
+  exact ht.1 (fun Z _ hZ => (mem_finSupersets.1 hZ).2) B (F.star_subset_U' hP hBfin) (h a ha)
+
+/-- **Section 14.1, fourth example.** In an enlargement every
+set $`A \in \mathbb U` has a hyperfinite approximation: a hyperfinite set $`B` with
+$`\{{}^*a : a \in A\} \subseteq B \subseteq {}^*A`. It is a common member of the transforms
+of the sets $`A_a`; this is also the implication from (1) to (3) of Theorem 14.2.1. -/
+theorem IsEnlargement.exists_hyperfinite (hE : F.IsEnlargement) (hA : IsSetOf F.U A) :
+    ∃ B, F.Hyperfinite B ∧ F.im A ⊆ B ∧ B ⊆ F.star A := by
+  have hP := F.hU.isSetOf_finPow hA
+  by_cases hne : A = ∅
+  · subst hne
+    have h0 : F.star ∅ ∈ F.star (finPow ∅) := (F.star_mem_star_iff F.hU.empty_mem hP.1).2
+      (mem_finPow.2 ⟨fun _ h => h, by simp⟩)
+    refine ⟨F.star ∅, ⟨∅, hA, h0⟩, fun b hb => ?_, (F.internal_subset_of_mem_star_finPow hA h0).1⟩
+    obtain ⟨a, ha, -⟩ := F.mem_im.1 hb
+    exact absurd ha (notMem_empty a)
+  obtain ⟨B, -, hB⟩ := hE (ZFSet.range fun a : ↥A => finSupersets A a.1)
+    (F.hU.isSetOf_of_subset (F.hU.isSetOf_powerset hP) fun C hC => by
+      obtain ⟨a, rfl⟩ := mem_range.1 hC
+      exact mem_powerset.2 sep_subset)
+    (fun C hC => by
+      obtain ⟨a, rfl⟩ := mem_range.1 hC
+      exact F.hU.isSetOf_sep hP _)
+    (fip_finSupersets A)
+  obtain ⟨-, h2, h3, h4⟩ := F.hyperfinite_of_forall_mem_star_finSupersets hA hne
+    fun a ha => hB _ (mem_range.2 ⟨⟨a, ha⟩, rfl⟩)
+  exact ⟨B, h4, h2, h3⟩
+
 /-- **Chapter 14, introduction.** The identity map of a universe that has an infinite set is
 a framework but not an enlargement: it has no nonstandard entities. So the enlargement
 property is a real restriction. -/
-theorem not_isEnlargement_trivial {U X : ZFSet.{u}} (h : IsUniverseOver U X) (hA : IsSetOf U A)
+theorem not_isEnlargement_trivial {A U X : ZFSet.{u}} (h : IsUniverseOver U X) (hA : IsSetOf U A)
     (hinf : (A : Set ZFSet.{u}).Infinite) : ¬ (NonstandardFramework.trivial h).IsEnlargement :=
   fun hE => by
     obtain ⟨b, hb, hbim⟩ := hE.exists_mem_star_notMem_im (F := NonstandardFramework.trivial h)
@@ -337,40 +410,96 @@ theorem exists_nonzero_infinitesimal (hE : F.IsEnlargement) :
   obtain ⟨h1, h2⟩ := F.forall_mem_star_puncturedIntervals_iff.1 hb
   exact ⟨b, h1, h2⟩
 
+variable (F) in
+/-- A real number belongs to the ray above $`r` exactly when it is greater than $`r`. -/
+theorem real_mem_upperRay {r x : ℝ} : F.real x ∈ F.upperRay r ↔ r < x := by
+  rw [upperRay, mem_sep, F.pair_mem_Le]
+  exact ⟨fun ⟨_, hle, hne⟩ => lt_of_le_of_ne hle fun h => hne (h ▸ rfl),
+    fun h => ⟨F.mem_R.2 ⟨x, rfl⟩, h.le, fun e => h.ne' (F.real_injective e)⟩⟩
+
+variable (F) in
+/-- A member of the ray above $`r` is a real number greater than $`r`. -/
+theorem exists_of_mem_upperRay {r : ℝ} {a : ZFSet.{u}} (ha : a ∈ F.upperRay r) :
+    ∃ x : ℝ, r < x ∧ a = F.real x := by
+  obtain ⟨x, rfl⟩ := F.mem_R.1 (mem_sep.1 ha).1
+  exact ⟨x, F.real_mem_upperRay.1 ha, rfl⟩
+
+variable (F) in
+/-- Every ray $`(r, \infty)`, in particular the set $`\mathbb R^+` of positive reals, the ray
+above $`0`, is a set of the universe. -/
+theorem isSetOf_upperRay (r : ℝ) : IsSetOf F.U (F.upperRay r) := F.hU.isSetOf_sep F.isSetOf_R _
+
+variable (F) in
+/-- **Section 14.1, second example: the collection.** The set of all rays
+$`(r, \infty) = \{x \in \mathbb R : r < x\}` with $`r` a positive real number. The ray is
+{lit}`upperRay` of Chapter 13, whose transform is computed there by transfer. -/
+def posRays : ZFSet.{u} := ZFSet.range fun r : {r : ℝ // 0 < r} => F.upperRay r.1
+
+variable (F) in
+/-- **Section 14.1, second example.** The collection of the rays $`(r, \infty)` is a set of
+sets of the universe. -/
+theorem isSetOf_posRays : IsSetOf F.U F.posRays ∧ ∀ B ∈ F.posRays, IsSetOf F.U B :=
+  ⟨F.hU.isSetOf_of_subset (F.hU.isSetOf_powerset F.isSetOf_R) fun B hB => by
+      obtain ⟨r, rfl⟩ := mem_range.1 hB
+      exact mem_powerset.2 sep_subset,
+    fun B hB => by
+      obtain ⟨r, rfl⟩ := mem_range.1 hB
+      exact F.isSetOf_upperRay _⟩
+
+variable (F) in
+/-- **Section 14.1, second example.** The rays $`(r, \infty)` have the finite intersection
+property: finitely many of them all contain $`m + 1`, where $`m` is the greatest of their end
+points. -/
+theorem fip_posRays : FIP F.posRays := fun s hs => by
+  choose r hr using fun B : {B // B ∈ F.posRays} => mem_range.1 B.2
+  let g : {B // B ∈ s} → ℝ := fun B => (r ⟨B.1, hs B.1 B.2⟩).1
+  have hne : (insert 0 (s.attach.image g)).Nonempty := Finset.insert_nonempty _ _
+  set m := (insert 0 (s.attach.image g)).max' hne with hm
+  refine ⟨F.real (m + 1), fun B hB => ?_⟩
+  have hle : g ⟨B, hB⟩ ≤ m := Finset.le_max' _ _
+    (Finset.mem_insert_of_mem (Finset.mem_image.2 ⟨⟨B, hB⟩, Finset.mem_attach _ _, rfl⟩))
+  have e := hr ⟨B, hs B hB⟩
+  simp only at e
+  simp only [g] at hle
+  rw [← e, F.real_mem_upperRay]
+  linarith
+
+variable (F) in
+/-- **Section 14.1, second example: the intersection.** The common members of the transforms
+$`{}^*(r, \infty)`, $`r` a positive real, are exactly the positive unlimited hyperreals: the
+$`b \in {}^*\mathbb R` with $`r < b` for every real $`r`. This holds in every framework. The
+collection is indexed by the positive reals, as in the book; a member of all its transforms
+exceeds every real $`r`, positive or not, because $`(1, \infty) \subseteq (r, \infty)` when
+$`r \le 1`. -/
+theorem forall_mem_star_posRays_iff {b : ZFSet.{u}} :
+    (∀ B ∈ F.posRays, b ∈ F.star B) ↔
+      b ∈ F.star F.R ∧ ∀ r : ℝ, pair (F.real r) b ∈ F.star F.Le ∧ b ≠ F.real r := by
+  constructor
+  · intro h
+    have key : ∀ r : ℝ, b ∈ (F.star F.R).sep fun x =>
+        pair (F.real r) x ∈ F.star F.Le ∧ x ≠ F.real r := fun r => by
+      have h1 : b ∈ F.star (F.upperRay (max r 1)) :=
+        h _ (mem_range.2 ⟨⟨max r 1, lt_max_of_lt_right one_pos⟩, rfl⟩)
+      have hsub : F.upperRay (max r 1) ⊆ F.upperRay r := fun a ha => by
+        obtain ⟨x, hx, rfl⟩ := F.exists_of_mem_upperRay ha
+        exact F.real_mem_upperRay.2 (lt_of_le_of_lt (le_max_left r 1) hx)
+      rw [← F.star_upperRay]
+      exact (F.star_subset_star_iff (F.isSetOf_upperRay _) (F.isSetOf_upperRay r)).2 hsub h1
+    exact ⟨(mem_sep.1 (key 0)).1, fun r => (mem_sep.1 (key r)).2⟩
+  · rintro ⟨hb, h⟩ B hB
+    obtain ⟨r, rfl⟩ := mem_range.1 hB
+    rw [F.star_upperRay, mem_sep]
+    exact ⟨hb, h r.1⟩
+
 /-- **Section 14.1, second example.** In an enlargement over the real
 numbers there is a positive unlimited hyperreal: a $`b \in {}^*\mathbb R` with $`r < b` for
-every real $`r`. It is a member of all the sets $`{}^*(r, \infty)`. -/
+every real $`r`. It is a common member of all the sets $`{}^*(r, \infty)`, which exists
+because the rays $`(r, \infty)` have the finite intersection property. -/
 theorem exists_pos_unlimited (hE : F.IsEnlargement) :
     ∃ b ∈ F.star F.R, ∀ r : ℝ, pair (F.real r) b ∈ F.star F.Le ∧ b ≠ F.real r := by
-  set 𝒜 : ZFSet.{u} := ZFSet.range fun r : ℝ => F.upperRay r with h𝒜def
-  have hsets : ∀ B ∈ 𝒜, IsSetOf F.U B := fun B hB => by
-    obtain ⟨r, rfl⟩ := mem_range.1 hB
-    exact F.hU.isSetOf_sep F.isSetOf_R _
-  have h𝒜 : IsSetOf F.U 𝒜 :=
-    F.hU.isSetOf_of_subset (F.hU.isSetOf_powerset F.isSetOf_R) fun B hB => by
-      obtain ⟨r, rfl⟩ := mem_range.1 hB
-      exact mem_powerset.2 sep_subset
-  have hfip : FIP 𝒜 := fun s hs => by
-    choose r hr using fun B : {B // B ∈ 𝒜} => mem_range.1 B.2
-    let g : {B // B ∈ s} → ℝ := fun B => r ⟨B.1, hs B.1 B.2⟩
-    have hne : (insert 0 (s.attach.image g)).Nonempty := Finset.insert_nonempty _ _
-    set m := (insert 0 (s.attach.image g)).max' hne with hm
-    refine ⟨F.real (m + 1), fun B hB => ?_⟩
-    have hle : g ⟨B, hB⟩ ≤ m := Finset.le_max' _ _
-      (Finset.mem_insert_of_mem (Finset.mem_image.2 ⟨⟨B, hB⟩, Finset.mem_attach _ _, rfl⟩))
-    have e := hr ⟨B, hs B hB⟩
-    simp only at e
-    simp only [g] at hle
-    rw [← e, upperRay, mem_sep]
-    refine ⟨F.mem_R.2 ⟨_, rfl⟩, F.pair_mem_Le.2 (by linarith), fun h => ?_⟩
-    have := F.real_injective h
-    linarith
-  obtain ⟨b, -, hb⟩ := hE 𝒜 h𝒜 hsets hfip
-  have key : ∀ r : ℝ, b ∈ (F.star F.R).sep fun x =>
-      pair (F.real r) x ∈ F.star F.Le ∧ x ≠ F.real r := fun r => by
-    rw [← F.star_upperRay]
-    exact hb _ (mem_range.2 ⟨r, rfl⟩)
-  exact ⟨b, (mem_sep.1 (key 0)).1, fun r => (mem_sep.1 (key r)).2⟩
+  obtain ⟨b, -, hb⟩ := hE _ F.isSetOf_posRays.1 F.isSetOf_posRays.2 F.fip_posRays
+  obtain ⟨h1, h2⟩ := F.forall_mem_star_posRays_iff.1 hb
+  exact ⟨b, h1, h2⟩
 
 end RealFramework
 
@@ -537,6 +666,45 @@ theorem mem_star_notMem_im_of_bound_neRel (hA : IsSetOf F.U A) (h2 : ∃ a ∈ A
     exact ((F.pair_mem_star_neRel hA).1 (hb a ha)).2.2 rfl
   exact ⟨hbA, hbim, F.star_subset_U' hA hbA, fun hs => hbim ((F.mem_im_iff hA).2 ⟨hbA, hs⟩)⟩
 
+/-- **Section 14.2, fourth example.** The transform of the membership relation between a set
+$`A \in \mathbb U` and $`\mathcal P_F(A)` is the membership relation between $`{}^*A` and
+$`{}^*\mathcal P_F(A)`, by transfer of
+$`(\forall x \in A)(\forall Z \in \mathcal P_F(A))\,((x, Z) \in R \leftrightarrow x \in Z)`. -/
+theorem pair_mem_star_memRel (hA : IsSetOf F.U A) {x Z : ZFSet.{u}} :
+    pair x Z ∈ F.star (memRel A) ↔ x ∈ F.star A ∧ Z ∈ F.star (finPow A) ∧ x ∈ Z := by
+  have hP := F.hU.isSetOf_finPow hA
+  have hsub : memRel A ⊆ prod A (finPow A) := sep_subset
+  have hR := F.hU.isSetOf_of_subset_prod hA hP hsub
+  have ht := F.transfer
+    (.all 0 (.const A) (.all 1 (.const (finPow A))
+      (.biimp (.elem (.opair (.var 0) (.var 1)) (.const (memRel A)))
+        (.elem (.var 0) (.var 1)))))
+    (by simp [IsSentence, hA.1, hP.1, hR.1])
+  sat_simp at ht
+  have key := ht.1 fun a _ ha Z _ hZ =>
+    ⟨fun h => (pair_mem_memRel.1 h).2.2, fun h => pair_mem_memRel.2 ⟨ha, hZ, h⟩⟩
+  constructor
+  · intro h
+    obtain ⟨hx, hZ⟩ := pair_mem_prod.1 (F.star_subset_prod hA hP hsub h)
+    exact ⟨hx, hZ, (key x (F.star_subset_U' hA hx) hx Z (F.star_subset_U' hP hZ) hZ).1 h⟩
+  · rintro ⟨hx, hZ, h⟩
+    exact (key x (F.star_subset_U' hA hx) hx Z (F.star_subset_U' hP hZ) hZ).2 h
+
+/-- **Section 14.2, fourth example.** A bound of the transformed membership relation between a
+nonempty set $`A \in \mathbb U` and $`\mathcal P_F(A)`, that is, an entity $`B` with
+$`{}^*a \mathrel{{}^*R} B` for all $`a \in A`, is a hyperfinite subset of $`{}^*A` that
+includes the image of $`A`. The book does not say that $`A` must be nonempty; for empty $`A`
+the relation is empty and every entity is a bound. -/
+theorem mem_star_finPow_of_bound_memRel (hA : IsSetOf F.U A) (hne : A ≠ ∅) {B : ZFSet.{u}}
+    (hB : ∀ x ∈ dom (memRel A), pair (F.star x) B ∈ F.star (memRel A)) :
+    B ∈ F.star (finPow A) ∧ F.im A ⊆ B ∧ B ⊆ F.star A ∧ F.Hyperfinite B := by
+  rw [dom_memRel] at hB
+  obtain ⟨a0, ha0⟩ := (eq_empty_or_nonempty A).resolve_left hne
+  have hBfin : B ∈ F.star (finPow A) := ((F.pair_mem_star_memRel hA).1 (hB a0 ha0)).2.1
+  refine ⟨hBfin, fun b hb => ?_, (F.internal_subset_of_mem_star_finPow hA hBfin).1, A, hA, hBfin⟩
+  obtain ⟨a, ha, rfl⟩ := F.mem_im.1 hb
+  exact ((F.pair_mem_star_memRel hA).1 (hB a ha)).2.2
+
 end NonstandardFramework
 
 namespace RealFramework
@@ -544,21 +712,6 @@ namespace RealFramework
 open Formula Term
 
 variable (F : RealFramework.{u})
-
-/-- A real number belongs to the ray above $`r` exactly when it is greater than $`r`. -/
-theorem real_mem_upperRay {r x : ℝ} : F.real x ∈ F.upperRay r ↔ r < x := by
-  rw [upperRay, mem_sep, F.pair_mem_Le]
-  exact ⟨fun ⟨_, hle, hne⟩ => lt_of_le_of_ne hle fun h => hne (h ▸ rfl),
-    fun h => ⟨F.mem_R.2 ⟨x, rfl⟩, h.le, fun e => h.ne' (F.real_injective e)⟩⟩
-
-/-- A member of the ray above $`r` is a real number greater than $`r`. -/
-theorem exists_of_mem_upperRay {r : ℝ} {a : ZFSet.{u}} (ha : a ∈ F.upperRay r) :
-    ∃ x : ℝ, r < x ∧ a = F.real x := by
-  obtain ⟨x, rfl⟩ := F.mem_R.1 (mem_sep.1 ha).1
-  exact ⟨x, F.real_mem_upperRay.1 ha, rfl⟩
-
-/-- The set $`\mathbb R^+` of positive reals, the ray above $`0`, is a set of the universe. -/
-theorem isSetOf_upperRay (r : ℝ) : IsSetOf F.U (F.upperRay r) := F.hU.isSetOf_sep F.isSetOf_R _
 
 /-- **Section 14.2, first example: the relation.** The "greater than" relation on the positive
 reals, $`\{(r, y) \in \mathbb R^+ \times \mathbb R^+ : r > y\}`. The set $`\mathbb R^+` is the
@@ -814,7 +967,8 @@ theorem IsEnlargement.concurrentBound (hE : F.IsEnlargement) : F.ConcurrentBound
 /-- **Theorem 14.2.1, (2) implies (3).** If concurrent
 relations have bounds, then every set $`A \in \mathbb U` has a hyperfinite approximation: a
 bound $`B` of the membership relation between $`A` and $`\mathcal P_F(A)` lies in
-$`{}^*\mathcal P_F(A)` and contains $`{}^*a` for every $`a \in A`. -/
+$`{}^*\mathcal P_F(A)` and contains $`{}^*a` for every $`a \in A`
+({lit}`NonstandardFramework.mem_star_finPow_of_bound_memRel`). -/
 theorem ConcurrentBound.hyperfiniteApprox (h2 : F.ConcurrentBound) : F.HyperfiniteApprox := by
   intro A hA
   have hP := F.hU.isSetOf_finPow hA
@@ -824,29 +978,11 @@ theorem ConcurrentBound.hyperfiniteApprox (h2 : F.ConcurrentBound) : F.Hyperfini
       (mem_finPow.2 ⟨fun _ h => h, by simp⟩), fun b hb => ?_⟩
     obtain ⟨a, ha, -⟩ := F.mem_im.1 hb
     exact absurd ha (notMem_empty a)
-  obtain ⟨a0, ha0⟩ := (eq_empty_or_nonempty A).resolve_left hne
-  set R : ZFSet.{u} := memRel A with hRdef
-  have hmemR : ∀ {a Z : ZFSet.{u}}, pair a Z ∈ R ↔ a ∈ A ∧ Z ∈ finPow A ∧ a ∈ Z :=
-    pair_mem_memRel
-  have hRsub : R ⊆ prod A (finPow A) := sep_subset
-  have hR := F.hU.isSetOf_of_subset_prod hA hP hRsub
-  have hrel := F.hU.relIn_of_subset_prod hA hP hRsub
-  have hAdom : ∀ {a : ZFSet.{u}}, a ∈ A → a ∈ dom R := fun {a} h => by
-    rw [hRdef, dom_memRel]
-    exact h
-  have hconc : Concurrent R := concurrent_memRel A
-  obtain ⟨B, hB, hBm⟩ := h2 R hR hrel hconc
-  have hstarR := F.star_subset_prod hA hP hRsub
-  have hBfin : B ∈ F.star (finPow A) := (pair_mem_prod.1 (hstarR (hBm a0 (hAdom ha0)))).2
-  refine ⟨B, hBfin, fun b hb => ?_⟩
-  obtain ⟨a, ha, rfl⟩ := F.mem_im.1 hb
-  have ht := F.transfer
-    (.all 0 (.const A) (.all 1 (.const (finPow A))
-      (.imp (.elem (.opair (.var 0) (.var 1)) (.const R)) (.elem (.var 0) (.var 1)))))
-    (by simp [IsSentence, hA.1, hP.1, hR.1])
-  sat_simp at ht
-  exact ht.1 (fun a _ _ Z _ _ h => (hmemR.1 h).2.2) (F.star a) (F.star_mem a (F.hU.subset hA ha))
-    ((F.star_mem_star_iff (F.hU.subset hA ha) hA.1).2 ha) B hB hBfin (hBm a (hAdom ha))
+  have hRsub : memRel A ⊆ prod A (finPow A) := sep_subset
+  obtain ⟨B, -, hBm⟩ := h2 (memRel A) (F.hU.isSetOf_of_subset_prod hA hP hRsub)
+    (F.hU.relIn_of_subset_prod hA hP hRsub) (concurrent_memRel A)
+  obtain ⟨h1, h2, -⟩ := F.mem_star_finPow_of_bound_memRel hA hne hBm
+  exact ⟨B, h1, h2⟩
 
 /-- **Theorem 14.2.1, (3) implies (1).** A framework with
 hyperfinite approximation is an enlargement. For a collection $`\mathcal A` with the finite
@@ -891,14 +1027,6 @@ theorem enlargement_tfae : List.TFAE [F.IsEnlargement, F.ConcurrentBound, F.Hype
   tfae_have 2 → 3 := ConcurrentBound.hyperfiniteApprox
   tfae_have 3 → 1 := HyperfiniteApprox.isEnlargement
   tfae_finish
-
-/-- **Section 14.1, fourth example.** In an enlargement every
-set $`A \in \mathbb U` has a hyperfinite approximation: a hyperfinite set $`B` with
-$`\{{}^*a : a \in A\} \subseteq B \subseteq {}^*A`. -/
-theorem IsEnlargement.exists_hyperfinite (hE : F.IsEnlargement) (hA : IsSetOf F.U A) :
-    ∃ B, F.Hyperfinite B ∧ F.im A ⊆ B ∧ B ⊆ F.star A := by
-  obtain ⟨B, hB, him⟩ := hE.concurrentBound.hyperfiniteApprox A hA
-  exact ⟨B, ⟨A, hA, hB⟩, him, (F.internal_subset_of_mem_star_finPow hA hB).1⟩
 
 end NonstandardFramework
 

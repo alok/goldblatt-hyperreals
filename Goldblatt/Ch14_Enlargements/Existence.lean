@@ -41,8 +41,46 @@ namespace BoundedUltrapower
 variable (X : ZFSet.{u})
 
 /-- **Section 14.3, the index set.** $`I = \mathcal P_F(\mathbb U(X))`, the set of all
-finite subsets of the superstructure, as a type. -/
+finite subsets of the superstructure, as a type. The set $`I` is not a member of
+$`\mathbb U(X)` ({lit}`finPow_superstructure_notMem`), and accordingly the type lives one
+universe level above the sets. -/
 abbrev Index : Type (u + 1) := ↥(finPow (superstructure X))
+
+/-- **Section 14.3, remark on the index set.** Each member of $`I` belongs to
+$`\mathbb U(X)`: a finite subset of the superstructure is included in one level
+$`\mathbb U_n(X)`, where $`n` is the greatest rank of its members, and so is a member of
+$`\mathbb U_{n+1}(X)`. -/
+theorem index_mem_superstructure (b : Index X) : b.1 ∈ superstructure X := by
+  obtain ⟨hsub, hfin⟩ := mem_finPow.1 b.2
+  refine mem_superstructure.2 ⟨hfin.toFinset.sup (rank X) + 1, mem_cumPow_succ_of_subset
+    fun x hx => ?_⟩
+  exact cumPow_mono (Finset.le_sup (f := rank X) (hfin.mem_toFinset.2 hx))
+    ((mem_cumPow_iff_rank_le (hsub hx)).2 le_rfl)
+
+/-- **Section 14.3, remark on the index set.** The set $`I = \mathcal P_F(\mathbb U(X))`
+itself does not belong to $`\mathbb U(X)`: its union is all of $`\mathbb U(X)`, because
+$`\{a\} \in I` for every entity $`a`, and a universe is closed under unions of its sets but is
+not a member of itself. This is why the index set of the construction cannot be a set of the
+universe one starts from; in Lean it is a type one universe level above that of the sets, and
+the ultrapower is formed for index types that are small relative to that level. -/
+theorem finPow_superstructure_notMem (hX : IsBaseSet X) :
+    finPow (superstructure X) ∉ superstructure X := fun h => by
+  have hW := (isUniverseOver_superstructure hX).toIsUniverse
+  have hI : IsSetOf (superstructure X) (finPow (superstructure X)) :=
+    isSetOf_of_subset h fun b hb => index_mem_superstructure X ⟨b, hb⟩
+  have hU := hW.isSetOf_sUnion hI fun b hb =>
+    isSetOf_of_subset (index_mem_superstructure X ⟨b, hb⟩) (mem_finPow.1 hb).1
+  have e : (⋃₀ finPow (superstructure X) : ZFSet.{u}) = superstructure X := by
+    ext a
+    constructor
+    · intro ha
+      obtain ⟨b, hb, hab⟩ := mem_sUnion.1 ha
+      exact (mem_finPow.1 hb).1 hab
+    · intro ha
+      exact mem_sUnion.2 ⟨{a}, mem_finPow.2 ⟨fun x hx => by rwa [mem_singleton.1 hx],
+        finite_coe_singleton a⟩, mem_singleton.2 rfl⟩
+  rw [e] at hU
+  exact ZFSet.mem_irrefl _ hU.1
 
 /-- **Section 14.3, the sets $`I_a`.** For $`a \in I`, the set
 $`I_a = \{b \in I : a \subseteq b\}`. -/

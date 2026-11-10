@@ -59,13 +59,20 @@ namespace BoundedUltrapower
 
 variable {I : Type v} (𝓕 : Ultrafilter I) (X : ZFSet.{u})
 
-/-- **Section 14.3, the sets $`Z_n` and $`Z`.** A function $`f : I \to \mathbb U(X)` is
-of bounded rank when for some $`n` the set of indices $`i` with $`f(i) \in \mathbb U_n(X)` is in
-the ultrafilter. These functions form the book's set $`Z = \bigcup_n Z_n`. -/
+/-- **Section 14.3, the sets $`Z_n` and $`Z`.** A function $`f` on $`I` is of bounded rank
+when for some $`n` the set of indices $`i` with $`f(i) \in \mathbb U_n(X)` is in the
+ultrafilter; that condition for a fixed $`n` is the book's $`f \in Z_n`, and the functions of
+bounded rank form $`Z = \bigcup_n Z_n`. The Lean definition differs in shape from the book's:
+there $`Z_n` consists of functions all of whose values are in $`\mathbb U(X)`, while here the
+values of $`f` off a set of the ultrafilter are unconstrained. Every such $`f` agrees almost
+everywhere with a function into $`\mathbb U_n(X)` ({lit}`exists_rep`), and the collapse depends
+only on the values almost everywhere ({lit}`col_congr`), so this is the book's $`Z` up to
+almost-everywhere equality. -/
 def Bdd (f : I → ZFSet.{u}) : Prop := ∃ n, ∀ᶠ i in 𝓕, f i ∈ cumPow X n
 
 /-- **Section 14.3, the set $`Z_0`.** A function is of rank zero when almost all of
-its values are individuals. -/
+its values are individuals. As for {lit}`Bdd`, the values off a set of the ultrafilter are not
+constrained. -/
 def Atomic (f : I → ZFSet.{u}) : Prop := ∀ᶠ i in 𝓕, f i ∈ X
 
 /-- **Section 14.3, membership modulo the ultrafilter.** For functions of bounded rank,
@@ -122,10 +129,85 @@ individual; this uses that the filter is an ultrafilter. -/
 theorem not_atomic_iff : ¬ Atomic 𝓕 X f ↔ ∀ᶠ i in 𝓕, f i ∉ X :=
   Ultrafilter.eventually_not.symm
 
+/-- **Section 14.3, the chain $`Z_0 \subseteq Z_1 \subseteq \cdots`.** If $`m \le n` then
+$`Z_m \subseteq Z_n`: a function with almost all values in $`\mathbb U_m(X)` has almost all
+values in $`\mathbb U_n(X)`. -/
+theorem eventually_mem_cumPow_mono {m n : ℕ} (h : m ≤ n) (hf : ∀ᶠ i in 𝓕, f i ∈ cumPow X m) :
+    ∀ᶠ i in 𝓕, f i ∈ cumPow X n :=
+  hf.mono fun _ hi => cumPow_mono h hi
+
+/-!
+### The rank of a function
+
+A function of bounded rank has a rank of its own: the ranks of its values are almost
+everywhere one and the same number, which is also the least $`n` with $`f \in Z_n`. Membership
+almost everywhere lowers this rank, which is why it is a well-founded relation.
+-/
+
 /-- Almost all values of a function of bounded rank lie in the level
 given by its rank. -/
 theorem eventually_mem_cumPow_rk (hf : Bdd 𝓕 X f) : ∀ᶠ i in 𝓕, f i ∈ cumPow X (rk 𝓕 X f) :=
   Nat.sInf_mem hf
+
+/-- **Section 14.3, rank of a function.** A function $`f \in Z` has a
+well-defined rank: there is exactly one $`k` such that $`\{i : f(i) \text{ has rank } k\}`
+belongs to the ultrafilter. -/
+theorem existsUnique_rank {f : I → ZFSet.{u}} (hf : Bdd 𝓕 X f) :
+    ∃! k, ∀ᶠ i in 𝓕, rank X (f i) = k := by
+  obtain ⟨n, hn⟩ := hf
+  have h1 : ∀ᶠ i in 𝓕, ∃ k : Fin (n + 1), rank X (f i) = k := hn.mono fun i hi =>
+    ⟨⟨rank X (f i), Nat.lt_succ_of_le (rank_le_of_mem_cumPow hi)⟩, rfl⟩
+  obtain ⟨k, hk⟩ := Ultrafilter.eventually_exists_iff.1 h1
+  refine ⟨k, hk, fun k' hk' => ?_⟩
+  obtain ⟨i, h2, h3⟩ := (hk'.and hk).exists
+  exact h2.symm.trans h3
+
+/-- **Section 14.3, rank of a function.** For $`f \in Z`, the rank {lit}`rk` of $`f` is at
+most $`n` exactly when $`f \in Z_n`. -/
+theorem rk_le_iff {f : I → ZFSet.{u}} (hf : Bdd 𝓕 X f) {n : ℕ} :
+    rk 𝓕 X f ≤ n ↔ ∀ᶠ i in 𝓕, f i ∈ cumPow X n :=
+  ⟨fun h => (eventually_mem_cumPow_rk hf).mono fun _ hi => cumPow_mono h hi,
+    fun h => Nat.sInf_le h⟩
+
+/-- **Section 14.3, rank of a function.** The two descriptions of the rank of $`f \in Z` agree:
+the least $`n` with $`f \in Z_n` ({lit}`rk`) is the number $`k` for which
+$`\{i : f(i) \text{ has rank } k\}` belongs to the ultrafilter. -/
+theorem eventually_rank_eq_rk {f : I → ZFSet.{u}} (hf : Bdd 𝓕 X f) :
+    ∀ᶠ i in 𝓕, rank X (f i) = rk 𝓕 X f := by
+  obtain ⟨k, hk, -⟩ := existsUnique_rank hf
+  have h1 : rk 𝓕 X f ≤ k := (rk_le_iff hf).2 (by
+    filter_upwards [hk, hf.eventually_mem] with i h2 h3
+    exact (mem_cumPow_iff_rank_le h3).2 h2.le)
+  have h2 : k ≤ rk 𝓕 X f := by
+    obtain ⟨i, h3, h4⟩ := (hk.and (eventually_mem_cumPow_rk hf)).exists
+    exact h3 ▸ rank_le_of_mem_cumPow h4
+  exact hk.mono fun i hi => hi.trans (le_antisymm h2 h1)
+
+/-- **Section 14.3, rank of a function.** The functions of rank $`n + 1` are those in
+$`Z_{n+1} - Z_n`. -/
+theorem rk_eq_succ_iff {f : I → ZFSet.{u}} {n : ℕ} :
+    (Bdd 𝓕 X f ∧ rk 𝓕 X f = n + 1) ↔
+      (∀ᶠ i in 𝓕, f i ∈ cumPow X (n + 1)) ∧ ¬ ∀ᶠ i in 𝓕, f i ∈ cumPow X n := by
+  constructor
+  · rintro ⟨hf, h⟩
+    exact ⟨(rk_le_iff hf).1 h.le, fun h' => by have := (rk_le_iff hf).2 h'; omega⟩
+  · rintro ⟨h1, h2⟩
+    have hf : Bdd 𝓕 X f := ⟨n + 1, h1⟩
+    have h3 := (rk_le_iff hf).2 h1
+    have h4 : ¬ rk 𝓕 X f ≤ n := fun h => h2 ((rk_le_iff hf).1 h)
+    exact ⟨hf, by omega⟩
+
+/-- **Section 14.3, rank of a function.** The functions of rank $`0` are those in $`Z_0`. -/
+theorem rk_eq_zero_iff {f : I → ZFSet.{u}} (hf : Bdd 𝓕 X f) : rk 𝓕 X f = 0 ↔ Atomic 𝓕 X f := by
+  rw [← Nat.le_zero, rk_le_iff hf]
+  rfl
+
+/-- **Section 14.3, rank of a function.** The rank of the constant function $`a^I` is the rank
+of the entity $`a` in $`\mathbb U(X)`. -/
+theorem rk_const {a : ZFSet.{u}} (ha : a ∈ superstructure X) :
+    rk 𝓕 X (fun _ : I => a) = rank X a := by
+  obtain ⟨_, h⟩ := (eventually_rank_eq_rk (𝓕 := 𝓕) (bdd_const ha)).exists
+  exact h.symm
 
 /-- **Section 14.3.** Membership modulo the ultrafilter lowers the rank: if
 $`f \mathrel E g` then the rank of $`f` is smaller than that of $`g`. -/
