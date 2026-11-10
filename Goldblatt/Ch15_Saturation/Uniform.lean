@@ -42,7 +42,9 @@ $`{}^*f_K(c) \simeq g(c)`, and therefore $`{}^*g(x) \simeq g(c)`.
 In the formalization a sequence of functions is a function
 {lit}`f : ℕ → ℝ → ℝ`, the set $`S` is arbitrary (the book takes a closed interval), and the
 function of two variables is coded on pairs of real numbers, the first component being
-rounded down to a natural number.
+rounded down to a natural number. That this coding yields the book's $`{}^*f_n`, the value at
+$`n` of the transform of the sequence regarded as a function into a function space, is
+proved in {lit}`app_app_star_seqSet`.
 -/
 
 /-- **Section 15.3.** A sequence of real functions as a function on pairs of real numbers:
@@ -67,7 +69,10 @@ function $`x \mapsto {}^*f_n(x)` is the transform of $`f_n`
 ({lit}`hseq_nat_real`, {lit}`hseq_nat`), and for every hypernatural $`n`, limited or not, it
 is an internal function from $`{}^*\mathbb R` to $`{}^*\mathbb R`
 ({lit}`exists_internal_hseq`), which is the property of $`{}^*f_n` that the argument of this
-section uses. -/
+section uses. The two codings agree: the book's object, the transform of the sequence
+$`n \mapsto f_n` as an entity of the universe ({lit}`seqSet`), has value at a hypernatural
+$`n` a member of the transformed function space whose value at $`x` is the hyperreal defined
+here ({lit}`app_app_star_seqSet`). -/
 def hseq (f : ℕ → ℝ → ℝ) (n x : ZFSet.{u}) : ZFSet.{u} :=
   Code.ap (F.cR.prod F.cR) F.cR (floorSeqFn f) (pair n x)
 
@@ -166,6 +171,123 @@ theorem exists_internal_hseq (f : ℕ → ℝ → ℝ) (hn : n ∈ F.star F.R) :
       fun x y z hy hz => (huniq x y hy).2.trans (huniq x z hz).2.symm,
       fun x hx => ⟨_, hseq_mem hn hx, hval x hx⟩⟩
   exact ⟨g, hgint, hfunc, fun x hx => hfunc.isFunction.app_eq (hval x hx)⟩
+
+/-!
+### The book's coding of the extended sequence
+
+The book regards the sequence as a function $`f : \mathbb N \to \mathbb R^{\mathbb R}`
+that is itself an entity of the universe, and defines $`{}^*f_n` as the value at $`n` of
+its transform. The next results carry this out and show that it gives the same hyperreal
+$`{}^*f_n(x)` as {name}`Goldblatt.RealFramework.hseq` for every hypernatural $`n`, so that
+everything proved in this part about the latter is a statement about the book's extended
+sequence.
+-/
+
+variable (F) in
+/-- **Section 15.3, the sequence as an entity.** The function $`n \mapsto f_n` from
+$`\mathbb N` to the set of functions from $`\mathbb R` to $`\mathbb R`, as a set of pairs of
+the universe: the pairs of a natural number $`n` and the graph of $`f_n`. -/
+def seqSet (f : ℕ → ℝ → ℝ) : ZFSet.{u} :=
+  ZFSet.range fun k : ℕ => pair (F.nat k) (Code.graph F.cR F.cR (f k))
+
+/-- The members of the sequence, regarded as a set of pairs. -/
+theorem mem_seqSet {p : ZFSet.{u}} :
+    p ∈ F.seqSet f ↔ ∃ k : ℕ, p = pair (F.nat k) (Code.graph F.cR F.cR (f k)) := by
+  rw [seqSet, mem_range]
+  exact ⟨fun ⟨k, h⟩ => ⟨k, h.symm⟩, fun ⟨k, h⟩ => ⟨k, h.symm⟩⟩
+
+/-- The graph of a real function is a member of the set of functions from $`\mathbb R` to
+$`\mathbb R` of the universe. -/
+theorem graph_mem_funs (g : ℝ → ℝ) : Code.graph F.cR F.cR g ∈ funs F.R F.R := by
+  have := Code.isFunc_graph F.cR F.cR g
+  rw [F.cR_set_univ] at this
+  exact mem_funs.2 this
+
+/-- **Section 15.3.** The sequence is a function from $`\mathbb N` to the function space
+$`\mathbb R^{\mathbb R}` of the universe. -/
+theorem isFunc_seqSet (f : ℕ → ℝ → ℝ) : IsFunc F.N (funs F.R F.R) (F.seqSet f) := by
+  refine ⟨fun p hp => ?_, fun z hz => ?_⟩
+  · obtain ⟨k, rfl⟩ := mem_seqSet.1 hp
+    exact pair_mem_prod.2 ⟨F.mem_N.2 ⟨k, rfl⟩, graph_mem_funs _⟩
+  · obtain ⟨k, rfl⟩ := F.mem_N.1 hz
+    refine ⟨_, mem_seqSet.2 ⟨k, rfl⟩, fun w hw => ?_⟩
+    obtain ⟨j, hj⟩ := mem_seqSet.1 hw
+    obtain ⟨h1, h2⟩ := pair_inj.1 hj
+    rw [h2, F.nat_injective h1]
+
+/-- **Section 15.3.** For every hypernatural $`n`, the value $`{}^*f_n` of the transformed
+sequence belongs to the transform of the function space. -/
+theorem app_star_seqSet_mem (f : ℕ → ℝ → ℝ) (hn : n ∈ F.star F.N) :
+    app (F.star (F.seqSet f)) n ∈ F.star (funs F.R F.R) := by
+  have hf := F.isFunc_star F.isSetOf_N (F.hU.isSetOf_funs F.isSetOf_R F.isSetOf_R)
+    (isFunc_seqSet (F := F) f)
+  exact (pair_mem_prod.1 (hf.1 (hf.isFunction.pair_app_mem (hf.dom_eq.symm ▸ hn)))).2
+
+/-- **Section 15.3, $`{}^*f_n` is an internal function.** For every hypernatural $`n`, the
+value $`{}^*f_n` of the transformed sequence is an internal function from $`{}^*\mathbb R`
+to $`{}^*\mathbb R`, because the transform of a function space consists of the internal
+functions between the transformed sets (Section 13.13). -/
+theorem app_star_seqSet_spec (f : ℕ → ℝ → ℝ) (hn : n ∈ F.star F.N) :
+    IsFunc (F.star F.R) (F.star F.R) (app (F.star (F.seqSet f)) n) ∧
+      F.Internal (app (F.star (F.seqSet f)) n) :=
+  (F.mem_star_funs_iff F.isSetOf_R F.isSetOf_R).1 (app_star_seqSet_mem f hn)
+
+/-- **Section 15.3, agreement of the two codings.** For a hypernatural $`n` and a
+hyperreal $`x`, the value at $`x` of the function $`{}^*f_n`, obtained as in the book by
+transforming the sequence $`n \mapsto f_n`, is the hyperreal
+{name}`Goldblatt.RealFramework.hseq` obtained by transforming the function of two variables
+$`(t, x) \mapsto f_{\lfloor t \rfloor}(x)`. The proof transfers the statement that, for a
+natural number $`n` and real numbers $`x` and $`y`, the pair $`(x, y)` belongs to the graph
+of $`f_n` exactly when $`((n, x), y)` belongs to the graph of the function of two
+variables. -/
+theorem app_app_star_seqSet (f : ℕ → ℝ → ℝ) (hn : n ∈ F.star F.N) (hx : x ∈ F.star F.R) :
+    app (app (F.star (F.seqSet f)) n) x = F.hseq f n x := by
+  have hFR := F.hU.isSetOf_funs F.isSetOf_R F.isSetOf_R
+  have hsf := isFunc_seqSet (F := F) f
+  have hSset := F.hU.isSetOf_of_isFunc F.isSetOf_N hFR hsf
+  set G := Code.graph (F.cR.prod F.cR) F.cR (floorSeqFn f) with hG
+  have hGset : IsSetOf F.U G := Code.isSetOf_rel _ _ _
+  have h := F.transfer
+    (.all 0 (.const F.N) (.all 1 (.const (funs F.R F.R)) (.imp
+      (.elem (.opair (.var 0) (.var 1)) (.const (F.seqSet f)))
+      (.all 2 (.const F.R) (.all 3 (.const F.R) (.biimp
+        (.elem (.opair (.var 2) (.var 3)) (.var 1))
+        (.elem (.opair (.opair (.var 0) (.var 2)) (.var 3)) (.const G))))))))
+    (by simp [Formula.IsSentence, hFR.1, F.isSetOf_N.1, F.isSetOf_R.1, hSset.1, hGset.1])
+  sat_simp at h
+  have h' := h.1 (by
+    intro m _ hm g _ _ hmg a _ ha b _ hb
+    obtain ⟨k, rfl⟩ := F.mem_N.1 hm
+    obtain ⟨j, hj⟩ := mem_seqSet.1 hmg
+    obtain ⟨h1, rfl⟩ := pair_inj.1 hj
+    obtain rfl := F.nat_injective h1
+    obtain ⟨a, rfl⟩ := F.mem_R.1 ha
+    obtain ⟨b, rfl⟩ := F.mem_R.1 hb
+    rw [hG, Code.graph, Code.graph, Code.pair_mem_rel, Code.pair_mem_rel]
+    constructor
+    · rintro ⟨a', b', hab, h1, h2⟩
+      obtain rfl := F.real_injective h1
+      obtain rfl := F.real_injective h2
+      exact ⟨((k : ℝ), a), b, by simp [floorSeqFn, hab], rfl, rfl⟩
+    · rintro ⟨q, b', hab, h1, h2⟩
+      obtain rfl := F.real_injective h2
+      obtain ⟨h3, h4⟩ := pair_inj.1 h1
+      have h3' : (k : ℝ) = q.1 := F.real_injective h3
+      obtain rfl := F.real_injective h4
+      exact ⟨q.2, b, by rw [hab, floorSeqFn, ← h3', Nat.floor_natCast], rfl, rfl⟩)
+  have hfs := F.isFunc_star F.isSetOf_N hFR hsf
+  have hg := app_star_seqSet_mem f hn
+  have hgf := ((F.mem_star_funs_iff F.isSetOf_R F.isSetOf_R).1 hg).1
+  have hpair : pair n (app (F.star (F.seqSet f)) n) ∈ F.star (F.seqSet f) :=
+    hfs.isFunction.pair_app_mem (hfs.dom_eq.symm ▸ hn)
+  have hnR := F.mem_star_R_iff.1 (F.star_N_subset_star_R hn)
+  have hxR := F.mem_star_R_iff.1 hx
+  have hy := Code.pair_ap_mem (F.cR.prod F.cR) F.cR (g := floorSeqFn f)
+    (Code.pair_mem_star_prod_univ F.cR F.cR hnR hxR)
+  have hval := hseq_mem (f := f) (F.star_N_subset_star_R hn) hx
+  exact hgf.isFunction.app_eq ((h' n (F.star_subset_U' F.isSetOf_N hn) hn _
+    (F.star_subset_U' hFR hg) hg hpair x (F.star_subset_U' F.isSetOf_R hx) hx _
+    (F.star_subset_U' F.isSetOf_R hval) hval).2 hy)
 
 /-- A nonstandard hypernatural number belongs to the transform of every final segment of the
 natural numbers. -/

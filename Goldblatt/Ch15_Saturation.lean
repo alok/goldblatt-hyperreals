@@ -91,7 +91,11 @@ version for hypersequences defined up to an unlimited index
 
 Part 4. The extended sequence $`{}^*f_n(x)` is {name}`Goldblatt.RealFramework.hseq`, and for
 every hypernatural $`n` the function $`{}^*f_n` is internal
-({name}`Goldblatt.RealFramework.exists_internal_hseq`). Uniform
+({name}`Goldblatt.RealFramework.exists_internal_hseq`). It agrees with the book's definition
+of $`{}^*f_n` as the value at $`n` of the transform of the sequence $`n \mapsto f_n`, a
+function from $`\mathbb N` into a function space ({name}`Goldblatt.RealFramework.seqSet`,
+{name}`Goldblatt.RealFramework.app_star_seqSet_spec`,
+{name}`Goldblatt.RealFramework.app_app_star_seqSet`). Uniform
 convergence is equivalent to condition (i) of the book
 ({name}`Goldblatt.RealFramework.tendstoUniformlyOn_iff_near`; the direction asked for in
 Exercise 15.3.1 is {name}`Goldblatt.RealFramework.tendstoUniformlyOn_of_near`). The proof
@@ -131,7 +135,9 @@ the two instances for hypernaturals mentioned in the book
 
 Part 7. Countable saturation in terms of countable collections with the finite intersection
 property is {name}`Goldblatt.NonstandardFramework.countablySaturated_iff_countable_fip`. The
-definition of $`\kappa`-saturation is {name}`Goldblatt.NonstandardFramework.Saturated`, and
+definition of $`\kappa`-saturation is {name}`Goldblatt.NonstandardFramework.Saturated`
+(for a set of internal sets, as in the book:
+{name}`Goldblatt.NonstandardFramework.saturated_iff_set_fip`), and
 countable saturation is $`\aleph_1`-saturation
 ({name}`Goldblatt.NonstandardFramework.saturated_aleph_one_iff`). The example of an
 uncountable collection without a common member is
@@ -168,11 +174,13 @@ $`f : A \to B` in the definition of comprehensiveness is any set of pairs.
 
 *Cardinals.* In the definition of $`\kappa`-saturation the cardinal lives in the universe
 level of the sets, and a collection of fewer than $`\kappa` internal sets is a family
-indexed by a type of that level.
+indexed by a type of that level; the equivalence with collections given as sets is
+{name}`Goldblatt.NonstandardFramework.saturated_iff_set_fip`.
 
 *Corrections to the book.* Theorem 15.1.1 (5) is false as printed: an internal set can
 contain every real number $`a \ge r` and omit a point infinitely close to $`r`
-({name}`Goldblatt.RealFramework.exists_internal_set_reals_ge_not_interval`). The statement
+({name}`Goldblatt.RealFramework.exists_internal_set_reals_ge_not_interval`; for a formula,
+{name}`Goldblatt.RealFramework.exists_internalFormula_reals_ge_not_interval`). The statement
 proved has the hypothesis for all limited hyperreals $`a \ge r`, as in the analogous result of Section
 11.6. In Exercise 15.4.4 the reciprocal is taken of $`\max(\underline s_n, 1)`. In Exercise
 15.5.1 the element $`b` is required to lie in the range of the relation only when the set

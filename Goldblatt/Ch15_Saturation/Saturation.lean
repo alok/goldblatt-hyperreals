@@ -37,7 +37,8 @@ framework.
 
 Collections of sets are given as families indexed by a type. A collection with fewer than
 $`\kappa` members, for a cardinal $`\kappa` of the universe level of the sets, can always be
-indexed by a type of that level, so nothing is lost.
+indexed by a type of that level, so nothing is lost; the equivalence with the formulation for
+a set of internal sets is {lit}`saturated_iff_set_fip` below.
 -/
 
 variable {F}
@@ -96,10 +97,10 @@ variable (F) in
 /-- **Section 15.5, $`\kappa`-saturation.** Let $`\kappa` be a cardinal. The framework is
 $`\kappa`-saturated when the following holds for every family $`(A_i)_{i \in \iota}` of
 internal sets whose index type has cardinality below $`\kappa`: if each finite subfamily has
-a common point, then the whole family has one. Indexing by a type loses nothing, since a
-collection of fewer than $`\kappa` sets can be indexed by a type of the universe level of
-$`\kappa`. The book gives the definition for enlargements; the enlargement property is a
-separate hypothesis here. -/
+a common point, then the whole family has one. The book speaks of a collection, that is a
+set, of fewer than $`\kappa` internal sets; that formulation is equivalent to this one and
+is proved as {lit}`saturated_iff_set_fip`. The book gives the definition for enlargements;
+the enlargement property is a separate hypothesis here. -/
 def Saturated (κ : Cardinal.{u}) : Prop :=
   ∀ (ι : Type u) (A : ι → ZFSet.{u}), #ι < κ → (∀ i, F.InternalSet (A i)) →
     (∀ t : Finset ι, ∃ x, ∀ i ∈ t, x ∈ A i) → ∃ x, ∀ i, x ∈ A i
@@ -108,6 +109,49 @@ def Saturated (κ : Cardinal.{u}) : Prop :=
 \kappa`. -/
 theorem Saturated.mono (h : F.Saturated κ) (hκ : κ' ≤ κ) : F.Saturated κ' :=
   fun ι A hι => h ι A (hι.trans_le hκ)
+
+/-- **Section 15.5, $`\kappa`-saturation for collections.** The definition in the book's
+form. A framework is $`\kappa`-saturated exactly when every set $`S` of internal sets with
+fewer than $`\kappa` members, in which any finitely many members have a common point, has a
+point common to all its members. The collection $`S` is a Lean set of entities, which lives
+one universe level above $`\kappa`, so its cardinality is compared with the lift of
+$`\kappa`. -/
+theorem saturated_iff_set_fip :
+    F.Saturated κ ↔ ∀ S : Set ZFSet.{u}, #S < Cardinal.lift.{u + 1} κ →
+      (∀ A ∈ S, F.InternalSet A) →
+      (∀ t : Finset ZFSet.{u}, (↑t : Set ZFSet.{u}) ⊆ S → ∃ x, ∀ A ∈ t, x ∈ A) →
+        ∃ x, ∀ A ∈ S, x ∈ A := by
+  classical
+  constructor
+  · intro h S hS hint hfip
+    obtain ⟨c, hcκ, hc⟩ := lt_lift_iff.1 hS
+    have hc' : Cardinal.lift.{u + 1} #c.out = Cardinal.lift.{u} #S := by
+      rw [Cardinal.mk_out, hc, lift_id'.{u, u + 1}]
+    obtain ⟨e⟩ := lift_mk_eq'.1 hc'
+    obtain ⟨x, hx⟩ := h c.out (fun i => (e i).1) (by rwa [Cardinal.mk_out]) (fun i => hint _ (e i).2)
+      fun t => by
+        obtain ⟨x, hx⟩ := hfip (t.image fun i => (e i).1) (by
+          intro A hA
+          obtain ⟨i, -, rfl⟩ := Finset.mem_image.1 (Finset.mem_coe.1 hA)
+          exact (e i).2)
+        exact ⟨x, fun i hi => hx _ (Finset.mem_image_of_mem _ hi)⟩
+    refine ⟨x, fun A hA => ?_⟩
+    have := hx (e.symm ⟨A, hA⟩)
+    rwa [Equiv.apply_symm_apply] at this
+  · intro h ι A hι hA hfip
+    have hcard : #(Set.range A) < Cardinal.lift.{u + 1} κ := by
+      have h1 := mk_range_le_lift (f := A)
+      rw [lift_id'.{u, u + 1}] at h1
+      exact h1.trans_lt (lift_lt.2 hι)
+    obtain ⟨x, hx⟩ := h (Set.range A) hcard (by rintro _ ⟨i, rfl⟩; exact hA i) fun t ht => by
+      have hex : ∀ B : {B // B ∈ t}, ∃ i, A i = B.1 := fun B => ht (Finset.mem_coe.2 B.2)
+      choose idx hidx using hex
+      obtain ⟨x, hx⟩ := hfip (t.attach.image idx)
+      refine ⟨x, fun B hB => ?_⟩
+      have := hx _ (Finset.mem_image_of_mem idx (Finset.mem_attach t ⟨B, hB⟩))
+      rw [hidx ⟨B, hB⟩] at this
+      exact this
+    exact ⟨x, fun i => hx _ ⟨i, rfl⟩⟩
 
 /-- **Section 15.5.** Saturation at the first uncountable cardinal is countable
 saturation: a family has fewer than $`\aleph_1` members exactly when it is countable, so
@@ -297,9 +341,10 @@ theorem lift_le_mk_star_R (h : F.Saturated κ) :
     Cardinal.lift.{u + 1} κ ≤ #(↥(F.star F.R)) :=
   h.lift_le_mk_of_infinite F.star_R_spec F.infinite_star_R
 
-/-- **Section 15.5, the example.** The collection $`\{{}^*\mathbb R - \{r\} : r \in
-{}^*\mathbb R\}` of internal sets has the finite intersection property and empty
-intersection. -/
+/-- **Section 15.5, the example.** Remove one point at a time from the hyperreal line:
+each set $`{}^*\mathbb R - \{r\}`, $`r \in {}^*\mathbb R`, is internal, any finitely many
+of them have a common member, and no hyperreal belongs to all of them. This is the instance
+$`A = {}^*\mathbb R` of {name}`Goldblatt.NonstandardFramework.fip_sdiff_singleton`. -/
 theorem fip_star_R_sdiff_singleton (F : RealFramework.{u}) :
     (∀ r ∈ F.star F.R, F.InternalSet (F.star F.R \ {r})) ∧
       (∀ t : Finset ZFSet.{u}, ∃ x, ∀ r ∈ t, x ∈ F.star F.R \ {r}) ∧
@@ -307,7 +352,7 @@ theorem fip_star_R_sdiff_singleton (F : RealFramework.{u}) :
   fip_sdiff_singleton F.star_R_spec F.infinite_star_R
 
 /-- Every hypernatural number has a greater hypernatural number. -/
-theorem exists_nat_gt {n : ZFSet.{u}} (hn : n ∈ F.star F.N) : ∃ m ∈ F.star F.N, F.Lt n m := by
+theorem exists_hypernat_gt {n : ZFSet.{u}} (hn : n ∈ F.star F.N) : ∃ m ∈ F.star F.N, F.Lt n m := by
   have h1 : n ∈ F.star (F.cR.set {a : ℝ | ∃ b : ℝ, (∃ j : ℕ, b = j) ∧ a < b}) :=
     F.cR.star_set_mono (by
       rintro a ⟨k, rfl⟩
@@ -340,7 +385,7 @@ theorem not_countable_gt (hS : F.CountablySaturated) {K : ZFSet.{u}} (hK : K ∈
   rw [← hset]
   refine hS.not_countable_of_infinite hA ?_
   rw [hset]
-  choose next hnext using fun p : {n // n ∈ F.star F.N} => exists_nat_gt p.2
+  choose next hnext using fun p : {n // n ∈ F.star F.N} => exists_hypernat_gt p.2
   let f : ℕ → {n // n ∈ F.star F.N} := fun k =>
     Nat.rec ⟨K, hK⟩ (fun _ p => ⟨next p, (hnext p).1⟩) k
   have hstep : ∀ k, F.Lt (f k).1 (f (k + 1)).1 := fun k => (hnext (f k)).2

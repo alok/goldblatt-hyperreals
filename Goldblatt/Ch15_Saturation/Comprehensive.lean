@@ -65,7 +65,9 @@ theorem app_mem_of_isFunc {A B f a : ZFSet.{u}} (hf : IsFunc A B f) (ha : a ∈ 
 
 /-- **The membership relation on a set.** The set of pairs $`(x, S)` with $`x \in S` and
 $`S \subseteq T`. Its transform lets membership in a variable internal subset of $`{}^*T`
-be handled with the operations on relations. -/
+be handled with the operations on relations. It is not the relation
+{name}`Goldblatt.memRel` of Chapter 14, which relates a point only to the _finite_ subsets
+that contain it; here $`S` ranges over all subsets of $`T`. -/
 def memRelOn (T : ZFSet.{u}) : ZFSet.{u} :=
   (ZFSet.prod T (powerset T)).sep fun p => ∃ x S, p = pair x S ∧ x ∈ S
 
@@ -530,8 +532,8 @@ theorem exists_nonstandard_nat_of_countablySaturated (hS : F.CountablySaturated)
 
 /-- **Theorem 15.4.2.** For a framework over the real numbers the following are
 equivalent: (1) it is countably comprehensive and has an unlimited hypernatural; (2) it is
-sequentially comprehensive and has an unlimited hypernatural; (3) it is countably saturated:
-every decreasing sequence of nonempty internal sets has nonempty intersection. -/
+sequentially comprehensive and has an unlimited hypernatural; (3) it is countably saturated
+({name}`Goldblatt.NonstandardFramework.CountablySaturated`). -/
 theorem countablySaturated_tfae (F : RealFramework.{u}) :
     List.TFAE [F.CountablyComprehensive ∧ ∃ n, n ∈ F.star F.N ∧ n ∉ F.N,
       F.SequentiallyComprehensive ∧ ∃ n, n ∈ F.star F.N ∧ n ∉ F.N,

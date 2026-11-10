@@ -11,6 +11,13 @@ limited and unlimited hyperreals, and the relation of being infinitely close. In
 III of the book these were defined inside the ultrapower of the reals; here they are defined
 from the transforms of relations on the reals, and their basic properties are obtained by
 transfer with the lemmas of part 1.
+
+A note for later chapters. Several lemmas about the hyperreal order in the namespace
+{lit}`Goldblatt.RealFramework` carry the short names of Mathlib's order lemmas
+({lit}`le_refl`, {lit}`le_trans`, {lit}`le_antisymm`, {lit}`le_total` from Chapter 13, and
+{lit}`lt_iff`, {lit}`lt_or_le`, {lit}`lt_of_le_of_lt`, {lit}`lt_of_lt_of_le` from this page).
+Inside that namespace the short name resolves to the framework lemma, so the Mathlib lemma
+about real numbers has to be written with the prefix {lit}`_root_.`.
 -/
 
 noncomputable section

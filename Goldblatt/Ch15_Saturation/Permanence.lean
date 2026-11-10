@@ -185,10 +185,11 @@ theorem underflow_set (hA : F.Internal A) (hK : K ∈ F.star F.N) (hKN : K ∉ F
   obtain rfl := mem_singleton.1 hK₂
   exact hxA (h x hxN (notMem_N_of_le hK' hK'N hK'x) hxK₂)
 
-/-- **Theorem 15.1.1 (2), underflow.** Let $`\varphi(x)` be an internal formula. If
-there is an unlimited hypernatural $`K` such that $`\varphi(n)` is true for all unlimited
-hypernaturals $`n \le K`, then there is a standard $`k` such that $`\varphi(n)` is true for
-all standard $`n \ge k`. -/
+/-- **Theorem 15.1.1 (2), underflow.** An internal property cannot hold on the unlimited
+part of an initial segment of the hypernaturals without reaching down into $`\mathbb N`.
+Precisely: let $`\varphi(x)` be an internal formula and $`K` an unlimited hypernatural. When
+$`\varphi(n)` holds at each unlimited hypernatural $`n \le K`, it already holds at every
+standard $`n` from some $`k \in \mathbb N` onwards. -/
 theorem underflow (hφ : F.IsInternalFormula φ v) (hK : K ∈ F.star F.N) (hKN : K ∉ F.N)
     (h : ∀ n ∈ F.star F.N, n ∉ F.N → pair n K ∈ F.star F.Le → F.TrueAt φ v n) :
     ∃ k : ℕ, ∀ n : ℕ, k ≤ n → F.TrueAt φ v (F.nat n) := by
@@ -248,9 +249,10 @@ theorem near_permanence_set (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N) (hA : 
     have hpos : (0 : ℝ) < (k : ℝ) + 1 := by positivity
     exact (lt_div_iff₀ hpos).1 hq) ha
 
-/-- **Theorem 15.1.1 (3).** Let $`\varphi(x)` be an internal formula. If $`\varphi(a)` is
-true for all hyperreals $`a` infinitely close to a hyperreal $`b`, then $`\varphi(a)` is
-true for all hyperreals $`a` within some positive real distance of $`b`. -/
+/-- **Theorem 15.1.1 (3).** Permanence from a halo to a real neighbourhood. Let
+$`\varphi(x)` be an internal formula and $`b` a hyperreal. When $`\varphi` holds at every
+point of the halo of $`b`, there is a real number $`r > 0` such that $`\varphi(a)` holds
+for each hyperreal $`a` with $`|a - b| < r`. -/
 theorem near_permanence (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N) (hφ : F.IsInternalFormula φ v)
     (hb : b ∈ F.star F.R) (h : ∀ a, F.Near a b → F.TrueAt φ v a) :
     ∃ r : ℝ, 0 < r ∧ ∀ a, F.Within r a b → F.TrueAt φ v a := by
@@ -298,10 +300,11 @@ theorem exists_negUnlimited_mem (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N) (h
   exact lt_real_iff.2 (F.cR.star_set_mono (fun x (hx : x < - -r) => by
     simpa using hx) h2)
 
-/-- **Theorem 15.1.1 (4).** Let $`\varphi(x)` be an internal formula. If $`\varphi(a)` is
-true for arbitrarily large real numbers $`a`, then it is true for some positive unlimited
-hyperreal; if it is true for arbitrarily small real numbers, then it is true for some
-negative unlimited hyperreal. -/
+/-- **Theorem 15.1.1 (4).** Permanence from unbounded sets of reals to unlimited
+hyperreals, for an internal formula $`\varphi(x)`. The statement has two halves. First:
+suppose the real numbers satisfying $`\varphi` are unbounded above; then some positive
+unlimited hyperreal satisfies $`\varphi`. Second: suppose they are unbounded below; then
+some negative unlimited hyperreal satisfies $`\varphi`. -/
 theorem exists_unlimited_trueAt (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
     (hφ : F.IsInternalFormula φ v) :
     ((∀ r : ℝ, ∃ a : ℝ, r < a ∧ F.TrueAt φ v (F.real a)) →
@@ -379,15 +382,42 @@ theorem exists_internal_set_reals_ge_not_interval (hω : ∃ n, n ∈ F.star F.N
     rw [hx, add_sub_cancel_left, div_mul_eq_mul_div, one_mul, div_lt_one (hpos m)]
     linarith [le_abs_self m, abs_nonneg m]
 
+/-- Membership in an internal set $`A` is an internal formula: the formula $`x \in A`
+with the constant $`A`. -/
+theorem isInternalFormula_mem {A : ZFSet.{u}} (hA : F.Internal A) :
+    F.IsInternalFormula (.elem (.var 0) (.const A)) 0 :=
+  ⟨by simp [Formula.Admissible, hA.mem_U'], 1, by simp [Formula.Below, Term.Below, hA]⟩
+
+/-- The formula $`x \in A` is true at $`a` exactly when $`a \in A`. -/
+theorem trueAt_mem_iff {A a : ZFSet.{u}} : F.TrueAt (.elem (.var 0) (.const A)) 0 a ↔ a ∈ A := by
+  simp [NonstandardFramework.TrueAt, Sat]
+
+/-- **Theorem 15.1.1 (5), counterexample to the printed statement, for formulas.** The
+statement as printed speaks of an internal formula $`\varphi(x)` that is true at every real
+number $`a \ge r`. For every real $`r` there is such a formula for which the conclusion
+fails: whatever the positive unlimited $`b`, the formula is false at some hyperreal $`a`
+with $`r \le a \le b`. The formula is $`x \in A` for the internal set $`A` of
+{name}`Goldblatt.RealFramework.exists_internal_set_reals_ge_not_interval`. -/
+theorem exists_internalFormula_reals_ge_not_interval (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
+    (r : ℝ) :
+    ∃ φ : Formula.{u}, F.IsInternalFormula φ 0 ∧ (∀ a : ℝ, r ≤ a → F.TrueAt φ 0 (F.real a)) ∧
+      ∀ b, F.PosUnlimited b →
+        ∃ a, pair (F.real r) a ∈ F.star F.Le ∧ pair a b ∈ F.star F.Le ∧ ¬ F.TrueAt φ 0 a := by
+  obtain ⟨A, hA, h1, h2⟩ := exists_internal_set_reals_ge_not_interval hω r
+  refine ⟨_, isInternalFormula_mem hA, fun a ha => trueAt_mem_iff.2 (h1 a ha), fun b hb => ?_⟩
+  obtain ⟨a, h3, h4, h5⟩ := h2 b hb
+  exact ⟨a, h3, h4, fun h => h5 (trueAt_mem_iff.1 h)⟩
+
 /-- **Theorem 15.1.1 (5), for internal sets, corrected.** If an internal entity $`A`
 contains every _limited_ hyperreal $`a \ge r`, for some real $`r`, then for some positive
 unlimited $`b` it contains every hyperreal $`a` with $`r \le a \le b`.
 
 The book's hypothesis is only that $`A` contains every _real_ number $`a \ge r`. With that
-hypothesis the conclusion fails: for a positive infinitesimal $`\varepsilon` the internal
-set of the hyperreals $`a` with $`a \le r` or $`a \ge r + \varepsilon` contains every real
-number $`a \ge r` but not $`r + \varepsilon/2`
-({name}`Goldblatt.RealFramework.exists_internal_set_reals_ge_not_interval`). The hypothesis
+hypothesis the conclusion fails: for an unlimited hypernatural $`K` the internal set of the
+hyperreals $`a` with $`a \le r` or $`(a - r) K \ge 1` contains every real number
+$`a \ge r` but not $`r + 1/(2K + 2)`
+({name}`Goldblatt.RealFramework.exists_internal_set_reals_ge_not_interval`, and for formulas
+{name}`Goldblatt.RealFramework.exists_internalFormula_reals_ge_not_interval`). The hypothesis
 used here is the one of the analogous statement of Section 11.6, that an internal set including all limited numbers
 includes an interval with unlimited end points. -/
 theorem exists_posUnlimited_forall_mem (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
