@@ -562,4 +562,201 @@ theorem exists_grid_representation {N : ℝ*} (hN : N ∈ ℕ*) (hU : Unlimited 
 
 end InverseShadow
 
+/-!
+### The remarks of Section 16.8
+
+The grid has internal cardinality $`2N^2 + 1`, every real number is infinitely close to a grid
+point, the set of limited grid points is Loeb measurable but not internal, and the whole grid
+has infinite Loeb measure. The last fact shows why the grid points _in_ the enlargement of a
+set cannot be used to represent it: every grid point is hyperrational, so the grid points in
+the enlargement of the rationals have Loeb measure $`\infty`, while the rationals have
+Lebesgue measure zero. A concrete instance of Theorem 16.8.2 closes the section.
+-/
+
+section Remarks
+
+variable {ν : ℕ → ℕ}
+
+/-- **Section 16.8.** The finite grid of mesh $`1/N` has $`2N^2 + 1` points. -/
+theorem card_gridFinset {N : ℕ} (hN : 0 < N) : (gridFinset N).card = 2 * N ^ 2 + 1 := by
+  have hN' : (N : ℝ) ≠ 0 := by exact_mod_cast hN.ne'
+  rw [gridFinset, Finset.card_image_of_injective _ (fun k l hkl => by
+    have := (div_left_inj' hN').1 hkl
+    exact_mod_cast this), Int.card_Icc]
+  have : ((N : ℤ) ^ 2 + 1 - -((N : ℤ) ^ 2)) = ((2 * N ^ 2 + 1 : ℕ) : ℤ) := by push_cast; ring
+  rw [this, Int.toNat_natCast]
+
+/-- **Section 16.8.** The grid has internal cardinality $`2N^2 + 1`. -/
+theorem hcard_hyperGrid (hν : Unlimited (hnat ν)) :
+    hcard (hyperGrid ν) = 2 * hnat ν ^ 2 + 1 := by
+  rw [hcard, hyperGrid, internalCard_internalSet_finset]
+  change Hyperreal.ofSeq (fun n => ((gridFinset (ν n)).card : ℝ)) =
+    Hyperreal.ofSeq fun n => 2 * (ν n : ℝ) ^ 2 + 1
+  rw [ofSeq_eq_ofSeq_iff]
+  filter_upwards [eventually_lt_of_unlimited_hnat hν 0] with n hn
+  rw [card_gridFinset hn]
+  push_cast
+  ring
+
+/-- **Section 16.8.** Each real number is approximated infinitely closely by grid points. The
+book derives this by transfer; here it follows from Theorem 16.8.1 and countable saturation:
+the internal sets of grid points within $`\tfrac1{n+1}` of $`r` have positive Loeb measure, so
+they are nonempty, and they decrease. -/
+theorem exists_mem_hyperGrid_infClose (hν : Unlimited (hnat ν)) (r : ℝ) :
+    ∃ s ∈ hyperGrid ν, s ≊ (r : ℝ*) := by
+  have hint : ∀ n : ℕ, IsInternal (hyperGrid ν ∩
+      Ioo ((r - 1 / ((n : ℝ) + 1) : ℝ) : ℝ*) ((r + 1 / ((n : ℝ) + 1) : ℝ) : ℝ*)) := fun n => by
+    rw [hyperGrid_inter_Ioo]; exact isInternalSet_internalSet _
+  have hne : ∀ n : ℕ, (hyperGrid ν ∩
+      Ioo ((r - 1 / ((n : ℝ) + 1) : ℝ) : ℝ*) ((r + 1 / ((n : ℝ) + 1) : ℝ) : ℝ*)).Nonempty := by
+    intro n
+    by_contra hempty
+    have h := gridLoeb_μL_Ioo hν (r - 1 / ((n : ℝ) + 1)) (r + 1 / ((n : ℝ) + 1))
+    rw [not_nonempty_iff_eq_empty.1 hempty, (gridLoeb ν).isFinitelyAdditive.empty] at h
+    have hpos : (0 : ℝ) < 1 / ((n : ℝ) + 1) := by positivity
+    have h' := ENNReal.ofReal_eq_zero.1 h.symm
+    linarith
+  have hdec : ∀ n : ℕ, (hyperGrid ν ∩ Ioo ((r - 1 / (((n + 1 : ℕ) : ℝ) + 1) : ℝ) : ℝ*)
+      ((r + 1 / (((n + 1 : ℕ) : ℝ) + 1) : ℝ) : ℝ*)) ⊆ hyperGrid ν ∩
+      Ioo ((r - 1 / ((n : ℝ) + 1) : ℝ) : ℝ*) ((r + 1 / ((n : ℝ) + 1) : ℝ) : ℝ*) := by
+    intro n
+    have h : 1 / (((n + 1 : ℕ) : ℝ) + 1) ≤ 1 / ((n : ℝ) + 1) :=
+      one_div_le_one_div_of_le (by positivity) (by push_cast; linarith)
+    exact inter_subset_inter_right _ (Ioo_subset_Ioo (Hyperreal.coe_le_coe.2 (by linarith))
+      (Hyperreal.coe_le_coe.2 (by linarith)))
+  obtain ⟨s, hs⟩ := iInter_nonempty_of_isInternal hint hne hdec
+  have hs' := mem_iInter.1 hs
+  refine ⟨s, (hs' 0).1, ?_⟩
+  change Infinitesimal (s - (r : ℝ*))
+  refine infinitesimal_of_forall_abs_lt_one_div fun n => ?_
+  obtain ⟨-, h1, h2⟩ := hs' n
+  have h1' : (r : ℝ*) - ((1 / ((n : ℝ) + 1) : ℝ) : ℝ*) < s := h1
+  have h2' : s < (r : ℝ*) + ((1 / ((n : ℝ) + 1) : ℝ) : ℝ*) := h2
+  rw [coe_one_div_natCast_add_one] at h1' h2'
+  rw [abs_lt]
+  constructor <;> linarith
+
+/-- **Section 16.8.** The set of limited grid points is not internal, although it is Loeb
+measurable. If it were internal it would be the union of finitely many of the sets
+$`S \cap {}^*(-n, n)`, by countable saturation, but there are grid points infinitely close to
+every real number. -/
+theorem not_isInternal_shInv_univ (hν : Unlimited (hnat ν)) : ¬ IsInternal (shInv ν univ) := by
+  intro hint
+  rw [shInv_univ_eq_iUnion] at hint
+  obtain ⟨k, hk⟩ := exists_iUnion_eq_biUnion_le
+    (fun n => by rw [hyperGrid_inter_Ioo]; exact isInternalSet_internalSet _) hint
+  obtain ⟨s, hs, hsr⟩ := exists_mem_hyperGrid_infClose hν ((k : ℝ) + 1)
+  have hl : Limited s := limited_of_infClose_coe hsr
+  have hmem : s ∈ ⋃ n : ℕ, hyperGrid ν ∩ Ioo (((-(n : ℝ) : ℝ)) : ℝ*) ((n : ℝ) : ℝ*) := by
+    rw [← shInv_univ_eq_iUnion]; exact ⟨hs, hl, mem_univ _⟩
+  rw [hk] at hmem
+  simp only [mem_iUnion, exists_prop] at hmem
+  obtain ⟨n, hn, -, -, h2⟩ := hmem
+  have hsh : sh s = (k : ℝ) + 1 := sh_eq_of_infClose hsr
+  have h3 := hl.sh_le h2.le
+  have h4 : (n : ℝ) ≤ k := by exact_mod_cast hn
+  linarith
+
+/-- **Section 16.8, the remark after Theorem 16.8.1.** Any internal set of grid points that
+contains the grid points of $`(a, b)` and is contained in the hyperreal interval
+$`[a, b]` has $`\mu_L`-measure $`b - a`: it is squeezed between the grid points of
+$`(a, b)` and those of $`(a - \delta, b + \delta)` for every real $`\delta > 0`. -/
+theorem gridLoeb_μL_of_between (hν : Unlimited (hnat ν)) {a b : ℝ} (hab : a ≤ b) {X : Set ℝ*}
+    (hX : X ∈ (gridLoeb ν).ring) (h1 : hyperGrid ν ∩ Ioo (a : ℝ*) b ⊆ X)
+    (h2 : X ⊆ Icc (a : ℝ*) b) : (gridLoeb ν).μL X = ENNReal.ofReal (b - a) := by
+  have hfa := (gridLoeb ν).isFinitelyAdditive
+  have hR := (gridLoeb ν).isRing
+  apply le_antisymm
+  · refine ENNReal.le_of_forall_pos_le_add fun δ hδ _ => ?_
+    have hδ' : (0 : ℝ) < δ := NNReal.coe_pos.2 hδ
+    have hsub : X ⊆ hyperGrid ν ∩
+        Ioo ((a - (δ : ℝ) / 2 : ℝ) : ℝ*) ((b + (δ : ℝ) / 2 : ℝ) : ℝ*) := fun x hx =>
+      ⟨((mem_gridLoeb_ring_iff ν).1 hX).2 hx,
+        lt_of_lt_of_le (Hyperreal.coe_lt_coe.2 (by linarith)) (h2 hx).1,
+        lt_of_le_of_lt (h2 hx).2 (Hyperreal.coe_lt_coe.2 (by linarith))⟩
+    have h := hfa.mono hR hX (hyperGrid_inter_Ioo_mem_ring ν _ _) hsub
+    rw [gridLoeb_μL_Ioo hν] at h
+    refine h.trans (le_of_eq ?_)
+    rw [show b + (δ : ℝ) / 2 - (a - (δ : ℝ) / 2) = (b - a) + δ by ring,
+      ENNReal.ofReal_add (sub_nonneg.2 hab) δ.coe_nonneg, ENNReal.ofReal_coe_nnreal]
+  · rw [← gridLoeb_μL_Ioo hν]
+    exact hfa.mono hR (hyperGrid_inter_Ioo_mem_ring ν a b) hX h1
+
+/-- **Section 16.8, the remark after Theorem 16.8.1.** The grid points in the closed interval
+from $`a` to $`b` have $`\mu_L`-measure $`b - a`. -/
+theorem gridLoeb_μL_Icc (hν : Unlimited (hnat ν)) {a b : ℝ} (hab : a ≤ b) :
+    (gridLoeb ν).μL (hyperGrid ν ∩ Icc (a : ℝ*) b) = ENNReal.ofReal (b - a) :=
+  gridLoeb_μL_of_between hν hab
+    ((mem_gridLoeb_ring_iff ν).2 ⟨(isInternalSet_internalSet _).inter (isInternal_Icc _ _),
+      inter_subset_left⟩)
+    (inter_subset_inter_right _ Ioo_subset_Icc_self) inter_subset_right
+
+/-- **Section 16.8, the remark after Theorem 16.8.1.** The grid points in the half-open
+interval $`(a, b]` have $`\mu_L`-measure $`b - a`. -/
+theorem gridLoeb_μL_Ioc (hν : Unlimited (hnat ν)) {a b : ℝ} (hab : a ≤ b) :
+    (gridLoeb ν).μL (hyperGrid ν ∩ Ioc (a : ℝ*) b) = ENNReal.ofReal (b - a) :=
+  gridLoeb_μL_of_between hν hab
+    ((mem_gridLoeb_ring_iff ν).2 ⟨(isInternalSet_internalSet _).inter (isInternal_Ioc _ _),
+      inter_subset_left⟩)
+    (inter_subset_inter_right _ Ioo_subset_Ioc_self)
+    (inter_subset_right.trans Ioc_subset_Icc_self)
+
+/-- **Section 16.8, the remark after Theorem 16.8.1.** The grid points in the half-open
+interval $`[a, b)` have $`\mu_L`-measure $`b - a`. -/
+theorem gridLoeb_μL_Ico (hν : Unlimited (hnat ν)) {a b : ℝ} (hab : a ≤ b) :
+    (gridLoeb ν).μL (hyperGrid ν ∩ Ico (a : ℝ*) b) = ENNReal.ofReal (b - a) :=
+  gridLoeb_μL_of_between hν hab
+    ((mem_gridLoeb_ring_iff ν).2 ⟨(isInternalSet_internalSet _).inter (isInternal_Ico _ _),
+      inter_subset_left⟩)
+    (inter_subset_inter_right _ Ioo_subset_Ico_self)
+    (inter_subset_right.trans Ico_subset_Icc_self)
+
+/-- **Section 16.8.** The whole grid has infinite Loeb measure: it includes the grid points of
+$`(-n, n)`, of measure $`2n`, for every $`n`. -/
+theorem gridLoeb_μL_hyperGrid (hν : Unlimited (hnat ν)) :
+    (gridLoeb ν).μL (hyperGrid ν) = ∞ := by
+  refine ENNReal.eq_top_of_forall_nnreal_le fun r => ?_
+  obtain ⟨n, hn⟩ := exists_nat_gt (r : ℝ)
+  have h1 := (gridLoeb ν).isFinitelyAdditive.mono (gridLoeb ν).isRing
+    (hyperGrid_inter_Ioo_mem_ring ν (-(n : ℝ)) n) (hyperGrid_mem_ring ν) inter_subset_left
+  rw [gridLoeb_μL_Ioo hν] at h1
+  refine le_trans ?_ h1
+  rw [← ENNReal.ofReal_coe_nnreal]
+  exact ENNReal.ofReal_le_ofReal (by linarith [r.coe_nonneg])
+
+/-- **Section 16.8.** Every grid point is a hyperrational number. -/
+theorem hyperGrid_subset_hyperRat (ν : ℕ → ℕ) : hyperGrid ν ⊆ ℚ* :=
+  internalSet_subset_starSet_iff.2 (Eventually.of_forall fun n x hx => by
+    obtain ⟨k, -, rfl⟩ := mem_gridFinset.1 (Finset.mem_coe.1 hx)
+    exact ⟨(k : ℚ) / (ν n : ℚ), by simp⟩)
+
+/-- **Section 16.8.** The equation $`\lambda(B) = \mu_L(S \cap {}^*B)` fails for the set of
+rationals: the grid points in the enlargement of the rationals are all the grid points, of Loeb
+measure $`\infty`, while the rationals have Lebesgue measure $`0`. -/
+theorem gridLoeb_μL_inter_hyperRat (hν : Unlimited (hnat ν)) :
+    (gridLoeb ν).μL (hyperGrid ν ∩ ℚ*) = ∞ ∧ volume (range ((↑) : ℚ → ℝ)) = 0 :=
+  ⟨by rw [inter_eq_left.2 (hyperGrid_subset_hyperRat ν)]; exact gridLoeb_μL_hyperGrid hν,
+    (countable_range _).measure_zero volume⟩
+
+/-- Every Borel set of reals is Lebesgue measurable. -/
+theorem lebesgueMeasurable_of_measurableSet {B : Set ℝ} (hB : MeasurableSet B) :
+    LebesgueMeasurable B :=
+  lebesgueMeasurable_iff_nullMeasurableSet.2 hB.nullMeasurableSet
+
+/-- The hypernatural $`\omega`, the class of the sequence $`0, 1, 2, \dots`, is unlimited; so
+the hypotheses of the section are satisfied by the grid of mesh $`1/\omega`. -/
+theorem unlimited_hnat_id : Unlimited (hnat fun n => n) := unlimited_omega
+
+/-- **Theorem 16.8.2, an instance.** In the grid of mesh $`1/\omega`, the grid points
+infinitely close to the unit interval form a Loeb measurable set of Loeb measure $`1`. -/
+theorem loebMeasure_shInv_Icc_zero_one :
+    (gridLoeb fun n => n).LoebMeasurable (shInv (fun n => n) (Icc 0 1)) ∧
+      (gridLoeb fun n => n).loebMeasure (shInv (fun n => n) (Icc 0 1)) = 1 := by
+  have h := lebesgueMeasurable_of_measurableSet (measurableSet_Icc (a := (0 : ℝ)) (b := 1))
+  refine ⟨(lebesgueMeasurable_iff_loebMeasurable_shInv unlimited_hnat_id).1 h, ?_⟩
+  rw [← volume_eq_loebMeasure_shInv unlimited_hnat_id h, Real.volume_Icc]
+  simp
+
+end Remarks
+
 end Goldblatt
