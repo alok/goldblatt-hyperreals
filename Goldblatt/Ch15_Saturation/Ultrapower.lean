@@ -21,10 +21,10 @@ open scoped Classical
 universe u v
 
 /-- Some member of a nonempty set, and the empty set for the empty set. -/
-def pick (S : ZFSet.{u}) : ZFSet.{u} := if h : ∃ y, y ∈ S then Classical.choose h else ∅
+private def pick (S : ZFSet.{u}) : ZFSet.{u} := if h : ∃ y, y ∈ S then Classical.choose h else ∅
 
 /-- The chosen member of a nonempty set belongs to it. -/
-theorem pick_mem {S : ZFSet.{u}} (h : S ≠ ∅) : pick S ∈ S := by
+private theorem pick_mem {S : ZFSet.{u}} (h : S ≠ ∅) : pick S ∈ S := by
   have hex : ∃ y, y ∈ S := by
     obtain ⟨y, hy⟩ := (eq_empty_or_nonempty S).resolve_left h
     exact ⟨y, hy⟩
@@ -156,7 +156,7 @@ include hA hf
 theorem relIn_graphAt (i : I) : RelIn (superstructure X) (ρ.graphAt A f i) := fun p hp => by
   obtain ⟨a, ha, rfl⟩ := ρ.mem_graphAt.1 hp
   exact ⟨a, (isUniverseOver_superstructure hX).toIsUniverse.mem_of_mem hA ha, _,
-    cumPow_subset_superstructure _ (ρ.P_mem_cumPow (hf.app_mem ha) i), rfl⟩
+    cumPow_subset_superstructure _ (ρ.P_mem_cumPow (app_mem_of_isFunc hf ha) i), rfl⟩
 
 /-- **Section 15.4.** The functions $`f_i` have bounded rank, uniformly in $`i`. -/
 theorem exists_graphAt_mem_cumPow : ∃ N, ∀ i, ρ.graphAt A f i ∈ cumPow X N := by
@@ -166,7 +166,7 @@ theorem exists_graphAt_mem_cumPow : ∃ N, ∀ i, ρ.graphAt A f i ∈ cumPow X 
   obtain ⟨a, ha, rfl⟩ := ρ.mem_graphAt.1 hp
   have ha' : a ∈ cumPow X m := mem_cumPow_of_mem' hX hm ha (hW.mem_of_mem hA ha)
   exact opair_mem_cumPow (cumPow_mono (le_max_left _ _) ha')
-    (cumPow_mono (le_max_right _ _) (ρ.P_mem_cumPow (hf.app_mem ha) i))
+    (cumPow_mono (le_max_right _ _) (ρ.P_mem_cumPow (app_mem_of_isFunc hf ha) i))
 
 /-- The function $`i \mapsto f_i` has bounded rank. -/
 theorem bdd_graphAt : Bdd 𝓕 X (ρ.graphAt A f) :=
@@ -186,7 +186,7 @@ theorem ext_app {k : I → ZFSet.{u}} (hk : ∀ᶠ i in 𝓕, k i ∈ A) :
     app (ρ.ext A f) (col 𝓕 hX k) = col 𝓕 hX fun i => ρ.P (app f (k i)) i := by
   have hbk := bdd_of_eventually_mem_set hX hA hk
   have hbv : Bdd 𝓕 X fun i => ρ.P (app f (k i)) i :=
-    ⟨ρ.n + 1, hk.mono fun i hi => ρ.P_mem_cumPow (hf.app_mem hi) i⟩
+    ⟨ρ.n + 1, hk.mono fun i hi => ρ.P_mem_cumPow (app_mem_of_isFunc hf hi) i⟩
   refine (app_col_eq_iff hX (ρ.bdd_graphAt hA hf) hbk hbv
     (Eventually.of_forall fun i => ⟨ρ.isFunction_graphAt i, ρ.relIn_graphAt hA hf i⟩)).2 ?_
   filter_upwards [hk] with i hi
@@ -197,7 +197,7 @@ theorem ext_app_star {a : ZFSet.{u}} (ha : a ∈ A) :
     app (ρ.ext A f) (star 𝓕 hX a) = app f a := by
   have := ρ.ext_app hA hf (k := fun _ => a) (Eventually.of_forall fun _ => ha)
   rw [star, this]
-  exact ρ.col_P _ (hf.app_mem ha)
+  exact ρ.col_P _ (app_mem_of_isFunc hf ha)
 
 /-- **Section 15.4.** $`{}^+f` is a function from $`{}^*A` to $`B`. -/
 theorem isFunc_ext : IsFunc (star 𝓕 hX A) B (ρ.ext A f) := by
@@ -216,7 +216,7 @@ theorem isFunc_ext : IsFunc (star 𝓕 hX A) B (ρ.ext A f) := by
     have hαA : ∀ᶠ i in 𝓕, α i ∈ A := hα.mono fun i hi => hi.1
     have hbα := bdd_of_eventually_mem_set hX hA hαA
     have hbv : Bdd 𝓕 X fun i => ρ.P (app f (α i)) i :=
-      ⟨ρ.n + 1, hαA.mono fun i hi => ρ.P_mem_cumPow (hf.app_mem hi) i⟩
+      ⟨ρ.n + 1, hαA.mono fun i hi => ρ.P_mem_cumPow (app_mem_of_isFunc hf hi) i⟩
     have e : col 𝓕 hX fy = pair (col 𝓕 hX α) (col 𝓕 hX fun i => ρ.P (app f (α i)) i) := by
       rw [← col_opair hX hbα hbv]
       exact col_congr hX (hα.mono fun i hi => hi.2)
@@ -224,14 +224,14 @@ theorem isFunc_ext : IsFunc (star 𝓕 hX A) B (ρ.ext A f) := by
     obtain ⟨rfl, rfl⟩ := pair_inj.1 e
     refine pair_mem_prod.2 ⟨(mem_star_iff hX hA).2 ⟨α, hbα, hαA, rfl⟩, ?_⟩
     obtain ⟨i₀, hi₀⟩ := hαA.exists
-    have hne := ρ.eventually_ne_empty (hf.app_mem hi₀)
+    have hne := ρ.eventually_ne_empty (app_mem_of_isFunc hf hi₀)
     have hmemH := (col_mem_col_iff hX hbv ρ.bdd_H).2 (by
       filter_upwards [hαA, hne] with i hi hi'
-      exact ρ.P_mem _ (hf.app_mem hi) i hi')
+      exact ρ.P_mem _ (app_mem_of_isFunc hf hi) i hi')
     rwa [ρ.col_H] at hmemH
   · obtain ⟨k, hbk, hk, rfl⟩ := (mem_star_iff hX hA).1 hz
     have hbv : Bdd 𝓕 X fun i => ρ.P (app f (k i)) i :=
-      ⟨ρ.n + 1, hk.mono fun i hi => ρ.P_mem_cumPow (hf.app_mem hi) i⟩
+      ⟨ρ.n + 1, hk.mono fun i hi => ρ.P_mem_cumPow (app_mem_of_isFunc hf hi) i⟩
     have hmem : pair (col 𝓕 hX k) (col 𝓕 hX fun i => ρ.P (app f (k i)) i) ∈ ρ.ext A f :=
       (col_appVal hX hG hbk hbv).2 (hk.mono fun i hi => ρ.pair_mem_graphAt.2 ⟨hi, rfl⟩)
     exact ⟨_, hmem, fun w hw => hfun.2 _ _ _ hw hmem⟩

@@ -56,9 +56,12 @@ theorem countablySaturated_iff_seq_fip :
   obtain ⟨x, hx⟩ := (eq_empty_or_nonempty (A (t.sup id))).resolve_left (hne _)
   exact ⟨x, fun n hn => hanti n _ (Finset.le_sup (f := id) hn) hx⟩
 
-/-- **Section 15.5, first statement.** Countable saturation is equivalent to the
-assertion that every countable collection of internal sets with the finite intersection
-property has nonempty intersection. -/
+/-- **Section 15.5, first statement.** Countable saturation can be tested on arbitrary
+countable collections instead of decreasing sequences. A framework is countably saturated
+exactly when, for each countable set $`S` of internal sets in which any finitely many members
+have a common point, some point lies in every member of $`S`. The collection is a Lean
+{name}`Set.Countable` set of entities, and the finite intersection property is stated for
+its finite subsets. -/
 theorem countablySaturated_iff_countable_fip :
     F.CountablySaturated ↔ ∀ S : Set ZFSet.{u}, S.Countable → (∀ A ∈ S, F.InternalSet A) →
       (∀ t : Finset ZFSet.{u}, (↑t : Set ZFSet.{u}) ⊆ S → ∃ x, ∀ A ∈ t, x ∈ A) →
@@ -90,11 +93,13 @@ theorem countablySaturated_iff_countable_fip :
     exact ⟨x, fun n => hx _ ⟨n, rfl⟩⟩
 
 variable (F) in
-/-- **Section 15.5, $`\kappa`-saturation.** A framework is $`\kappa`-saturated when any
-collection of fewer than $`\kappa` internal sets with the finite intersection property has
-nonempty intersection. The collection is a family indexed by a type with fewer than
-$`\kappa` members. The book gives the definition for enlargements; the enlargement property
-is a separate hypothesis here. -/
+/-- **Section 15.5, $`\kappa`-saturation.** Let $`\kappa` be a cardinal. The framework is
+$`\kappa`-saturated when the following holds for every family $`(A_i)_{i \in \iota}` of
+internal sets whose index type has cardinality below $`\kappa`: if each finite subfamily has
+a common point, then the whole family has one. Indexing by a type loses nothing, since a
+collection of fewer than $`\kappa` sets can be indexed by a type of the universe level of
+$`\kappa`. The book gives the definition for enlargements; the enlargement property is a
+separate hypothesis here. -/
 def Saturated (κ : Cardinal.{u}) : Prop :=
   ∀ (ι : Type u) (A : ι → ZFSet.{u}), #ι < κ → (∀ i, F.InternalSet (A i)) →
     (∀ t : Finset ι, ∃ x, ∀ i ∈ t, x ∈ A i) → ∃ x, ∀ i, x ∈ A i
@@ -104,8 +109,10 @@ def Saturated (κ : Cardinal.{u}) : Prop :=
 theorem Saturated.mono (h : F.Saturated κ) (hκ : κ' ≤ κ) : F.Saturated κ' :=
   fun ι A hι => h ι A (hι.trans_le hκ)
 
-/-- **Section 15.5.** "Countably saturated" is the same as "$`\aleph_1`-saturated", where
-$`\aleph_1` is the least uncountable cardinal. -/
+/-- **Section 15.5.** Saturation at the first uncountable cardinal is countable
+saturation: a family has fewer than $`\aleph_1` members exactly when it is countable, so
+$`\aleph_1`-saturation of a framework and its countable saturation are the same
+property. -/
 theorem saturated_aleph_one_iff : F.Saturated ℵ₁ ↔ F.CountablySaturated := by
   classical
   rw [countablySaturated_iff_seq_fip]
@@ -176,36 +183,57 @@ theorem CountablySaturated.not_countable_of_infinite (h : F.CountablySaturated)
   rw [← lift_aleph0.{u + 1, u}, lift_le] at h3
   exact absurd aleph0_lt_aleph_one (not_lt.2 h3)
 
-/-- **Section 15.5, existence of saturated enlargements.** For any cardinal $`\kappa`, any
-superstructure $`\mathbb U(X)` has a $`\kappa`-saturated enlargement.
+/-- **Section 15.5, existence of saturated enlargements, the proved case.** Over an
+arbitrary base set $`X` and for every cardinal $`\kappa \le \aleph_1`, the superstructure
+$`\mathbb U(X)` has a $`\kappa`-saturated enlargement of the form $`\mathbb U({}^*X)`. It
+is the countably saturated enlargement of
+{name}`Goldblatt.exists_countablySaturated_enlargement`, which is $`\aleph_1`-saturated by
+{name}`Goldblatt.NonstandardFramework.saturated_aleph_one_iff`. -/
+theorem exists_saturated_enlargement_of_le_aleph_one {X : ZFSet.{u}} (hX : IsBaseSet X)
+    (hκ : κ ≤ ℵ₁) :
+    ∃ F : NonstandardFramework.{u}, F.X = X ∧ F.U = superstructure X ∧
+      F.U' = superstructure (F.star X) ∧ F.IsEnlargement ∧ F.Saturated κ := by
+  obtain ⟨F, h1, h2, h3, h4, -, h6⟩ := exists_countablySaturated_enlargement hX
+  exact ⟨F, h1, h2, h3, h4, (saturated_aleph_one_iff.2 h6).mono hκ⟩
 
-The book states this without proof, with the remark that it is shown by using special kinds
-of ultrafilters. The proof requires an ultrafilter that is countably incomplete and
-$`\kappa^+`-good, and the theorem that the ultrapower modulo such an ultrafilter is
-$`\kappa^+`-saturated; neither the existence of good ultrafilters nor that theorem is
-available in Mathlib. The statement is recorded here, in the form of the enlargement theorem
-of Chapter 14 (the target universe is the superstructure over $`{}^*X`), and is not proved.
-The case
-$`\kappa = \aleph_1` over the real numbers is proved:
-{lit}`Goldblatt.exists_realFramework_countablySaturated`. -/
+/-- **Section 15.5, existence of saturated enlargements.** Whatever the cardinal $`\kappa`
+and the base set $`X`, there is a $`\kappa`-saturated enlargement of the superstructure
+$`\mathbb U(X)`.
+
+The book asserts this without proof and attributes it to special kinds of ultrafilters. For
+$`\kappa \le \aleph_1` it is proved, over any base set
+({name}`Goldblatt.NonstandardFramework.exists_saturated_enlargement_of_le_aleph_one`), and
+that is all that Part V of the book needs. For $`\kappa > \aleph_1` the statement is
+recorded and *not proved*: the single {lit}`sorry` of the chapter is confined to that case.
+A proof needs an ultrafilter that is countably incomplete and $`\kappa^+`-good, together
+with the theorem that the ultrapower modulo such an ultrafilter is $`\kappa^+`-saturated
+(or else a union of a long chain of successive enlargements); neither good ultrafilters nor
+either construction is available in Mathlib. The statement has the form of the enlargement
+theorem of Chapter 14: the target universe is the superstructure over $`{}^*X`. -/
 theorem exists_saturated_enlargement {X : ZFSet.{u}} (hX : IsBaseSet X) (κ : Cardinal.{u}) :
     ∃ F : NonstandardFramework.{u}, F.X = X ∧ F.U = superstructure X ∧
       F.U' = superstructure (F.star X) ∧ F.IsEnlargement ∧ F.Saturated κ := by
-  sorry
+  rcases le_or_gt κ ℵ₁ with hκ | hκ
+  · exact exists_saturated_enlargement_of_le_aleph_one hX hκ
+  · sorry
 
-/-- **Exercise 15.5.1.** $`\kappa`-saturation is equivalent to the following statement:
-if an internal relation $`R` is concurrent on a subset $`A` of its domain that has
-cardinality less than $`\kappa` ($`A` need not be internal), then there is an entity $`b`
-such that $`a \mathrel R b` for all $`a \in A`. The set $`A` is given as a family
-$`(a_i)` indexed by a type with fewer than $`\kappa` members, and concurrency on $`A` means
-that for finitely many indices there is a $`b` related to all the corresponding $`a_i`.
-The entity $`b` belongs to the range of $`R` as soon as $`A` is not empty; for empty $`A`
-and empty $`R` the book's requirement that $`b` be in the range cannot be met, so it is not
-part of the statement. -/
+/-- **Exercise 15.5.1.** Saturation in terms of concurrent relations. The framework is
+$`\kappa`-saturated if and only if every internal binary relation $`R` has this property:
+whenever $`(a_i)_{i \in \iota}` is a family of points of the domain of $`R`, indexed by a
+type of cardinality below $`\kappa`, such that any finitely many of the $`a_i` are
+$`R`-related to a common entity, there is one entity $`b` to which every $`a_i` is
+$`R`-related, and $`b` lies in the range of $`R` provided the family is not empty.
+
+The family $`(a_i)` plays the part of the book's set $`A`, which is an arbitrary set of
+fewer than $`\kappa` points of the domain, internal or not, and the finiteness hypothesis is
+concurrency of $`R` on $`A`. The clause on the range is conditional because the book's
+unconditional one cannot be met when $`A` and $`R` are both empty; for a nonempty family it
+is exactly the book's requirement. -/
 theorem saturated_iff_concurrent :
     F.Saturated κ ↔ ∀ R, F.InternalSet R → RelIn F.U' R →
       ∀ (ι : Type u) (a : ι → ZFSet.{u}), #ι < κ → (∀ i, a i ∈ dom R) →
-        (∀ t : Finset ι, ∃ b, ∀ i ∈ t, pair (a i) b ∈ R) → ∃ b, ∀ i, pair (a i) b ∈ R := by
+        (∀ t : Finset ι, ∃ b, ∀ i ∈ t, pair (a i) b ∈ R) →
+          ∃ b, (Nonempty ι → b ∈ ran R) ∧ ∀ i, pair (a i) b ∈ R := by
   classical
   have hU' := F.isUniverse'
   constructor
@@ -219,9 +247,10 @@ theorem saturated_iff_concurrent :
       fun t => by
         obtain ⟨b, hb⟩ := hconc t
         exact ⟨b, fun i hi => mem_relImage.2 ⟨a i, mem_singleton.2 rfl, hb i hi⟩⟩
-    refine ⟨x, fun i => ?_⟩
-    obtain ⟨a', ha', h'⟩ := mem_relImage.1 (hx i)
-    rwa [mem_singleton.1 ha'] at h'
+    have hall : ∀ i, pair (a i) x ∈ R := fun i => by
+      obtain ⟨a', ha', h'⟩ := mem_relImage.1 (hx i)
+      rwa [mem_singleton.1 ha'] at h'
+    exact ⟨x, fun ⟨i⟩ => mem_ran.2 ⟨a i, hall i⟩, hall⟩
   · intro h ι A hι hA hfip
     by_cases hne : Nonempty ι
     · obtain ⟨i₀⟩ := hne
@@ -236,9 +265,9 @@ theorem saturated_iff_concurrent :
           pair (A i ∩ A i₀) x ∈ relInv (F.star (memRelOn T)) := fun {i x} h1 h2 =>
         pair_mem_relInv.2 ((F.pair_mem_star_memRelOn hT).2
           ⟨hA0T h2, hBP i, mem_inter.2 ⟨h1, h2⟩⟩)
-      obtain ⟨b, hb⟩ := h (relInv (F.star (memRelOn T)))
+      obtain ⟨b, -, hb⟩ := h (relInv (F.star (memRelOn T)))
         ⟨F.internal_relInv hEint hEset' hErel', hU'.isSetOf_relInv hEset' hErel'⟩
-        hErel'.relInv ι (fun i => A i ∩ A i₀) hι
+        (relIn_relInv hErel') ι (fun i => A i ∩ A i₀) hι
         (fun i => by
           obtain ⟨x, hx⟩ := hfip {i, i₀}
           exact mem_dom.2 ⟨x, hmem (hx i (by simp)) (hx i₀ (by simp))⟩)

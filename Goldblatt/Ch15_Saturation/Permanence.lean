@@ -321,53 +321,12 @@ theorem exists_unlimited_trueAt (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
       ⟨a, hra, mem_sep.2 ⟨F.real_mem_star a, ha⟩⟩
     exact ⟨a, ha, (mem_sep.1 haA).2⟩
 
-/-- **Theorem 15.1.1 (5), for internal sets, corrected.** If an internal entity $`A`
-contains every _limited_ hyperreal $`a \ge r`, for some real $`r`, then for some positive
-unlimited $`b` it contains every hyperreal $`a` with $`r \le a \le b`.
-
-The book's hypothesis is only that $`A` contains every _real_ number $`a \ge r`. With that
-hypothesis the conclusion fails: for a positive infinitesimal $`\varepsilon` the internal
-set of the hyperreals $`a` with $`a \le r` or $`a \ge r + \varepsilon` contains every real
-number $`a \ge r` but not $`r + \varepsilon/2`
-({lit}`not_theorem_15_1_1_5_as_printed`). The hypothesis used here is the one of the
-analogous statement of Section 11.6, that an internal set including all limited numbers
-includes an interval with unlimited end points. -/
-theorem exists_posUnlimited_forall_mem (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
-    (hA : F.Internal A) (r : ℝ)
-    (h : ∀ a, F.Limited a → pair (F.real r) a ∈ F.star F.Le → a ∈ A) :
-    ∃ b, F.PosUnlimited b ∧
-      ∀ a, pair (F.real r) a ∈ F.star F.Le → pair a b ∈ F.star F.Le → a ∈ A := by
-  obtain ⟨hNint, hNset⟩ := F.star_N_spec
-  obtain ⟨hLint, hLset, hLrel⟩ := star_rel_spec F.isSetOf_Le F.relIn_Le
-  have hrint : F.Internal (F.real r) := internal_of_mem_star_R (F.real_mem_star r)
-  set C := relImage (F.star F.Le) {F.real r} \ A with hC
-  set B := F.star F.N \ relImage (F.star F.Le) C with hB
-  have hCint : F.Internal C :=
-    F.internal_sdiff (internal_relImage_star F.isSetOf_Le F.relIn_Le
-      (F.internal_singleton hrint)) (F.isUniverse'.isSetOf_relImage hLset hLrel _) hA
-  have hBint : F.Internal B :=
-    F.internal_sdiff hNint hNset (internal_relImage_star F.isSetOf_Le F.relIn_Le hCint)
-  obtain ⟨K, hK, hKN, hKB⟩ := exists_nonstandard_mem hω hBint (by
-    intro m hm
-    obtain ⟨j, rfl⟩ := F.mem_N.1 hm
-    refine mem_sdiff.2 ⟨F.N_subset_star hm, fun hj => ?_⟩
-    obtain ⟨a, haC, haj⟩ := mem_relImage.1 hj
-    obtain ⟨hra, haA⟩ := mem_sdiff.1 haC
-    obtain ⟨_, hr', hra⟩ := mem_relImage.1 hra
-    rw [mem_singleton] at hr'
-    subst hr'
-    exact haA (h a (limited_of_le_of_le hra haj) hra))
-  refine ⟨K, posUnlimited_of_nonstandard hK hKN, fun a hra haK => ?_⟩
-  by_contra haA
-  exact (mem_sdiff.1 hKB).2 (mem_relImage.2 ⟨a, mem_sdiff.2
-    ⟨mem_relImage.2 ⟨_, mem_singleton.2 rfl, hra⟩, haA⟩, haK⟩)
-
-/-- **Theorem 15.1.1 (5) as printed is false.** For every real $`r` there is an internal
-set that contains every real number $`a \ge r` but, for every positive unlimited $`b`, omits
-some hyperreal $`a` with $`r \le a \le b`. With an unlimited hypernatural $`K`, the set
+/-- **Theorem 15.1.1 (5), counterexample to the printed statement.** For every real $`r`
+there is an internal set that contains every real number $`a \ge r` but, for every positive
+unlimited $`b`, omits some hyperreal $`a` with $`r \le a \le b`. With an unlimited hypernatural $`K`, the set
 consists of the hyperreals $`a` for which it is not the case that $`r < a` and
 $`(a - r) K < 1`; the omitted point is $`r + 1/(2K + 2)`. -/
-theorem not_theorem_15_1_1_5_as_printed (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N) (r : ℝ) :
+theorem exists_internal_set_reals_ge_not_interval (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N) (r : ℝ) :
     ∃ A, F.Internal A ∧ (∀ a : ℝ, r ≤ a → F.real a ∈ A) ∧
       ∀ b, F.PosUnlimited b →
         ∃ a, pair (F.real r) a ∈ F.star F.Le ∧ pair a b ∈ F.star F.Le ∧ a ∉ A := by
@@ -420,10 +379,51 @@ theorem not_theorem_15_1_1_5_as_printed (hω : ∃ n, n ∈ F.star F.N ∧ n ∉
     rw [hx, add_sub_cancel_left, div_mul_eq_mul_div, one_mul, div_lt_one (hpos m)]
     linarith [le_abs_self m, abs_nonneg m]
 
+/-- **Theorem 15.1.1 (5), for internal sets, corrected.** If an internal entity $`A`
+contains every _limited_ hyperreal $`a \ge r`, for some real $`r`, then for some positive
+unlimited $`b` it contains every hyperreal $`a` with $`r \le a \le b`.
+
+The book's hypothesis is only that $`A` contains every _real_ number $`a \ge r`. With that
+hypothesis the conclusion fails: for a positive infinitesimal $`\varepsilon` the internal
+set of the hyperreals $`a` with $`a \le r` or $`a \ge r + \varepsilon` contains every real
+number $`a \ge r` but not $`r + \varepsilon/2`
+({name}`Goldblatt.RealFramework.exists_internal_set_reals_ge_not_interval`). The hypothesis
+used here is the one of the analogous statement of Section 11.6, that an internal set including all limited numbers
+includes an interval with unlimited end points. -/
+theorem exists_posUnlimited_forall_mem (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
+    (hA : F.Internal A) (r : ℝ)
+    (h : ∀ a, F.Limited a → pair (F.real r) a ∈ F.star F.Le → a ∈ A) :
+    ∃ b, F.PosUnlimited b ∧
+      ∀ a, pair (F.real r) a ∈ F.star F.Le → pair a b ∈ F.star F.Le → a ∈ A := by
+  obtain ⟨hNint, hNset⟩ := F.star_N_spec
+  obtain ⟨hLint, hLset, hLrel⟩ := star_rel_spec F.isSetOf_Le F.relIn_Le
+  have hrint : F.Internal (F.real r) := internal_of_mem_star_R (F.real_mem_star r)
+  set C := relImage (F.star F.Le) {F.real r} \ A with hC
+  set B := F.star F.N \ relImage (F.star F.Le) C with hB
+  have hCint : F.Internal C :=
+    F.internal_sdiff (internal_relImage_star F.isSetOf_Le F.relIn_Le
+      (F.internal_singleton hrint)) (F.isUniverse'.isSetOf_relImage hLset hLrel _) hA
+  have hBint : F.Internal B :=
+    F.internal_sdiff hNint hNset (internal_relImage_star F.isSetOf_Le F.relIn_Le hCint)
+  obtain ⟨K, hK, hKN, hKB⟩ := exists_nonstandard_mem hω hBint (by
+    intro m hm
+    obtain ⟨j, rfl⟩ := F.mem_N.1 hm
+    refine mem_sdiff.2 ⟨F.N_subset_star hm, fun hj => ?_⟩
+    obtain ⟨a, haC, haj⟩ := mem_relImage.1 hj
+    obtain ⟨hra, haA⟩ := mem_sdiff.1 haC
+    obtain ⟨_, hr', hra⟩ := mem_relImage.1 hra
+    rw [mem_singleton] at hr'
+    subst hr'
+    exact haA (h a (limited_of_le_of_le hra haj) hra))
+  refine ⟨K, posUnlimited_of_nonstandard hK hKN, fun a hra haK => ?_⟩
+  by_contra haA
+  exact (mem_sdiff.1 hKB).2 (mem_relImage.2 ⟨a, mem_sdiff.2
+    ⟨mem_relImage.2 ⟨_, mem_singleton.2 rfl, hra⟩, haA⟩, haK⟩)
+
 /-- **Theorem 15.1.1 (5), corrected.** Let $`\varphi(x)` be an internal formula and $`r`
 a real number. If $`\varphi(a)` is true for all limited hyperreals $`a \ge r`, then there is
 a positive unlimited $`b` such that $`\varphi(a)` is true for all hyperreals $`a` with
-$`r \le a \le b`. See {lit}`exists_posUnlimited_forall_mem` for the reason why "limited
+$`r \le a \le b`. See {name}`Goldblatt.RealFramework.exists_posUnlimited_forall_mem` for the reason why "limited
 hyperreals" replaces the book's "real numbers". -/
 theorem exists_posUnlimited_forall_trueAt (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
     (hφ : F.IsInternalFormula φ v) (r : ℝ)
@@ -480,10 +480,12 @@ theorem exists_nat_bound_of_forall_limited (hω : ∃ n, n ∈ F.star F.N ∧ n 
       ((Code.pair_enc_right_mem_star_rel F.cR F.cR (b := (k : ℝ))).1 h1)
   · exact absurd (mem_relImage.2 ⟨w, hw, h1⟩) (mem_sdiff.1 hkB).2
 
-/-- **Exercise 15.1.2.** Let $`f` be an internal function with values in
-$`{}^*\mathbb R` such that $`f(x)` is limited for all $`x` in an internal set
-$`A \subseteq \operatorname{dom} f`. Then there is a standard $`n \in \mathbb N` with
-$`|f(x)| < n`, that is $`-n < f(x) < n`, for all $`x \in A`. -/
+/-- **Exercise 15.1.2.** Limited values on an internal set are uniformly bounded. Take an
+internal function $`f` and an internal set $`A` inside its domain, and suppose every value
+$`f(x)`, $`x \in A`, is a limited hyperreal. Then one standard natural number $`n` bounds
+all of them: $`-n < f(x) < n` for each $`x \in A`, which is the Lean rendering of
+$`|f(x)| < n`. The values $`f(x)` for $`x \in A` form an internal set of limited numbers,
+and {name}`Goldblatt.RealFramework.exists_nat_bound_of_forall_limited` applies to it. -/
 theorem exists_nat_bound_of_limited_values (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
     (hf : F.Internal f) (hfset : IsSetOf F.U' f) (hrel : RelIn F.U' f) (hfun : IsFunction f)
     (hA : F.Internal A) (hAf : A ⊆ dom f) (h : ∀ x ∈ A, F.Limited (app f x)) :
@@ -655,10 +657,15 @@ theorem isFunc_spec {D E : ZFSet.{u}} (hD : IsSetOf F.U' D) (hE : IsSetOf F.U' E
   ⟨F.isUniverse'.isSetOf_of_subset_prod hD hE hs.1,
     F.isUniverse'.relIn_of_subset_prod hD hE hs.1, hs.isFunction, hs.dom_eq⟩
 
-/-- **Lemma 15.2.1 (Robinson's sequential lemma).** If
-$`s : {}^*\mathbb N \to {}^*\mathbb R` is an internal hypersequence such that $`s_n` is
-infinitesimal for all standard $`n`, then there is an unlimited $`K \in {}^*\mathbb N` such
-that $`s_n` is infinitesimal for all hypernatural $`n \le K`. -/
+/-- **Lemma 15.2.1 (Robinson's sequential lemma).** Infinitesimality of the terms of an
+internal hypersequence spills over from the standard indices to an unlimited initial
+segment. Precisely: let $`s` be an internal function from $`{}^*\mathbb N` to
+$`{}^*\mathbb R` whose value $`s_n` at each standard index $`n` is infinitesimal. Then
+some unlimited hypernatural $`K` has $`s_n \simeq 0` at every index $`n \le K`, standard or
+not. In Lean, $`s` is a set of pairs with
+{name}`ZFSet.IsFunc` from $`{}^*\mathbb N` to $`{}^*\mathbb R`, and the theorem is the
+case of {name}`Goldblatt.RealFramework.robinson_function` in which the domain is all of
+$`{}^*\mathbb N`. -/
 theorem robinson_sequential_lemma (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N) (hs : F.Internal s)
     (hsf : IsFunc (F.star F.N) (F.star F.R) s)
     (h : ∀ n : ℕ, F.Infinitesimal (app s (F.nat n))) :
@@ -669,11 +676,14 @@ theorem robinson_sequential_lemma (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N) 
     ⟨hdom ▸ F.N_subset_star (F.mem_N.2 ⟨n, rfl⟩), h n⟩
   exact ⟨K, hK, hKN, fun n hn hnK => (hall n hn hnK).2⟩
 
-/-- **Exercise 15.2.2.** If $`c \in {}^*\mathbb R` and
-$`s : {}^*\mathbb N \to {}^*\mathbb R` is an internal hypersequence such that
-$`s_n \simeq c` for all standard $`n`, then there is an unlimited $`K \in {}^*\mathbb N` such
-that $`s_n \simeq c` for all hypernatural $`n \le K`. The version for a hypersequence
-defined up to an unlimited index is {lit}`robinson_near`. -/
+/-- **Exercise 15.2.2.** Robinson's lemma with an arbitrary hyperreal $`c` in place of
+zero. Let $`s` be an internal function from $`{}^*\mathbb N` to $`{}^*\mathbb R` and
+suppose each term $`s_n` with standard index is infinitely close to $`c`. Then the terms
+stay infinitely close to $`c` on an initial segment with unlimited end point: some unlimited
+hypernatural $`K` has $`s_n \simeq c` at every index $`n \le K`. The hyperreal $`c` need
+not be limited. The statement for internal functions whose domain merely contains the
+standard numbers is {name}`Goldblatt.RealFramework.robinson_near`, from which this one
+follows. -/
 theorem robinson_near_sequence (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N) (hs : F.Internal s)
     (hsf : IsFunc (F.star F.N) (F.star F.R) s) (hc : c ∈ F.star F.R)
     (h : ∀ n : ℕ, F.Near (app s (F.nat n)) c) :
@@ -684,12 +694,17 @@ theorem robinson_near_sequence (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N) (hs
     ⟨hdom ▸ F.N_subset_star (F.mem_N.2 ⟨n, rfl⟩), h n⟩
   exact ⟨K, hK, hKN, fun n hn hnK => (hall n hn hnK).2⟩
 
-/-- **Theorem 15.2.3.** If $`f` is an internal function with values in
-$`{}^*\mathbb R` and $`f(x)` is infinitesimal for all limited hyperreals $`x`, then there is
-a positive unlimited $`b` such that $`f(x)` is infinitesimal for all $`x \in [-b, b]`, that
-is, for all hyperreals with $`|x| \le b`. The internal set of the $`x` with
-$`|x \cdot f(x)| < 1` includes the limited numbers, hence an interval $`[-b, b]` with $`b`
-unlimited. -/
+/-- **Theorem 15.2.3.** The analogue of Robinson's lemma for a continuous variable.
+Suppose the internal function $`f` is defined at every limited hyperreal $`x` and takes an
+infinitesimal value there. Then the same is true beyond the limited numbers: for some
+positive unlimited $`b`, every hyperreal $`x` with $`|x| \le b` (the interval
+$`[-b, b]`) lies in the domain of $`f` and has $`f(x) \simeq 0`. The condition
+$`|x| \le b` is written with the transform of the relation $`|x| \le y` on the reals.
+
+For the proof, the $`x` with $`|x \cdot f(x)| < 1` form an internal set that contains
+every limited number, so by
+{name}`Goldblatt.RealFramework.exists_posUnlimited_interval_subset` it contains such an
+interval; at an unlimited $`x` the inequality forces $`f(x)` to be infinitesimal. -/
 theorem infinitesimal_on_unlimited_interval (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
     (hf : F.Internal f) (hfset : IsSetOf F.U' f) (hrel : RelIn F.U' f) (hfun : IsFunction f)
     (h : ∀ x, F.Limited x → x ∈ dom f ∧ F.Infinitesimal (app f x)) :

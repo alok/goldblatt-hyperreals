@@ -28,19 +28,16 @@ section Sets
 variable {U R S T X Y g x y : ZFSet.{u}}
 
 /-- The inverse of a binary relation of a universe is a binary relation of the universe. -/
-theorem RelIn.relInv (h : RelIn U R) : RelIn U (relInv R) := fun p hp => by
+theorem relIn_relInv (h : RelIn U R) : RelIn U (relInv R) := fun p hp => by
   obtain ⟨u, v, rfl, huv⟩ := mem_relInv.1 hp
   obtain ⟨u', hu', v', hv', huv'⟩ := h _ huv
   obtain ⟨rfl, rfl⟩ := pair_inj.1 huv'
   exact ⟨v, hv', u, hu', rfl⟩
 
-/-- A subset of a binary relation of a universe is a binary relation of the universe. -/
-theorem RelIn.mono (h : RelIn U R) (hS : S ⊆ R) : RelIn U S := fun p hp => h p (hS hp)
-
 /-- **Changing one value of a function.** If $`g : X \to Y`, $`x \in X` and $`y \in Y`,
 then removing from $`g` the pair with first component $`x` and adding $`(x, y)` gives a
 function from $`X` to $`Y`. -/
-theorem isFunc_update (hg : IsFunc X Y g) (hx : x ∈ X) (hy : y ∈ Y) :
+private theorem isFunc_update (hg : IsFunc X Y g) (hx : x ∈ X) (hy : y ∈ Y) :
     IsFunc X Y ((g \ ZFSet.prod {x} Y) ∪ {pair x y}) := by
   refine ⟨fun p hp => ?_, fun z hz => ?_⟩
   · rcases mem_union.1 hp with h | h
@@ -62,7 +59,7 @@ theorem isFunc_update (hg : IsFunc X Y g) (hx : x ∈ X) (hy : y ∈ Y) :
       · exact absurd (pair_inj.1 (mem_singleton.1 h)).1 hzx
 
 /-- The values of a function from $`A` to $`B` belong to $`B`. -/
-theorem _root_.ZFSet.IsFunc.app_mem {A B f a : ZFSet.{u}} (hf : IsFunc A B f) (ha : a ∈ A) :
+theorem app_mem_of_isFunc {A B f a : ZFSet.{u}} (hf : IsFunc A B f) (ha : a ∈ A) :
     app f a ∈ B :=
   (pair_mem_prod.1 (hf.1 (hf.isFunction.pair_app_mem (hf.dom_eq.symm ▸ ha)))).2
 
@@ -83,12 +80,13 @@ theorem pair_mem_memRelOn : pair x S ∈ memRelOn T ↔ x ∈ T ∧ S ⊆ T ∧ 
     exact ⟨⟨hx, hS⟩, x, S, rfl, hxS⟩
 
 /-- The $`n`-fold intersection $`A_0 \cap \dots \cap A_n` of a sequence of sets. -/
-def interUpTo (A : ℕ → ZFSet.{u}) : ℕ → ZFSet.{u}
+private def interUpTo (A : ℕ → ZFSet.{u}) : ℕ → ZFSet.{u}
   | 0 => A 0
   | n + 1 => interUpTo A n ∩ A (n + 1)
 
 /-- The members of a finite intersection of an initial part of a sequence of sets. -/
-theorem mem_interUpTo (A : ℕ → ZFSet.{u}) (n : ℕ) : x ∈ interUpTo A n ↔ ∀ i ≤ n, x ∈ A i := by
+private theorem mem_interUpTo (A : ℕ → ZFSet.{u}) (n : ℕ) :
+    x ∈ interUpTo A n ↔ ∀ i ≤ n, x ∈ A i := by
   induction n with
   | zero => simp [interUpTo]
   | succ n ih =>
@@ -174,8 +172,10 @@ def CountablyComprehensive : Prop :=
   ∀ A B f, IsSetOf F.U A → (A : Set ZFSet.{u}).Countable → F.InternalSet B → IsFunc A B f →
     ∃ g, F.Internal g ∧ IsFunc (F.star A) B g ∧ ∀ a ∈ A, app g (F.star a) = app f a
 
-/-- **Theorem 15.4.2 (3), countable saturation.** Every decreasing sequence of nonempty
-internal sets has nonempty intersection. -/
+/-- **Theorem 15.4.2 (3), countable saturation.** The framework is countably saturated
+when a chain $`A_0 \supseteq A_1 \supseteq \cdots` of internal sets, indexed by the standard
+natural numbers and with no $`A_n` empty, always has a point common to all the $`A_n`. The
+chain is a Lean sequence {lit}`A : ℕ → ZFSet`; it is not assumed to be internal. -/
 def CountablySaturated : Prop :=
   ∀ A : ℕ → ZFSet.{u}, (∀ n, F.InternalSet (A n)) → (∀ n, A (n + 1) ⊆ A n) →
     (∀ n, A n ≠ ∅) → ∃ x, ∀ n, x ∈ A n
@@ -448,7 +448,8 @@ theorem SequentiallyComprehensive.countablySaturated (hSC : F.SequentiallyCompre
   have hNotInint : F.Internal NotIn := by
     rw [hNotIndef]
     exact F.internal_sdiff hNTint hNTset (F.internal_relComp hgint hgset hgrel
-      (F.internal_relInv hEint hEset' hErel') (hU'.isSetOf_relInv hEset' hErel') hErel'.relInv)
+      (F.internal_relInv hEint hEset' hErel') (hU'.isSetOf_relInv hEset' hErel')
+      (relIn_relInv hErel'))
   have hNotInset : IsSetOf F.U' NotIn := by
     rw [hNotIndef]
     exact hU'.isSetOf_sdiff hNTset
@@ -470,7 +471,7 @@ theorem SequentiallyComprehensive.countablySaturated (hSC : F.SequentiallyCompre
       relComp (relInv (F.star F.Le)) NotIn)) :=
     F.internal_dom (F.internal_sdiff hNTint hNTset
       (F.internal_relComp (F.internal_relInv hLint hLset hLrel) (hU'.isSetOf_relInv hLset hLrel)
-        hLrel.relInv hNotInint hNotInset hNotInrel))
+        (relIn_relInv hLrel) hNotInint hNotInset hNotInrel))
       (hU'.isSetOf_sdiff hNTset)
       (hU'.relIn_of_subset_prod hNset hTset fun p hp => (mem_sdiff.1 hp).1)
   obtain ⟨K, hK, hKN, hKY⟩ := exists_nonstandard_mem hω hYint (by
@@ -587,10 +588,13 @@ theorem exists_unlimited_lt_seq (hSC : F.SequentiallyComprehensive)
     have := hgfun.pair_app_mem (hgdom.symm ▸ F.N_subset_star (F.mem_N.2 ⟨n, rfl⟩))
     rwa [hgval n] at this
 
-/-- **Theorem 15.4.3.** In a sequentially comprehensive framework with an unlimited
-hypernatural (in particular in a sequentially comprehensive enlargement), if $`X` is any
-countable set of unlimited hypernaturals, then there is an unlimited hypernatural $`K` less
-than every member of $`X`. -/
+/-- **Theorem 15.4.3.** Countably many unlimited hypernaturals cannot be coinitial in the
+unlimited ones. Let the framework be sequentially comprehensive and possess an unlimited
+hypernatural, and let $`X` be a countable set (a Lean {name}`Set.Countable` set of
+entities) each of whose members is an unlimited hypernatural. Then a single unlimited
+hypernatural $`K` satisfies $`K < x` for all $`x \in X`. The book assumes an enlargement;
+only the existence of one unlimited hypernatural is used, and the version with the book's
+hypothesis is {lit}`exists_unlimited_lt_of_countable_of_isEnlargement`. -/
 theorem exists_unlimited_lt_of_countable (hSC : F.SequentiallyComprehensive)
     (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N) (X : Set ZFSet.{u}) (hX : X.Countable)
     (h : ∀ x ∈ X, x ∈ F.star F.N ∧ x ∉ F.N) :
@@ -602,9 +606,11 @@ theorem exists_unlimited_lt_of_countable (hSC : F.SequentiallyComprehensive)
     obtain ⟨K, hK, hKN, hlt⟩ := exists_unlimited_lt_seq hSC hω s fun n => h _ ⟨n, rfl⟩
     exact ⟨K, hK, hKN, by rintro _ ⟨n, rfl⟩; exact hlt n⟩
 
-/-- **Theorem 15.4.3, as stated in the book.** In a sequentially comprehensive
-enlargement, every countable set of unlimited hypernaturals has an unlimited hypernatural
-below all its members. -/
+/-- **Theorem 15.4.3, with the book's hypothesis.** The framework is assumed to be an
+enlargement and sequentially comprehensive. Given a countable set $`X` whose members are
+unlimited hypernaturals, there is an unlimited hypernatural $`K` with $`K < x` for each
+$`x \in X`. An enlargement has an unlimited hypernatural, so this is a case of
+{name}`Goldblatt.RealFramework.exists_unlimited_lt_of_countable`. -/
 theorem exists_unlimited_lt_of_countable_of_isEnlargement (hSC : F.SequentiallyComprehensive)
     (hE : F.IsEnlargement) (X : Set ZFSet.{u}) (hX : X.Countable)
     (h : ∀ x ∈ X, x ∈ F.star F.N ∧ x ∉ F.N) :
@@ -652,7 +658,7 @@ theorem exists_internal_running_min (hs : F.Internal s)
     have hσf : IsFunc F.N F.R σ := mem_funs.1 hσ
     have hσN : ∀ k : ℕ, F.nat k ∈ F.N := fun k => F.mem_N.2 ⟨k, rfl⟩
     have hval : ∀ k : ℕ, app σ (F.nat k) = F.real (F.toReal (app σ (F.nat k))) := fun k => by
-      obtain ⟨r, hr⟩ := F.mem_R.1 (hσf.app_mem (hσN k))
+      obtain ⟨r, hr⟩ := F.mem_R.1 (app_mem_of_isFunc hσf (hσN k))
       rw [hr, F.toReal_real]
     have hσmem : ∀ k : ℕ, pair (F.nat k) (F.real (F.toReal (app σ (F.nat k)))) ∈ σ := fun k => by
       rw [← hval k]
@@ -703,8 +709,8 @@ theorem exists_internal_running_min (hs : F.Internal s)
   · rw [htf.isFunction.app_eq hny, hsf.isFunction.app_eq hmy]
   · have h1 := htf.isFunction.pair_app_mem (htf.dom_eq.symm ▸ hn)
     have h2 := hsf.isFunction.pair_app_mem (hsf.dom_eq.symm ▸ hm')
-    exact hall m' (hNU hm') hm' hm'n _ (hRU (htf.app_mem hn)) (htf.app_mem hn) _
-      (hRU (hsf.app_mem hm')) (hsf.app_mem hm') ⟨h1, h2⟩
+    exact hall m' (hNU hm') hm' hm'n _ (hRU (app_mem_of_isFunc htf hn)) (app_mem_of_isFunc htf hn) _
+      (hRU (app_mem_of_isFunc hsf hm')) (app_mem_of_isFunc hsf hm') ⟨h1, h2⟩
 
 /-- **Exercise 15.4.4, second part.** Let $`s : {}^*\mathbb N \to {}^*\mathbb R` be an
 internal hypersequence such that $`s_n` is an unlimited hypernatural for all standard $`n`.
@@ -742,7 +748,7 @@ theorem exists_unlimited_lt_of_internal_seq (hω : ∃ n, n ∈ F.star F.N ∧ n
   have hrmem : ∀ n ∈ F.star F.N, pair n (Code.ap F.cR F.cR φ (app t n)) ∈
       relComp t (F.star (Code.graph F.cR F.cR φ)) := fun n hn =>
     pair_mem_relComp.2 ⟨app t n, htfun.pair_app_mem (htdom.symm ▸ hn),
-      Code.pair_ap_mem F.cR F.cR (F.mem_star_R_iff.1 (htf.app_mem hn))⟩
+      Code.pair_ap_mem F.cR F.cR (F.mem_star_R_iff.1 (app_mem_of_isFunc htf hn))⟩
   have htstd : ∀ n : ℕ, F.PosUnlimited (app t (F.nat n)) := by
     intro n
     obtain ⟨⟨m, hm, hmn, he⟩, -⟩ := ht (F.nat n) (F.N_subset_star (F.mem_N.2 ⟨n, rfl⟩))
@@ -762,7 +768,7 @@ theorem exists_unlimited_lt_of_internal_seq (hω : ∃ n, n ∈ F.star F.N ∧ n
       intro ε hε
       have h1 := real_lt_iff.1 (htstd n (1 / ε + 1))
       refine Code.mem_right_of_rel F.cR F.cR ?_ (Code.rel_of_mem_left F.cR F.cR h1
-        (Code.pair_ap_mem F.cR F.cR (g := φ) (F.mem_star_R_iff.1 (htf.app_mem hnN))))
+        (Code.pair_ap_mem F.cR F.cR (g := φ) (F.mem_star_R_iff.1 (app_mem_of_isFunc htf hnN))))
       rintro a b ⟨ha, hb⟩
       have ha' : 1 / ε + 1 < a := ha
       have hpos : 0 < 1 / ε := one_div_pos.2 hε
@@ -782,7 +788,7 @@ theorem exists_unlimited_lt_of_internal_seq (hω : ∃ n, n ∈ F.star F.N ∧ n
     intro q
     have h1 := infinitesimal_iff.1 hinf (1 / (|q| + 1)) (by positivity)
     have h2 := (Code.rel_swap F.cR F.cR).1
-      (Code.pair_ap_mem F.cR F.cR (g := φ) (F.mem_star_R_iff.1 (htf.app_mem hK₀)))
+      (Code.pair_ap_mem F.cR F.cR (g := φ) (F.mem_star_R_iff.1 (app_mem_of_isFunc htf hK₀)))
     rw [real_lt_iff]
     refine Code.mem_right_of_rel F.cR F.cR ?_ (Code.rel_of_mem_left F.cR F.cR h1 h2)
     rintro b a ⟨hb, hab⟩
@@ -803,7 +809,7 @@ theorem exists_unlimited_lt_of_internal_seq (hω : ∃ n, n ∈ F.star F.N ∧ n
     linarith [le_abs_self q]
   have hBint : F.Internal (F.star F.N ∩ relPreimage (F.star (F.rr (· < ·))) {app t K₀}) :=
     F.internal_inter hNint hNset (internal_relPreimage_star (Code.isSetOf_rel _ _ _)
-      (Code.relIn_rel _ _ _) (F.internal_singleton (internal_of_mem_star_R (htf.app_mem hK₀))))
+      (Code.relIn_rel _ _ _) (F.internal_singleton (internal_of_mem_star_R (app_mem_of_isFunc htf hK₀))))
   obtain ⟨K, hK, hKN, hKB⟩ := exists_nonstandard_mem hω hBint (by
     intro m hm
     obtain ⟨k, rfl⟩ := F.mem_N.1 hm

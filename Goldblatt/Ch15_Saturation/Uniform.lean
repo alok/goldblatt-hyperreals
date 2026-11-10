@@ -47,27 +47,38 @@ rounded down to a natural number.
 
 /-- **Section 15.3.** A sequence of real functions as a function on pairs of real numbers:
 the pair $`(t, x)` is sent to $`f_{\lfloor t \rfloor}(x)`. -/
-def seqFn (f : ℕ → ℝ → ℝ) (q : ℝ × ℝ) : ℝ := f ⌊q.1⌋₊ q.2
+def floorSeqFn (f : ℕ → ℝ → ℝ) (q : ℝ × ℝ) : ℝ := f ⌊q.1⌋₊ q.2
 
 variable (F) in
 /-- **Section 13.8.** The value $`{}^*g(x)` of the transform of a real function at a
 hyperreal. -/
-def ext (g : ℝ → ℝ) (x : ZFSet.{u}) : ZFSet.{u} := Code.ap F.cR F.cR g x
+def starFn (g : ℝ → ℝ) (x : ZFSet.{u}) : ZFSet.{u} := Code.ap F.cR F.cR g x
 
 variable (F) in
 /-- **Section 15.3, the extended sequence.** The value $`{}^*f_n(x)` of the transform of a
-sequence of real functions at a hypernatural $`n` and a hyperreal $`x`. -/
+sequence of real functions at a hypernatural $`n` and a hyperreal $`x`.
+
+The book transforms the map $`n \mapsto f_n` from $`\mathbb N` into a set of functions, and
+the transform of that set consists of internal functions, so that $`{}^*f_n` is an internal
+function for every hypernatural $`n`. Here the sequence is transformed as a function of the
+two variables $`(t, x)`, with $`t` rounded down to a natural number so that it is defined on
+all pairs of reals. The rounding is invisible on $`{}^*\mathbb N`: at standard $`n` the
+function $`x \mapsto {}^*f_n(x)` is the transform of $`f_n`
+({lit}`hseq_nat_real`, {lit}`hseq_nat`), and for every hypernatural $`n`, limited or not, it
+is an internal function from $`{}^*\mathbb R` to $`{}^*\mathbb R`
+({lit}`exists_internal_hseq`), which is the property of $`{}^*f_n` that the argument of this
+section uses. -/
 def hseq (f : ℕ → ℝ → ℝ) (n x : ZFSet.{u}) : ZFSet.{u} :=
-  Code.ap (F.cR.prod F.cR) F.cR (seqFn f) (pair n x)
+  Code.ap (F.cR.prod F.cR) F.cR (floorSeqFn f) (pair n x)
 
 /-- The extended function takes hyperreals to hyperreals. -/
-theorem ext_mem (hx : x ∈ F.star F.R) : F.ext g x ∈ F.star F.R :=
+theorem starFn_mem (hx : x ∈ F.star F.R) : F.starFn g x ∈ F.star F.R :=
   F.mem_star_R_iff.2 (Code.ap_mem F.cR F.cR (F.mem_star_R_iff.1 hx))
 
 /-- **Section 13.8.** The extended function agrees with the original one on real
 numbers. -/
 @[simp]
-theorem ext_real (r : ℝ) : F.ext g (F.real r) = F.real (g r) := Code.ap_enc F.cR F.cR r
+theorem starFn_real (r : ℝ) : F.starFn g (F.real r) = F.real (g r) := Code.ap_enc F.cR F.cR r
 
 /-- The extended sequence takes hyperreal values. -/
 theorem hseq_mem (hn : n ∈ F.star F.R) (hx : x ∈ F.star F.R) : F.hseq f n x ∈ F.star F.R :=
@@ -76,18 +87,18 @@ theorem hseq_mem (hn : n ∈ F.star F.R) (hx : x ∈ F.star F.R) : F.hseq f n x 
 
 /-- **Section 15.3.** For standard $`n` and $`x`, $`{}^*f_n(x) = f_n(x)`. -/
 theorem hseq_nat_real (m : ℕ) (r : ℝ) : F.hseq f (F.nat m) (F.real r) = F.real (f m r) := by
-  have := Code.ap_enc (F.cR.prod F.cR) F.cR (g := seqFn f) ((m : ℝ), r)
-  simpa [seqFn, hseq, RealFramework.nat] using this
+  have := Code.ap_enc (F.cR.prod F.cR) F.cR (g := floorSeqFn f) ((m : ℝ), r)
+  simpa [floorSeqFn, hseq, RealFramework.nat] using this
 
 /-- The basic transfer step of this section: a condition on the pair $`(n, x)` yields the
 corresponding relation between $`{}^*f_n(x)` and $`{}^*g(x)`. -/
-theorem hseq_ext_rel (hn : n ∈ F.star F.R) (hx : x ∈ F.star F.R) {S₂ : Set (ℝ × ℝ)}
+theorem hseq_starFn_rel (hn : n ∈ F.star F.R) (hx : x ∈ F.star F.R) {S₂ : Set (ℝ × ℝ)}
     (hp : pair n x ∈ F.star ((F.cR.prod F.cR).set S₂)) :
-    pair (F.hseq f n x) (F.ext g x) ∈
-      F.star (F.rr fun u w => ∃ q ∈ S₂, u = seqFn f q ∧ w = g q.2) := by
+    pair (F.hseq f n x) (F.starFn g x) ∈
+      F.star (F.rr fun u w => ∃ q ∈ S₂, u = floorSeqFn f q ∧ w = g q.2) := by
   have hnR := F.mem_star_R_iff.1 hn
   have hxR := F.mem_star_R_iff.1 hx
-  have h1 := Code.pair_ap_mem (F.cR.prod F.cR) F.cR (g := seqFn f)
+  have h1 := Code.pair_ap_mem (F.cR.prod F.cR) F.cR (g := floorSeqFn f)
     (Code.pair_mem_star_prod_univ F.cR F.cR hnR hxR)
   have h1' := Code.rel_of_mem_left (F.cR.prod F.cR) F.cR hp h1
   have hsnd := (Code.pair_pair_mem_star_snd F.cR F.cR).2 ⟨hnR, hxR, rfl⟩
@@ -96,26 +107,65 @@ theorem hseq_ext_rel (hn : n ∈ F.star F.R) (hx : x ∈ F.star F.R) {S₂ : Set
     (Q := fun a b => b = g a) (R := fun q w => w = g q.2)
     (fun q b w hb hw => by rw [hw, hb]) hsnd h2
   exact Code.rel_comp F.cR (F.cR.prod F.cR) F.cR
-    (P := fun u q => q ∈ S₂ ∧ u = seqFn f q) (Q := fun q w => w = g q.2)
-    (R := fun u w => ∃ q ∈ S₂, u = seqFn f q ∧ w = g q.2)
+    (P := fun u q => q ∈ S₂ ∧ u = floorSeqFn f q) (Q := fun q w => w = g q.2)
+    (R := fun u w => ∃ q ∈ S₂, u = floorSeqFn f q ∧ w = g q.2)
     (fun u q w hu hw => ⟨q, hu.1, hu.2, hw⟩)
     ((Code.rel_swap (F.cR.prod F.cR) F.cR).1 h1') h3
 
 /-- **Section 15.3.** For standard $`n`, the function $`x \mapsto {}^*f_n(x)` is the
 transform of $`f_n`. -/
-theorem hseq_nat (m : ℕ) (hx : x ∈ F.star F.R) : F.hseq f (F.nat m) x = F.ext (f m) x := by
+theorem hseq_nat (m : ℕ) (hx : x ∈ F.star F.R) : F.hseq f (F.nat m) x = F.starFn (f m) x := by
   have hnR : F.nat m ∈ F.star F.R := F.real_mem_star m
   have hp : pair (F.nat m) x ∈
       F.star ((F.cR.prod F.cR).set (({(m : ℝ)} : Set ℝ) ×ˢ (Set.univ : Set ℝ))) :=
     (Code.pair_mem_star_prod_set F.cR F.cR).2
       ⟨(F.cR.enc_mem_star_set (a := (m : ℝ))).2 rfl, F.mem_star_R_iff.1 hx⟩
-  have h := hseq_ext_rel (f := f) (g := f m) hnR hx hp
-  have h' : pair (F.hseq f (F.nat m) x) (F.ext (f m) x) ∈ F.star (F.rr fun u w => u = w) := by
+  have h := hseq_starFn_rel (f := f) (g := f m) hnR hx hp
+  have h' : pair (F.hseq f (F.nat m) x) (F.starFn (f m) x) ∈ F.star (F.rr fun u w => u = w) := by
     refine Code.rel_mono F.cR F.cR ?_ h
     rintro u w ⟨q, hq, hu, hw⟩
     have hq1 : q.1 = (m : ℝ) := hq.1
-    rw [hu, hw, seqFn, hq1, Nat.floor_natCast]
+    rw [hu, hw, floorSeqFn, hq1, Nat.floor_natCast]
   exact ((Code.pair_mem_star_rel_eq F.cR).1 h').2
+
+/-- **Section 15.3, the members of the extended sequence are internal functions.** For
+every hyperreal index $`n`, and so for every hypernatural $`n` whether standard or
+unlimited, the assignment $`x \mapsto {}^*f_n(x)` is an internal function from
+$`{}^*\mathbb R` to $`{}^*\mathbb R`: there is an internal set of pairs $`g` that is a
+function between these sets and has $`g(x) = {}^*f_n(x)` throughout. The function $`g` is the
+section at $`n` of the transformed graph of $`(x, t) \mapsto f_{\lfloor t \rfloor}(x)`. This
+is the counterpart of the book's observation that the transform of a set of functions
+consists of internal functions. -/
+theorem exists_internal_hseq (f : ℕ → ℝ → ℝ) (hn : n ∈ F.star F.R) :
+    ∃ g, F.Internal g ∧ IsFunc (F.star F.R) (F.star F.R) g ∧
+      ∀ x ∈ F.star F.R, app g x = F.hseq f n x := by
+  set cRR := F.cR.prod F.cR with hcRR
+  set D : ℝ × ℝ → ℝ := fun q => floorSeqFn f (q.2, q.1) with hD
+  have hnR := F.mem_star_R_iff.1 hn
+  obtain ⟨hGint, hGset, hGrel⟩ :=
+    star_rel_spec (F := F.toNonstandardFramework) (Code.isSetOf_rel cRR F.cR _)
+      (Code.relIn_rel cRR F.cR fun q b => b = D q)
+  set g := Code.sect F.cR F.cR (F.star (Code.graph cRR F.cR D)) n with hg
+  obtain ⟨hgint, hgset, hgrel⟩ := Code.sect_spec F.cR F.cR hGint hGset hGrel hnR
+  have hval : ∀ x ∈ F.star F.R, pair x (F.hseq f n x) ∈ g := fun x hx => by
+    have hxR := F.mem_star_R_iff.1 hx
+    refine (Code.pair_mem_sect F.cR F.cR hnR).2 ⟨hxR, ?_⟩
+    exact Code.rel_comp cRR cRR F.cR (P := fun q q' => q' = (q.2, q.1))
+      (Q := fun q' b => b = floorSeqFn f q') (R := fun q b => b = D q)
+      (fun q q' b hq hb => by rw [hb, hq]) (Code.pair_pair_mem_star_swap F.cR F.cR hxR hnR)
+      (Code.pair_ap_mem cRR F.cR (Code.pair_mem_star_prod_univ F.cR F.cR hnR hxR))
+  have huniq : ∀ x y, pair x y ∈ g → x ∈ F.star F.R ∧ y = F.hseq f n x := fun x y h => by
+    obtain ⟨hxR, hxy⟩ := (Code.pair_mem_sect F.cR F.cR hnR).1 h
+    have hx := F.mem_star_R_iff.2 hxR
+    have h' := ((Code.pair_mem_sect F.cR F.cR hnR).1 (hval x hx)).2
+    exact ⟨hx, (Code.ap_eq_of_pair_mem cRR F.cR hxy).symm.trans
+      (Code.ap_eq_of_pair_mem cRR F.cR h')⟩
+  have hfunc : IsFunc (F.star F.R) (F.star F.R) g :=
+    isFunc_iff.2 ⟨hgrel.isRel,
+      fun x y h => ⟨(huniq x y h).1, (huniq x y h).2 ▸ hseq_mem hn (huniq x y h).1⟩,
+      fun x y z hy hz => (huniq x y hy).2.trans (huniq x z hz).2.symm,
+      fun x hx => ⟨_, hseq_mem hn hx, hval x hx⟩⟩
+  exact ⟨g, hgint, hfunc, fun x hx => hfunc.isFunction.app_eq (hval x hx)⟩
 
 /-- A nonstandard hypernatural number belongs to the transform of every final segment of the
 natural numbers. -/
@@ -135,11 +185,11 @@ $`{}^*f_n(x) \simeq {}^*g(x)` for every unlimited hypernatural $`n` and every
 $`x \in {}^*S`. -/
 theorem near_hseq_of_tendstoUniformlyOn (hu : TendstoUniformlyOn f g Filter.atTop S)
     (hn : n ∈ F.star F.N) (hnN : n ∉ F.N) (hx : x ∈ F.star (F.cR.set S)) :
-    F.Near (F.hseq f n x) (F.ext g x) := by
+    F.Near (F.hseq f n x) (F.starFn g x) := by
   intro ε hε
   obtain ⟨k, hk⟩ := Filter.eventually_atTop.1 (Metric.tendstoUniformlyOn_iff.1 hu ε hε)
   have hp := (Code.pair_mem_star_prod_set F.cR F.cR).2 ⟨mem_star_nat_ge hn hnN k, hx⟩
-  have h := hseq_ext_rel (f := f) (g := g) (F.star_N_subset_star_R hn)
+  have h := hseq_starFn_rel (f := f) (g := g) (F.star_N_subset_star_R hn)
     (mem_star_R_of_mem_star_set hx) hp
   show pair _ _ ∈ F.star (F.rr fun x y => |x - y| < ε)
   refine Code.rel_mono F.cR F.cR ?_ h
@@ -147,7 +197,7 @@ theorem near_hseq_of_tendstoUniformlyOn (hu : TendstoUniformlyOn f g Filter.atTo
   obtain ⟨m, hm, hkm⟩ := hq.1
   have := hk m hkm q.2 hq.2
   rw [Real.dist_eq, abs_sub_comm] at this
-  rw [hu, hw, seqFn, hm, Nat.floor_natCast]
+  rw [hu, hw, floorSeqFn, hm, Nat.floor_natCast]
   exact this
 
 /-- **Exercise 15.3.1.** Condition (i) is sufficient for uniform convergence: if
@@ -156,7 +206,7 @@ $`x \in {}^*S`, then $`f_n` converges to $`g` uniformly on $`S`. Continuity of t
 is not needed. -/
 theorem tendstoUniformlyOn_of_near (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
     (h : ∀ n ∈ F.star F.N, n ∉ F.N → ∀ x ∈ F.star (F.cR.set S),
-      F.Near (F.hseq f n x) (F.ext g x)) :
+      F.Near (F.hseq f n x) (F.starFn g x)) :
     TendstoUniformlyOn f g Filter.atTop S := by
   rw [Metric.tendstoUniformlyOn_iff]
   intro ε hε
@@ -165,14 +215,14 @@ theorem tendstoUniformlyOn_of_near (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
   push Not at hcon
   obtain ⟨K, hK, hKN⟩ := hω
   set P : ℝ → ℝ × ℝ → Prop := fun t q =>
-    (∃ m : ℕ, q.1 = m ∧ t ≤ m) ∧ q.2 ∈ S ∧ ε ≤ |seqFn f q - g q.2| with hP
+    (∃ m : ℕ, q.1 = m ∧ t ≤ m) ∧ q.2 ∈ S ∧ ε ≤ |floorSeqFn f q - g q.2| with hP
   have hKS : K ∈ F.star (F.cR.set {t | ∃ q, P t q}) := by
     refine F.cR.star_set_mono ?_ (F.mem_star_N_iff.1 hK)
     rintro t ⟨k, rfl⟩
     obtain ⟨m, hm, y, hy, hd⟩ := hcon k
     refine ⟨((m : ℝ), y), ⟨m, rfl, by exact_mod_cast hm⟩, hy, ?_⟩
     rw [Real.dist_eq, abs_sub_comm] at hd
-    simpa [seqFn] using hd
+    simpa [floorSeqFn] using hd
   obtain ⟨p, hp⟩ := (Code.mem_star_set_exists F.cR (F.cR.prod F.cR)).1 hKS
   obtain ⟨n, hn, x, hx, rfl⟩ := Code.exists_pair_of_mem_star_prod_univ F.cR F.cR
     (Code.mem_of_pair_mem_star_rel F.cR (F.cR.prod F.cR) hp).2
@@ -201,13 +251,13 @@ theorem tendstoUniformlyOn_of_near (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
       (Code.rel_comp F.cR (F.cR.prod F.cR) F.cR (P := P) (Q := fun q a => a = q.2)
         (R := fun t a => ∃ q, P t q ∧ a = q.2) (fun t q a hq ha => ⟨q, hq, ha⟩) hp hsnd)
   have hW := h n hnN (notMem_N_of_le hK hKN hKn) x hxS ε hε
-  have hp2 : pair n x ∈ F.star ((F.cR.prod F.cR).set {q | ε ≤ |seqFn f q - g q.2|}) :=
+  have hp2 : pair n x ∈ F.star ((F.cR.prod F.cR).set {q | ε ≤ |floorSeqFn f q - g q.2|}) :=
     Code.mem_right_of_rel F.cR (F.cR.prod F.cR) (fun t q (hq : P t q) => hq.2.2) hp
-  have hrel := hseq_ext_rel (f := f) (g := g) (F.mem_star_R_iff.2 hn) (F.mem_star_R_iff.2 hx)
+  have hrel := hseq_starFn_rel (f := f) (g := g) (F.mem_star_R_iff.2 hn) (F.mem_star_R_iff.2 hx)
     hp2
   exact Code.notMem_star_rel F.cR F.cR
-    (P := fun u w => |u - w| < ε ∧ ∃ q ∈ {q | ε ≤ |seqFn f q - g q.2|},
-      u = seqFn f q ∧ w = g q.2)
+    (P := fun u w => |u - w| < ε ∧ ∃ q ∈ {q | ε ≤ |floorSeqFn f q - g q.2|},
+      u = floorSeqFn f q ∧ w = g q.2)
     (fun u w ⟨h1, q, hq, hu, hw⟩ => by
       rw [hu, hw] at h1
       exact absurd h1 (not_lt.2 hq))
@@ -219,16 +269,16 @@ hypernaturals $`n` and all $`x \in {}^*S`. -/
 theorem tendstoUniformlyOn_iff_near (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N) :
     TendstoUniformlyOn f g Filter.atTop S ↔
       ∀ n ∈ F.star F.N, n ∉ F.N → ∀ x ∈ F.star (F.cR.set S),
-        F.Near (F.hseq f n x) (F.ext g x) :=
+        F.Near (F.hseq f n x) (F.starFn g x) :=
   ⟨fun hu _ hn hnN _ hx => near_hseq_of_tendstoUniformlyOn hu hn hnN hx,
     tendstoUniformlyOn_of_near hω⟩
 
 /-- **Section 15.3 (the theory of Section 7.1 in a framework).** If $`g` is continuous at
 $`c` relative to $`S`, then $`{}^*g(x) \simeq g(c)` for every $`x \in {}^*S` with
 $`x \simeq c`. -/
-theorem near_ext_of_continuousWithinAt (hc : ContinuousWithinAt g S c)
+theorem near_starFn_of_continuousWithinAt (hc : ContinuousWithinAt g S c)
     (hx : x ∈ F.star (F.cR.set S)) (hxc : F.Near x (F.real c)) :
-    F.Near (F.ext g x) (F.real (g c)) := by
+    F.Near (F.starFn g x) (F.real (g c)) := by
   intro ε hε
   obtain ⟨δ, hδ, hd⟩ := Metric.continuousWithinAt_iff.1 hc ε hε
   have h1 := within_real_iff.1 (hxc δ hδ)
@@ -249,7 +299,7 @@ theorem near_ext_of_continuousWithinAt (hc : ContinuousWithinAt g S c)
 $`{}^*g(x) \simeq g(c)` for every $`x \in {}^*S` with $`x \simeq c`, then $`g` is continuous
 at $`c` relative to $`S`. -/
 theorem continuousWithinAt_of_near (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
-    (h : ∀ x ∈ F.star (F.cR.set S), F.Near x (F.real c) → F.Near (F.ext g x) (F.real (g c))) :
+    (h : ∀ x ∈ F.star (F.cR.set S), F.Near x (F.real c) → F.Near (F.starFn g x) (F.real (g c))) :
     ContinuousWithinAt g S c := by
   rw [Metric.continuousWithinAt_iff]
   intro ε hε
@@ -288,7 +338,7 @@ theorem continuousWithinAt_of_near (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N)
   have hg := Code.pair_ap_mem F.cR F.cR (g := g) (F.cR.star_set_subset_univ _ hxS)
   have hbad : x ∈ F.star (F.cR.set {y | ε ≤ |g y - g c|}) :=
     Code.mem_right_of_rel F.cR F.cR (fun t y (hy : P t y) => hy.2.2) hx
-  have h3 : F.ext g x ∈ F.star (F.cR.set {w | ε ≤ |w - g c|}) :=
+  have h3 : F.starFn g x ∈ F.star (F.cR.set {w | ε ≤ |w - g c|}) :=
     Code.mem_right_of_rel F.cR F.cR
       (P := fun a b => a ∈ {y | ε ≤ |g y - g c|} ∧ b = g a)
       (fun a b hab => by
@@ -416,9 +466,10 @@ theorem continuousWithinAt_of_tendstoUniformlyOn (hω : ∃ n, n ∈ F.star F.N 
 
 end RealFramework
 
-/-- **Section 15.3, the classical result.** If a sequence $`(f_n)` of continuous
-real-valued functions on the closed interval $`[a, b]` converges uniformly to a function
-$`g`, then $`g` is continuous. It is proved by the nonstandard argument of this section,
+/-- **Section 15.3, the classical result.** Uniform limits inherit continuity. In Mathlib's
+terms: when each $`f_n` is {name}`ContinuousOn` the interval $`[a, b]` and the $`f_n` tend
+to $`g` uniformly there ({name}`TendstoUniformlyOn` along {lit}`atTop`), the limit $`g` is
+continuous on $`[a, b]` as well. The proof is the nonstandard one of this section, run
 inside a framework over the real numbers that has a nonstandard hypernatural number; such a
 framework exists by Chapter 14. -/
 theorem continuousOn_of_tendstoUniformlyOn_Icc {f : ℕ → ℝ → ℝ} {g : ℝ → ℝ} {a b : ℝ}

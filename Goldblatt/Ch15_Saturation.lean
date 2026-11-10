@@ -41,20 +41,20 @@ The formalization is split over seven pages; this page is the overview and the i
 
 ## The seven parts
 
-* {lit}`Goldblatt.Ch15_Saturation.Codes` is preparatory. It turns relations between real
+* {module}`Goldblatt.Ch15_Saturation.Codes` is preparatory. It turns relations between real
   numbers into sets of the standard universe and restates the transfer principle for them,
   so that a fact about real numbers transfers to the hyperreals of an arbitrary framework
   without a formula being written.
-* {lit}`Goldblatt.Ch15_Saturation.Hyperreals` is preparatory. It defines the strict order of
+* {module}`Goldblatt.Ch15_Saturation.Hyperreals` is preparatory. It defines the strict order of
   the hyperreals, infinitesimal, limited and unlimited hyperreals and the relation of being
   infinitely close, in an arbitrary framework over the reals.
-* {lit}`Goldblatt.Ch15_Saturation.Permanence` covers Sections 15.1 and 15.2.
-* {lit}`Goldblatt.Ch15_Saturation.Uniform` covers Section 15.3.
-* {lit}`Goldblatt.Ch15_Saturation.Comprehensive` covers the definitions of Section 15.4,
+* {module}`Goldblatt.Ch15_Saturation.Permanence` covers Sections 15.1 and 15.2.
+* {module}`Goldblatt.Ch15_Saturation.Uniform` covers Section 15.3.
+* {module}`Goldblatt.Ch15_Saturation.Comprehensive` covers the definitions of Section 15.4,
   Theorems 15.4.2 and 15.4.3 and Exercise 15.4.4.
-* {lit}`Goldblatt.Ch15_Saturation.Ultrapower` covers the part of Section 15.4 about the
+* {module}`Goldblatt.Ch15_Saturation.Ultrapower` covers the part of Section 15.4 about the
   ultrapower, Exercise 15.4.1, and the existence of countably saturated enlargements.
-* {lit}`Goldblatt.Ch15_Saturation.Saturation` covers Section 15.5.
+* {module}`Goldblatt.Ch15_Saturation.Saturation` covers Section 15.5.
 
 ## 15.1 Permanence Principles
 
@@ -89,7 +89,9 @@ version for hypersequences defined up to an unlimited index
 
 ## 15.3 Uniformly Converging Sequences of Functions
 
-Part 4. The extended sequence $`{}^*f_n(x)` is {name}`Goldblatt.RealFramework.hseq`. Uniform
+Part 4. The extended sequence $`{}^*f_n(x)` is {name}`Goldblatt.RealFramework.hseq`, and for
+every hypernatural $`n` the function $`{}^*f_n` is internal
+({name}`Goldblatt.RealFramework.exists_internal_hseq`). Uniform
 convergence is equivalent to condition (i) of the book
 ({name}`Goldblatt.RealFramework.tendstoUniformlyOn_iff_near`; the direction asked for in
 Exercise 15.3.1 is {name}`Goldblatt.RealFramework.tendstoUniformlyOn_of_near`). The proof
@@ -135,8 +137,12 @@ countable saturation is $`\aleph_1`-saturation
 uncountable collection without a common member is
 {name}`Goldblatt.RealFramework.fip_star_R_sdiff_singleton`; in a $`\kappa`-saturated
 framework every infinite internal set has at least $`\kappa` members
-({name}`Goldblatt.NonstandardFramework.Saturated.lift_le_mk_of_infinite`). Exercise 15.5.1
-is {name}`Goldblatt.NonstandardFramework.saturated_iff_concurrent`.
+({name}`Goldblatt.NonstandardFramework.Saturated.lift_le_mk_of_infinite`). The existence of
+$`\kappa`-saturated enlargements is
+{name}`Goldblatt.NonstandardFramework.exists_saturated_enlargement`, proved for
+$`\kappa \le \aleph_1`
+({name}`Goldblatt.NonstandardFramework.exists_saturated_enlargement_of_le_aleph_one`).
+Exercise 15.5.1 is {name}`Goldblatt.NonstandardFramework.saturated_iff_concurrent`.
 
 ## Design of the formalization
 
@@ -166,17 +172,18 @@ indexed by a type of that level.
 
 *Corrections to the book.* Theorem 15.1.1 (5) is false as printed: an internal set can
 contain every real number $`a \ge r` and omit a point infinitely close to $`r`
-({name}`Goldblatt.RealFramework.not_theorem_15_1_1_5_as_printed`). The statement proved has
-the hypothesis for all limited hyperreals $`a \ge r`, as in the analogous result of Section
+({name}`Goldblatt.RealFramework.exists_internal_set_reals_ge_not_interval`). The statement
+proved has the hypothesis for all limited hyperreals $`a \ge r`, as in the analogous result of Section
 11.6. In Exercise 15.4.4 the reciprocal is taken of $`\max(\underline s_n, 1)`. In Exercise
-15.5.1 the element $`b` is not required to lie in the range of the relation when the set
-$`A` is empty. The overflow argument in the proof that sequential comprehensiveness implies
+15.5.1 the element $`b` is required to lie in the range of the relation only when the set
+$`A` is not empty. The overflow argument in the proof that sequential comprehensiveness implies
 countable saturation is applied to a slightly different internal property than in the book.
 
 *What is not proved.* The book states without proof that every superstructure has a
 $`\kappa`-saturated enlargement for every cardinal $`\kappa`. The statement is
 {name}`Goldblatt.NonstandardFramework.exists_saturated_enlargement`, and it is the only
-statement of the chapter left without proof: it needs good ultrafilters, which Mathlib does
-not have. The case of countable saturation is proved. The closing remarks of Section 15.5
+statement of the chapter not fully proved: for $`\kappa \le \aleph_1` it is proved over
+every base set, and for $`\kappa > \aleph_1` it is left open, since that case needs good
+ultrafilters, which Mathlib does not have. The closing remarks of Section 15.5
 on topological spaces are prose.
 -/

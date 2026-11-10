@@ -595,6 +595,27 @@ theorem pair_pair_mem_star_snd :
   · rintro ⟨hx, hy, rfl⟩
     exact (h' x (hAU hx) hx z (hBU hy) hy z (hBU hy) hy).2 rfl
 
+/-- Transfer of the interchange of components: the pair $`(y, x)` is related to $`(x, y)`
+by the transform of the relation "the second pair is the first one with its components
+interchanged". -/
+theorem pair_pair_mem_star_swap (hx : x ∈ F.star (c.set Set.univ))
+    (hy : y ∈ F.star (d.set Set.univ)) :
+    pair (pair x y) (pair y x) ∈
+      F.star (rel (c.prod d) (d.prod c) fun q q' => q' = (q.2, q.1)) := by
+  obtain ⟨w, hw⟩ := exists_pair_mem_star_graph (c.prod d) (d.prod c)
+    (fun q : α × β => (q.2, q.1)) (pair_mem_star_prod_univ c d hx hy)
+  obtain ⟨w₁, hw₁, w₂, hw₂, rfl⟩ := exists_pair_of_mem_star_prod_univ d c
+    (mem_of_pair_mem_star_rel (c.prod d) (d.prod c) hw).2
+  have h1 := rel_comp (c.prod d) (d.prod c) d (P := fun q q' => q' = (q.2, q.1))
+    (Q := fun q' b => b = q'.1) (R := fun q b => b = q.2)
+    (fun q q' b hq hb => by rw [hb, hq]) hw ((pair_pair_mem_star_fst d c).2 ⟨hw₁, hw₂, rfl⟩)
+  have h2 := rel_comp (c.prod d) (d.prod c) c (P := fun q q' => q' = (q.2, q.1))
+    (Q := fun q' a => a = q'.2) (R := fun q a => a = q.1)
+    (fun q q' a hq ha => by rw [ha, hq]) hw ((pair_pair_mem_star_snd d c).2 ⟨hw₁, hw₂, rfl⟩)
+  obtain rfl := ((pair_pair_mem_star_snd c d).1 h1).2.2
+  obtain rfl := ((pair_pair_mem_star_fst c d).1 h2).2.2
+  exact hw
+
 /-!
 ## Functions between coded types
 
