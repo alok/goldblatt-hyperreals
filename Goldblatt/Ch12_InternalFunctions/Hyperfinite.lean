@@ -318,7 +318,9 @@ theorem hcard_setOf_hyperNat_one_le_le_omega :
     not_countable_setOf_hyperNat_one_le_le omega_mem_hyperNat unlimited_omega⟩
 
 /-- **Section 12.3, fifth example.** For a hypernatural $`N`, the grid
-$`\{0, \tfrac1N, \tfrac2N, \dots, \tfrac{N-1}N, 1\}` is hyperfinite. -/
+$`\{0, \tfrac1N, \tfrac2N, \dots, \tfrac{N-1}N, 1\}` is hyperfinite. The grid is indexed
+here by the hypernaturals $`k \le N`, which is the same as the book's indexing by hyperintegers
+with $`0 \le k \le N`. -/
 theorem isHyperfinite_setOf_div_hyperNat {N : ℝ*} (hN : N ∈ ℕ*) :
     IsHyperfinite {x : ℝ* | ∃ k ∈ ℕ*, k ≤ N ∧ x = k / N} := by
   obtain ⟨N, rfl⟩ := exists_hnat_eq hN
@@ -329,7 +331,8 @@ theorem isHyperfinite_setOf_div_hyperNat {N : ℝ*} (hN : N ∈ ℕ*) :
 /-- **Section 12.3, fifth example.** For a hypernatural $`N`, the grid
 $`\{0, \tfrac1N, \tfrac2N, \dots, \tfrac{N-1}N, 1\}` has internal cardinality $`N + 1`. (For
 $`N = 0` the grid is $`\{0\}`, by the convention on division by zero, and the formula still
-holds.) -/
+holds.) As in {name}`Goldblatt.isHyperfinite_setOf_div_hyperNat`, the index $`k` ranges over
+the hypernaturals $`k \le N`, equivalently the book's hyperintegers with $`0 \le k \le N`. -/
 theorem hcard_setOf_div_hyperNat {N : ℝ*} (hN : N ∈ ℕ*) :
     hcard {x : ℝ* | ∃ k ∈ ℕ*, k ≤ N ∧ x = k / N} = N + 1 := by
   obtain ⟨N, rfl⟩ := exists_hnat_eq hN

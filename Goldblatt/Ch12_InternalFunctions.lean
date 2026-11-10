@@ -125,8 +125,9 @@ functions.
   continuous functions with Mathlib's interval integral
   ({name}`Goldblatt.integral_eq_sh_hsum_hpartition`), through the standard fact
   {name}`Goldblatt.abs_riemannSum_sub_integral_lt`.
-* The partition and Riemann sum of Section 9.1 ({name}`Goldblatt.partitionCard`,
-  {name}`Goldblatt.partitionPoint`, {name}`Goldblatt.riemannSum`) are defined on the third page
-  provisionally, for the same reason; a formalization of Chapter 9 should reuse them or bridge
-  to them.
+* The partition and Riemann sum of Section 9.1 ({name}`Goldblatt.widthPartitionCard`,
+  {name}`Goldblatt.widthPartitionPoint`, {name}`Goldblatt.riemannSum`) are defined on the third
+  page provisionally, for the same reason; a formalization of Chapter 9 should reuse them or
+  bridge to them. Their names carry the prefix {lit}`width` because the partition is determined
+  by a subinterval width, unlike the partition into $`n` equal parts of Chapter 7.
 -/

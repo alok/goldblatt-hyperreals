@@ -187,7 +187,12 @@ theorem isInternalPFun_internalMap (f : ℕ → α → β) :
   ⟨_, (internalPFun_coe f).symm⟩
 
 /-- **Section 12.1, constant sequences.** The internal function of the constant sequence with
-value a total function $`f` is the extension $`{}^*f` of Section 3.11. -/
+value a total function $`f` is the extension $`{}^*f` of Section 3.11.
+
+This is the total-function case of the book's remark, which is made for a partial function
+$`f : A \to \mathbb{R}` and its extension in the sense of Section 3.13. The partial case is
+{lit}`Goldblatt.starMapOn_mem_internalPFun_const` (for a function on a subtype) and
+{lit}`Goldblatt.mem_internalPFun_const_res` (for the restriction of a total function). -/
 theorem internalMap_const (f : α → β) : (internalMap (fun _ => f) : αS → βS) = ⋆f := by
   funext x
   obtain ⟨r, rfl⟩ := ofSeq_surjective (α := α) x

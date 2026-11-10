@@ -5,9 +5,14 @@ import Goldblatt.Ch12_InternalFunctions.Hyperfinite
 
 This is the third of three parts of Chapter 12 (the overview is on the chapter page
 {lit}`Goldblatt.Ch12_InternalFunctions`). It defines the sum of an internal function over a
-hyperfinite set, proves the algebraic properties of hyperfinite sums, and shows that the
-integral of a continuous function over a closed interval is the shadow of a hyperfinite Riemann
-sum over a partition of infinitesimal width.
+hyperfinite set, proves the algebraic properties of hyperfinite sums, and shows that an integral
+over a closed interval is the shadow of a hyperfinite Riemann sum over a partition of
+infinitesimal width. This is proved for every bounded function whose Riemann sums of
+Section 9.1 converge ({lit}`Goldblatt.RiemannSumsConverge.eq_sh_hsum_hpartition`), and hence
+for continuous functions with Mathlib's interval integral
+({lit}`Goldblatt.integral_eq_sh_hsum_hpartition`). The book states the result for Riemann
+integrable functions; that case needs the two hypotheses to be derived from integrability,
+which is the business of Chapter 9 and is not done here.
 -/
 
 universe u
@@ -29,7 +34,17 @@ finite sums.
 
 The second half of the section applies this to integration. For a positive infinitesimal
 $`\Delta x`, the points $`a + k\,\Delta x` below $`b` form a hyperfinite set $`P`, and the
-extended Riemann sum of Section 9.1 is a hyperfinite sum over $`P`. Its shadow is the integral.
+extended Riemann sum of Section 9.1 is, up to an infinitesimal, a hyperfinite sum over $`P`.
+Its shadow is the integral: this is proved for every function that is bounded on the interval
+and whose Section 9.1 Riemann sums converge
+({lit}`Goldblatt.RiemannSumsConverge.eq_sh_hsum_hpartition`), in particular for continuous
+functions ({lit}`Goldblatt.integral_eq_sh_hsum_hpartition`). The Riemann integrable case of
+the book is the same theorem once Chapter 9 supplies boundedness and convergence of the
+Riemann sums for integrable functions; it is not yet proved unconditionally.
+
+The partition here is the one of Section 9.1, determined by a width; its objects are named
+{lit}`Goldblatt.widthPartitionCard` and {lit}`Goldblatt.widthPartitionPoint` to keep them
+apart from the partition into $`n` equal parts used in Chapter 7.
 
 In the formalization the hyperfinite sum is {lit}`Goldblatt.internalSum` (for hyperreal
 functions, {lit}`Goldblatt.hsum`). A partial function is given the value $`0` outside its
@@ -278,42 +293,43 @@ This is a definition of Section 9.1, placed here provisionally because the chapt
 Riemann integral is not among the modules this chapter may import. Once that chapter exists,
 either it should reuse this name or the present section should be rebased on its definition
 through a bridging lemma. -/
-noncomputable def partitionCard (a b e : ℝ) : ℕ := ⌈(b - a) / e⌉₊
+noncomputable def widthPartitionCard (a b e : ℝ) : ℕ := ⌈(b - a) / e⌉₊
 
 /-- **Section 12.7 (and 9.1).** The $`k`-th point of the partition of $`[a, b]` into
 subintervals of width $`\varepsilon` with a possibly smaller last subinterval: $`a +
 k\varepsilon`, cut off at $`b`.
 
-Like {name}`Goldblatt.partitionCard`, this is a Section 9.1 definition placed here
+Like {name}`Goldblatt.widthPartitionCard`, this is a Section 9.1 definition placed here
 provisionally. -/
-noncomputable def partitionPoint (a b e : ℝ) (k : ℕ) : ℝ := min (a + k * e) b
+noncomputable def widthPartitionPoint (a b e : ℝ) (k : ℕ) : ℝ := min (a + k * e) b
 
 /-- **Section 12.7 (and 9.1).** The ordinary Riemann sum $`S_a^b(f, \varepsilon)` of the
 partition of $`[a, b]` into subintervals of width $`\varepsilon`, with a possibly smaller last
 subinterval: the sum of the terms $`f(x_k)(x_{k+1} - x_k)`.
 
-Like {name}`Goldblatt.partitionCard`, this is a Section 9.1 definition placed here
+Like {name}`Goldblatt.widthPartitionCard`, this is a Section 9.1 definition placed here
 provisionally; a later formalization of Chapter 9 should reuse it or be linked to it by a
 bridging lemma, so that the two chapters do not carry divergent copies. -/
 noncomputable def riemannSum (f : ℝ → ℝ) (a b e : ℝ) : ℝ :=
-  ∑ k ∈ Finset.range (partitionCard a b e),
-    f (partitionPoint a b e k) * (partitionPoint a b e (k + 1) - partitionPoint a b e k)
+  ∑ k ∈ Finset.range (widthPartitionCard a b e),
+    f (widthPartitionPoint a b e k) *
+      (widthPartitionPoint a b e (k + 1) - widthPartitionPoint a b e k)
 
 /-- **Section 12.7.** The sum $`\bigl(\sum_{x \in P_\varepsilon} f(x)\bigr)\varepsilon` over
 the points $`a + k\varepsilon` below $`b`, in which every term has the full width
 $`\varepsilon`. -/
 noncomputable def uniformSum (f : ℝ → ℝ) (a b e : ℝ) : ℝ :=
-  ∑ k ∈ Finset.range (partitionCard a b e), f (a + k * e) * e
+  ∑ k ∈ Finset.range (widthPartitionCard a b e), f (a + k * e) * e
 
 /-- **Section 12.7.** The finite set $`P_\varepsilon` of the points $`a + k\varepsilon` below
 $`b`. -/
 noncomputable def partitionFinset (a b e : ℝ) : Finset ℝ :=
-  (Finset.range (partitionCard a b e)).image fun k : ℕ => a + k * e
+  (Finset.range (widthPartitionCard a b e)).image fun k : ℕ => a + k * e
 
 /-- For $`\varepsilon > 0`, $`k < N` if and only if $`a + k\varepsilon < b`. -/
-theorem lt_partitionCard_iff {a b e : ℝ} (he : 0 < e) {k : ℕ} :
-    k < partitionCard a b e ↔ a + k * e < b := by
-  rw [partitionCard, Nat.lt_ceil, lt_div_iff₀ he]
+theorem lt_widthPartitionCard_iff {a b e : ℝ} (he : 0 < e) {k : ℕ} :
+    k < widthPartitionCard a b e ↔ a + k * e < b := by
+  rw [widthPartitionCard, Nat.lt_ceil, lt_div_iff₀ he]
   constructor <;> intro h <;> linarith
 
 /-- For $`\varepsilon > 0`, the finite set $`P_\varepsilon` consists of the points $`a +
@@ -325,9 +341,9 @@ theorem coe_partitionFinset {a b e : ℝ} (he : 0 < e) :
     mem_ofPred_eq]
   constructor
   · rintro ⟨k, hk, rfl⟩
-    exact ⟨k, rfl, (lt_partitionCard_iff he).1 hk⟩
+    exact ⟨k, rfl, (lt_widthPartitionCard_iff he).1 hk⟩
   · rintro ⟨k, rfl, hk⟩
-    exact ⟨k, (lt_partitionCard_iff he).2 hk, rfl⟩
+    exact ⟨k, (lt_widthPartitionCard_iff he).2 hk, rfl⟩
 
 /-- For $`\varepsilon > 0`, the points $`a + k\varepsilon` are distinct. -/
 theorem injective_partition {a e : ℝ} (he : 0 < e) :
@@ -336,7 +352,7 @@ theorem injective_partition {a e : ℝ} (he : 0 < e) :
 
 /-- For $`\varepsilon > 0`, the set $`P_\varepsilon` has $`N` elements. -/
 theorem card_partitionFinset {a b e : ℝ} (he : 0 < e) :
-    (partitionFinset a b e).card = partitionCard a b e := by
+    (partitionFinset a b e).card = widthPartitionCard a b e := by
   rw [partitionFinset, Finset.card_image_of_injective _ (injective_partition he),
     Finset.card_range]
 
@@ -344,46 +360,48 @@ theorem card_partitionFinset {a b e : ℝ} (he : 0 < e) :
 $`k < N`. -/
 theorem sum_partitionFinset {a b e : ℝ} (he : 0 < e) (g : ℝ → ℝ) :
     ∑ x ∈ partitionFinset a b e, g x =
-      ∑ k ∈ Finset.range (partitionCard a b e), g (a + k * e) := by
+      ∑ k ∈ Finset.range (widthPartitionCard a b e), g (a + k * e) := by
   rw [partitionFinset, Finset.sum_image fun _ _ _ _ h => injective_partition he h]
 
 /-- The first point of the partition is $`a`. -/
-theorem partitionPoint_zero {a b e : ℝ} (hab : a ≤ b) : partitionPoint a b e 0 = a := by
-  simp [partitionPoint, hab]
+theorem widthPartitionPoint_zero {a b e : ℝ} (hab : a ≤ b) :
+    widthPartitionPoint a b e 0 = a := by
+  simp [widthPartitionPoint, hab]
 
 /-- For $`k < N` the $`k`-th point of the partition is $`a + k\varepsilon`. -/
-theorem partitionPoint_of_lt {a b e : ℝ} (he : 0 < e) {k : ℕ} (hk : k < partitionCard a b e) :
-    partitionPoint a b e k = a + k * e :=
-  min_eq_left ((lt_partitionCard_iff he).1 hk).le
+theorem widthPartitionPoint_of_lt {a b e : ℝ} (he : 0 < e) {k : ℕ}
+    (hk : k < widthPartitionCard a b e) :
+    widthPartitionPoint a b e k = a + k * e :=
+  min_eq_left ((lt_widthPartitionCard_iff he).1 hk).le
 
 /-- The last point of the partition is $`b`. -/
-theorem partitionPoint_partitionCard {a b e : ℝ} (he : 0 < e) :
-    partitionPoint a b e (partitionCard a b e) = b := by
-  have h : ¬ partitionCard a b e < partitionCard a b e := lt_irrefl _
-  rw [lt_partitionCard_iff he] at h
+theorem widthPartitionPoint_widthPartitionCard {a b e : ℝ} (he : 0 < e) :
+    widthPartitionPoint a b e (widthPartitionCard a b e) = b := by
+  have h : ¬ widthPartitionCard a b e < widthPartitionCard a b e := lt_irrefl _
+  rw [lt_widthPartitionCard_iff he] at h
   exact min_eq_right (not_lt.1 h)
 
 /-- The points of the partition increase. -/
-theorem partitionPoint_le_succ {a b e : ℝ} (he : 0 < e) (k : ℕ) :
-    partitionPoint a b e k ≤ partitionPoint a b e (k + 1) := by
+theorem widthPartitionPoint_le_succ {a b e : ℝ} (he : 0 < e) (k : ℕ) :
+    widthPartitionPoint a b e k ≤ widthPartitionPoint a b e (k + 1) := by
   refine min_le_min ?_ le_rfl
   push_cast
   nlinarith
 
 /-- The points of the partition are at least $`a`. -/
-theorem le_partitionPoint {a b e : ℝ} (hab : a ≤ b) (he : 0 < e) (k : ℕ) :
-    a ≤ partitionPoint a b e k := by
+theorem le_widthPartitionPoint {a b e : ℝ} (hab : a ≤ b) (he : 0 < e) (k : ℕ) :
+    a ≤ widthPartitionPoint a b e k := by
   have h := mul_nonneg (Nat.cast_nonneg (α := ℝ) k) he.le
   exact le_min (by linarith) hab
 
 /-- The points of the partition are at most $`b`. -/
-theorem partitionPoint_le (a b e : ℝ) (k : ℕ) : partitionPoint a b e k ≤ b :=
+theorem widthPartitionPoint_le (a b e : ℝ) (k : ℕ) : widthPartitionPoint a b e k ≤ b :=
   min_le_right _ _
 
 /-- Consecutive points of the partition are at most $`\varepsilon` apart. -/
-theorem partitionPoint_succ_sub_le {a b e : ℝ} (he : 0 < e) (k : ℕ) :
-    partitionPoint a b e (k + 1) - partitionPoint a b e k ≤ e := by
-  unfold partitionPoint
+theorem widthPartitionPoint_succ_sub_le {a b e : ℝ} (he : 0 < e) (k : ℕ) :
+    widthPartitionPoint a b e (k + 1) - widthPartitionPoint a b e k ≤ e := by
+  unfold widthPartitionPoint
   push_cast
   rcases le_total (a + k * e) b with h | h
   · rw [min_eq_left h]
@@ -406,14 +424,14 @@ theorem abs_riemannSum_sub_integral_lt {f : ℝ → ℝ} {a b : ℝ} (hab : a < 
   have hc : 0 < δ / (2 * (b - a)) := div_pos hδ (by linarith)
   obtain ⟨η, hη, H⟩ := huc _ hc
   refine ⟨η, hη, fun e he heη => ?_⟩
-  set n := partitionCard a b e with hn
-  set y : ℕ → ℝ := partitionPoint a b e with hy
-  have hy0 : y 0 = a := partitionPoint_zero hab.le
-  have hyn : y n = b := partitionPoint_partitionCard he
-  have hymono : ∀ k, y k ≤ y (k + 1) := partitionPoint_le_succ he
-  have hya : ∀ k, a ≤ y k := le_partitionPoint hab.le he
-  have hyb : ∀ k, y k ≤ b := partitionPoint_le a b e
-  have hstep : ∀ k, y (k + 1) - y k ≤ e := partitionPoint_succ_sub_le he
+  set n := widthPartitionCard a b e with hn
+  set y : ℕ → ℝ := widthPartitionPoint a b e with hy
+  have hy0 : y 0 = a := widthPartitionPoint_zero hab.le
+  have hyn : y n = b := widthPartitionPoint_widthPartitionCard he
+  have hymono : ∀ k, y k ≤ y (k + 1) := widthPartitionPoint_le_succ he
+  have hya : ∀ k, a ≤ y k := le_widthPartitionPoint hab.le he
+  have hyb : ∀ k, y k ≤ b := widthPartitionPoint_le a b e
+  have hstep : ∀ k, y (k + 1) - y k ≤ e := widthPartitionPoint_succ_sub_le he
   have hint : ∀ k < n, IntervalIntegrable f MeasureTheory.volume (y k) (y (k + 1)) :=
     fun k _ => (hf.mono (by
       rw [uIcc_of_le (hymono k)]
@@ -491,23 +509,24 @@ theorem abs_uniformSum_sub_riemannSum_le {f : ℝ → ℝ} {a b : ℝ} (hab : a 
     ∃ M : ℝ, ∀ e, 0 < e → |uniformSum f a b e - riemannSum f a b e| ≤ M * e := by
   obtain ⟨M, hM⟩ := hf
   refine ⟨|M|, fun e he => ?_⟩
-  set n := partitionCard a b e with hn
-  set y : ℕ → ℝ := partitionPoint a b e with hy
+  set n := widthPartitionCard a b e with hn
+  set y : ℕ → ℝ := widthPartitionPoint a b e with hy
   have hyk : ∀ k ∈ Finset.range n, y k = a + k * e := fun k hk =>
-    partitionPoint_of_lt he (Finset.mem_range.1 hk)
+    widthPartitionPoint_of_lt he (Finset.mem_range.1 hk)
   have hU : uniformSum f a b e = ∑ k ∈ Finset.range n, f (y k) * e :=
     Finset.sum_congr rfl fun k hk => by rw [hyk k hk]
   rw [hU, riemannSum, ← Finset.sum_sub_distrib]
   have hterm : ∀ k ∈ Finset.range n,
       |f (y k) * e - f (y k) * (y (k + 1) - y k)| ≤ |M| * (e - (y (k + 1) - y k)) := by
     intro k hk
-    have hmem : y k ∈ Icc a b := ⟨le_partitionPoint hab.le he k, partitionPoint_le a b e k⟩
-    have h1 : 0 ≤ e - (y (k + 1) - y k) := sub_nonneg.2 (partitionPoint_succ_sub_le he k)
+    have hmem : y k ∈ Icc a b :=
+      ⟨le_widthPartitionPoint hab.le he k, widthPartitionPoint_le a b e k⟩
+    have h1 : 0 ≤ e - (y (k + 1) - y k) := sub_nonneg.2 (widthPartitionPoint_succ_sub_le he k)
     rw [← mul_sub, abs_mul, abs_of_nonneg h1]
     exact mul_le_mul_of_nonneg_right
       ((hM _ hmem).trans (le_abs_self M)) h1
-  have hy0 : y 0 = a := partitionPoint_zero hab.le
-  have hyn : y n = b := partitionPoint_partitionCard he
+  have hy0 : y 0 = a := widthPartitionPoint_zero hab.le
+  have hyn : y n = b := widthPartitionPoint_widthPartitionCard he
   have hceil : (n : ℝ) * e - (b - a) ≤ e := by
     have h1 : (n : ℝ) < (b - a) / e + 1 := Nat.ceil_lt_add_one (div_nonneg (by linarith) he.le)
     have h2 : (n : ℝ) * e < ((b - a) / e + 1) * e := mul_lt_mul_of_pos_right h1 he
@@ -582,7 +601,8 @@ theorem isHyperfinite_hpartition (a b : ℝ) {Δ : ℝ*} (hΔ : 0 < Δ) :
 value at $`\Delta x` of the extension of the function that counts the points of
 $`P_\varepsilon`. -/
 theorem hcard_hpartition (a b : ℝ) {Δ : ℝ*} (hΔ : 0 < Δ) :
-    hcard (hpartition a b Δ) = (⋆(fun e : ℝ => (partitionCard a b e : ℝ)) : ℝ* → ℝ*) Δ := by
+    hcard (hpartition a b Δ) =
+      (⋆(fun e : ℝ => (widthPartitionCard a b e : ℝ)) : ℝ* → ℝ*) Δ := by
   obtain ⟨e, rfl⟩ := hyperreal_exists_rep Δ
   rw [hpartition_eq_internalSet_finset a b hΔ]
   unfold hcard
@@ -598,7 +618,7 @@ theorem hpartition_eq_setOf_lt_hcard (a b : ℝ) {Δ : ℝ*} (hΔ : 0 < Δ) :
       {x : ℝ* | ∃ k ∈ ℕ*, k < hcard (hpartition a b Δ) ∧ x = a + k * Δ} := by
   obtain ⟨e, rfl⟩ := hyperreal_exists_rep Δ
   have hN : hcard (hpartition a b (Hyperreal.ofSeq e)) =
-      hnat fun n => partitionCard a b (e n) := by
+      hnat fun n => widthPartitionCard a b (e n) := by
     rw [hcard_hpartition a b hΔ]
     rfl
   have hpos := ofSeq_pos_iff.1 hΔ
@@ -611,14 +631,14 @@ theorem hpartition_eq_setOf_lt_hcard (a b : ℝ) {Δ : ℝ*} (hΔ : 0 < Δ) :
     obtain ⟨κ, hκ⟩ := exists_seq_of_almostAll_exists h
     refine ⟨hnat κ, hnat_mem_hyperNat κ, hnat_lt_hnat_iff.2 ?_, ?_⟩
     · filter_upwards [hκ, hpos] with n h1 h2
-      exact (lt_partitionCard_iff h2).2 (h1.1 ▸ h1.2)
+      exact (lt_widthPartitionCard_iff h2).2 (h1.1 ▸ h1.2)
     · change Hyperreal.ofSeq r = Hyperreal.ofSeq fun n => a + (κ n : ℝ) * e n
       exact ofSeq_eq_ofSeq_iff.2 (hκ.mono fun n hn => hn.1)
   · rintro ⟨k, hk, hkN, hx⟩
     obtain ⟨κ, rfl⟩ := exists_hnat_eq hk
     have hx' : Hyperreal.ofSeq r = Hyperreal.ofSeq fun n => a + (κ n : ℝ) * e n := hx
     filter_upwards [ofSeq_eq_ofSeq_iff.1 hx', hnat_lt_hnat_iff.1 hkN, hpos] with n h1 h2 h3
-    exact ⟨κ n, h1, h1 ▸ (lt_partitionCard_iff h3).1 h2⟩
+    exact ⟨κ n, h1, h1 ▸ (lt_widthPartitionCard_iff h3).1 h2⟩
 
 /-- **Exercise 12.7.1.** Each member of the hyperfinite partition $`P` has the form
 $`a + k\,\Delta x` for a hypernatural $`k` below the internal size $`N` of $`P`. -/
@@ -646,7 +666,7 @@ theorem unlimited_hcard_hpartition {a b : ℝ} (hab : a < b) {Δ : ℝ*} (hΔ : 
     linarith [mul_comm (e n) (|r| + 1)]
   calc r ≤ |r| := le_abs_self r
     _ < (b - a) / e n := by linarith
-    _ ≤ (partitionCard a b (e n) : ℝ) := Nat.le_ceil _
+    _ ≤ (widthPartitionCard a b (e n) : ℝ) := Nat.le_ceil _
 
 /-- **Section 12.7.** The hyperfinite sum of the extension $`{}^*f` of a real function over
 the hyperfinite partition $`P` is the class of the sequence of the finite sums over
