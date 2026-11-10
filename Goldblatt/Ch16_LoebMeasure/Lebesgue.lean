@@ -177,6 +177,25 @@ theorem mem_gridLoeb_ring_iff {X : Set ℝ*} :
 theorem hyperGrid_mem_ring : hyperGrid ν ∈ (gridLoeb ν).ring :=
   InternalMeasure.internalSet_mem_sets_weighted _ _
 
+variable {ν} in
+/-- **Section 16.8.** Every member of the algebra $`\mathcal P_I(S)` of internal subsets of
+the grid is hyperfinite. -/
+theorem isHyperfinite_of_mem_gridLoeb_ring {X : Set ℝ*} (hX : X ∈ (gridLoeb ν).ring) :
+    IsHyperfinite X :=
+  InternalMeasure.isHyperfiniteSet_of_mem_sets_weighted hX
+
+/-- **Section 16.8.** The algebra $`\mathcal P_I(S)` of internal subsets of the grid is itself
+internal and hyperfinite: it consists of the sets determined by the members of the internal
+set $`[\mathcal P(S_n)]` of the powersets of the finite grids, and that internal set is
+hyperfinite. -/
+theorem gridLoeb_ring_eq_image_and_isHyperfiniteSet :
+    (gridLoeb ν).ring = internalSetOfGerm ''
+        (internalSet (fun n => 𝒫 (gridFinset (ν n) : Set ℝ)) : Set (Ultrapower (Set ℝ))) ∧
+      IsHyperfiniteSet (Set ℝ)
+        (internalSet (fun n => 𝒫 (gridFinset (ν n) : Set ℝ)) : Set (Ultrapower (Set ℝ))) :=
+  ⟨InternalMeasure.sets_weighted_eq_image _ _,
+    InternalMeasure.isHyperfiniteSet_internalSet_powerset _⟩
+
 variable {ν}
 
 /-- If $`N = [\nu_n]` is unlimited then $`\nu_n` exceeds any given natural number for almost
@@ -276,8 +295,10 @@ theorem gridLoeb_μL_Ioo (hν : Unlimited (hnat ν)) (a b : ℝ) :
 /-- **Theorem 16.8.1**, for the Loeb measure: the set of grid points between $`a` and $`b`
 is Loeb measurable and has Loeb measure $`b - a`. -/
 theorem gridLoeb_loebMeasure_Ioo (hν : Unlimited (hnat ν)) (a b : ℝ) :
-    (gridLoeb ν).loebMeasure (hyperGrid ν ∩ Ioo (a : ℝ*) b) = ENNReal.ofReal (b - a) := by
-  rw [(gridLoeb ν).loebMeasure_of_mem (hyperGrid_inter_Ioo_mem_ring ν a b), gridLoeb_μL_Ioo hν]
+    (gridLoeb ν).LoebMeasurable (hyperGrid ν ∩ Ioo (a : ℝ*) b) ∧
+      (gridLoeb ν).loebMeasure (hyperGrid ν ∩ Ioo (a : ℝ*) b) = ENNReal.ofReal (b - a) :=
+  ⟨(gridLoeb ν).loebMeasurable_of_mem (hyperGrid_inter_Ioo_mem_ring ν a b), by
+    rw [(gridLoeb ν).loebMeasure_of_mem (hyperGrid_inter_Ioo_mem_ring ν a b), gridLoeb_μL_Ioo hν]⟩
 
 end Grid
 

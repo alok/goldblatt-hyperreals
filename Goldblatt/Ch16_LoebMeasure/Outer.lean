@@ -102,9 +102,9 @@ theorem ringOuter_iUnion_le (A : ℕ → Set S) :
 increasing sequence $`A_0 \subseteq A_1 \subseteq \cdots` of members of the ring that covers
 $`B` and has $`\mu^+(\bigcup_n A_n) \le \mu^+(B) + \varepsilon`.
 
-The book states this for every $`B`, but a set of infinite outer measure need not be covered by
-any sequence of members of a ring (take the ring of finite subsets of an uncountable set), so
-the hypothesis $`\mu^+(B) < \infty` is needed. -/
+This is the case of finite outer measure of
+{lit}`Goldblatt.exists_monotone_cover_of_cover`, which has the sharp hypothesis: that $`B` is
+covered by some sequence of members of the ring. A set of finite outer measure always is. -/
 theorem exists_monotone_cover (hR : IsRingOfSets 𝒜) (h0 : μ ∅ = 0) {B : Set S}
     (hB : ringOuter 𝒜 μ B ≠ ∞) {ε : ℝ≥0∞} (hε : ε ≠ 0) :
     ∃ A : ℕ → Set S, (∀ n, A n ∈ 𝒜) ∧ Monotone A ∧ B ⊆ ⋃ n, A n ∧
@@ -124,6 +124,48 @@ theorem exists_monotone_cover (hR : IsRingOfSets 𝒜) (h0 : μ ∅ = 0) {B : Se
     exact ⟨i, hi.trans hmn, hx⟩
   · rw [hU]; exact hBA
   · rw [hU]; exact (ringOuter_le_tsum hA Subset.rfl).trans hlt.le
+
+/-- **Section 16.3.** If $`B` is covered by some sequence of members of the ring, then for
+every $`\varepsilon > 0` there is an increasing sequence $`A_0 \subseteq A_1 \subseteq \cdots`
+of members of the ring that covers $`B` and has
+$`\mu^+(\bigcup_n A_n) \le \mu^+(B) + \varepsilon`.
+
+The book states this for every $`B`. That is not correct as it stands: a set need not be
+covered by any sequence of members of a ring (take the ring of finite subsets of an uncountable
+set, and $`B` the whole set; then $`\mu^+(B) = \infty` as an infimum over the empty family,
+and no cover exists). The existence of a cover is exactly what is missing: it is necessary,
+and it is sufficient, because when $`\mu^+(B) = \infty` the partial unions of any cover will
+do. -/
+theorem exists_monotone_cover_of_cover (hR : IsRingOfSets 𝒜) (h0 : μ ∅ = 0) {B : Set S}
+    (hcov : ∃ A : ℕ → Set S, (∀ n, A n ∈ 𝒜) ∧ B ⊆ ⋃ n, A n) {ε : ℝ≥0∞} (hε : ε ≠ 0) :
+    ∃ A : ℕ → Set S, (∀ n, A n ∈ 𝒜) ∧ Monotone A ∧ B ⊆ ⋃ n, A n ∧
+      ringOuter 𝒜 μ (⋃ n, A n) ≤ ringOuter 𝒜 μ B + ε := by
+  by_cases hB : ringOuter 𝒜 μ B = ∞
+  · obtain ⟨A, hA, hBA⟩ := hcov
+    have hU : ⋃ n, ⋃ i ≤ n, A i = ⋃ n, A n := by
+      ext x
+      simp only [mem_iUnion, exists_prop]
+      exact ⟨fun ⟨_, i, _, hx⟩ => ⟨i, hx⟩, fun ⟨i, hx⟩ => ⟨i, i, le_rfl, hx⟩⟩
+    refine ⟨fun n => ⋃ i ≤ n, A i, fun n => hR.biUnion_le_mem hA n, ?_, ?_, ?_⟩
+    · intro m n hmn x hx
+      simp only [mem_iUnion, exists_prop] at hx ⊢
+      obtain ⟨i, hi, hx⟩ := hx
+      exact ⟨i, hi.trans hmn, hx⟩
+    · rw [hU]; exact hBA
+    · rw [hB, top_add]; exact le_top
+  · exact exists_monotone_cover hR h0 hB hε
+
+/-- **Section 16.3.** The hypothesis of {name}`Goldblatt.exists_monotone_cover_of_cover` is
+necessary: a set with an increasing cover as in the book's statement is in particular covered
+by a sequence of members of the ring. So the book's property holds for $`B` if and only if
+$`B` has such a cover. -/
+theorem exists_monotone_cover_iff (hR : IsRingOfSets 𝒜) (h0 : μ ∅ = 0) {B : Set S} :
+    (∀ ε : ℝ≥0∞, ε ≠ 0 → ∃ A : ℕ → Set S, (∀ n, A n ∈ 𝒜) ∧ Monotone A ∧ B ⊆ ⋃ n, A n ∧
+      ringOuter 𝒜 μ (⋃ n, A n) ≤ ringOuter 𝒜 μ B + ε) ↔
+      ∃ A : ℕ → Set S, (∀ n, A n ∈ 𝒜) ∧ B ⊆ ⋃ n, A n :=
+  ⟨fun h => by
+    obtain ⟨A, hA, -, hBA, -⟩ := h 1 one_ne_zero
+    exact ⟨A, hA, hBA⟩, fun h _ hε => exists_monotone_cover_of_cover hR h0 h hε⟩
 
 /-- **Section 16.3.** A set of finite outer measure is covered by a sequence of members of the
 ring of finite measure. -/
@@ -416,12 +458,28 @@ theorem lebesgueMeasurable_iff_nullMeasurableSet {B : Set ℝ} :
 
 /-- **Section 16.4, fact 1.** Lebesgue measure is the only measure on the Borel sets that
 gives every open interval its length: a Borel measure with $`\nu((a, b)) = b - a` for all
-$`a, b` is Lebesgue measure. -/
+$`a, b` is Lebesgue measure. The book allows $`\nu` to be a measure on any algebra that
+includes the Borel sets and concludes that it agrees with $`\lambda` on the Borel sets; such a
+measure restricts to a measure on the Borel sigma-algebra, to which this statement applies
+({lit}`Goldblatt.eq_volume_of_isMeasureOnRing_of_forall_Ioo`). -/
 theorem eq_volume_of_forall_Ioo (ν : Measure ℝ)
     (h : ∀ a b : ℝ, ν (Ioo a b) = ENNReal.ofReal (b - a)) : ν = volume := by
   have : IsLocallyFiniteMeasure ν := ⟨fun x => ⟨Ioo (x - 1) (x + 1),
     Ioo_mem_nhds (by linarith) (by linarith), by rw [h]; exact ENNReal.ofReal_lt_top⟩⟩
   exact Real.measure_ext_Ioo_rat fun a b => by rw [h, Real.volume_Ioo]
+
+/-- **Section 16.4, fact 1**, in the book's generality: a measure, in the sense of Section
+16.2, on any collection of sets that includes the Borel sets and gives every open interval
+its length agrees with Lebesgue measure on all Borel sets. Its restriction to the Borel sets
+is a Mathlib measure, to which {name}`Goldblatt.eq_volume_of_forall_Ioo` applies. -/
+theorem eq_volume_of_isMeasureOnRing_of_forall_Ioo {𝒜 : Set (Set ℝ)} {μ : Set ℝ → ℝ≥0∞}
+    (h𝒜 : ∀ B : Set ℝ, MeasurableSet B → B ∈ 𝒜) (hμ : IsMeasureOnRing 𝒜 μ)
+    (h : ∀ a b : ℝ, μ (Ioo a b) = ENNReal.ofReal (b - a)) {B : Set ℝ} (hB : MeasurableSet B) :
+    μ B = volume B := by
+  let ν : Measure ℝ := Measure.ofMeasurable (fun A _ => μ A) hμ.empty
+    (fun A hA hd => hμ.iUnion (fun n => h𝒜 _ (hA n)) hd (h𝒜 _ (MeasurableSet.iUnion hA)))
+  have hν : ∀ A, MeasurableSet A → ν A = μ A := fun A hA => Measure.ofMeasurable_apply A hA
+  rw [← hν B hB, eq_volume_of_forall_Ioo ν fun a b => by rw [hν _ measurableSet_Ioo, h]]
 
 /-- **Section 16.4, fact 2.** For a Lebesgue measurable set $`B` there are Borel sets
 $`C \subseteq B \subseteq D` with $`\lambda(D - C) = 0`, and hence

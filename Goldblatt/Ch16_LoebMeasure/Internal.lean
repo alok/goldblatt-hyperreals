@@ -188,6 +188,23 @@ theorem internalSet_mem_internalCollection {𝔄 : ℕ → Set (Set β)} {B : �
     rwa [h1]
   · exact fun h => ⟨B, rfl, h⟩
 
+/-- **Section 16.5.** An internal collection of internal sets is an internal set one level up.
+The sequence $`(\mathcal A_n)` defines an internal set $`[\mathcal A_n]` of elements of the
+ultrapower of the type of sets, each such element $`[B_n]` determines the internal set
+$`[B_n]` of points ({name}`Goldblatt.internalSetOfGerm`), and the internal collection consists
+of the sets determined by the members of $`[\mathcal A_n]`. This is the sense in which an
+internal ring of sets is itself internal. -/
+theorem internalCollection_eq_image_internalSetOfGerm (𝔄 : ℕ → Set (Set β)) :
+    (internalCollection 𝔄 : Set (Set βS)) =
+      internalSetOfGerm '' (internalSet 𝔄 : Set (Ultrapower (Set β))) := by
+  ext X
+  constructor
+  · rintro ⟨B, rfl, hB⟩
+    exact ⟨ofSeq B, ofSeq_mem_internalSet.2 hB, rfl⟩
+  · rintro ⟨G, hG, rfl⟩
+    obtain ⟨B, rfl⟩ := ofSeq_surjective (α := Set β) G
+    exact ⟨B, rfl, ofSeq_mem_internalSet.1 hG⟩
+
 /-- **Section 16.5.** If the internal collection $`[\mathcal A_n]` is a ring of sets, then
 $`\mathcal A_n` is a ring for almost all $`n`. Otherwise almost every $`\mathcal A_n` would
 contain a pair of sets whose difference or union is missing, and the classes of these sets
@@ -295,21 +312,17 @@ namespace InternalMeasure
 variable {β βS : Type u} [StarType β βS] (I : InternalMeasure β)
 
 /-- **Section 16.5.** The internal ring $`\mathcal A`: the internal sets $`[B_n]` such that
-$`B_n \in \mathcal A_n` for almost all $`n`. -/
-def sets : Set (Set βS) :=
-  {X | ∃ B : ℕ → Set β, X = internalSet B ∧ ∀ᶠ n in hyperfilter ℕ, B n ∈ I.𝔄 n}
+$`B_n \in \mathcal A_n` for almost all $`n`, that is, the internal collection
+{name}`Goldblatt.internalCollection` of the sequence of rings. -/
+def sets : Set (Set βS) := internalCollection I.𝔄
 
 /-- The internal ring is the internal collection of the sequence of rings. -/
 theorem sets_eq_internalCollection : (I.sets : Set (Set βS)) = internalCollection I.𝔄 := rfl
 
 /-- Membership of $`[B_n]` in the internal ring does not depend on the defining sequence. -/
 theorem internalSet_mem_sets {B : ℕ → Set β} :
-    (internalSet B : Set βS) ∈ I.sets ↔ ∀ᶠ n in hyperfilter ℕ, B n ∈ I.𝔄 n := by
-  constructor
-  · rintro ⟨B', hBB', hB'⟩
-    filter_upwards [internalSet_eq_iff.1 hBB', hB'] with n h1 h2
-    rwa [h1]
-  · exact fun h => ⟨B, rfl, h⟩
+    (internalSet B : Set βS) ∈ I.sets ↔ ∀ᶠ n in hyperfilter ℕ, B n ∈ I.𝔄 n :=
+  internalSet_mem_internalCollection
 
 /-- Every member of the internal ring is an internal set. -/
 theorem isInternalSet_of_mem_sets {X : Set βS} (hX : X ∈ I.sets) : IsInternalSet β X := by
@@ -598,6 +611,147 @@ theorem approximable_iff {B : Set βS} :
 end InternalMeasure
 
 /-!
+## Unions of internal sequences
+
+An internal sequence of internal sets, indexed by the hypernaturals, is the class of a
+sequence of sequences $`(A_{n,k})_k`; its term at the hypernatural $`K = [\kappa_n]` is the
+internal set $`[A_{n,\kappa_n}]`. The union of all its terms, and the union of its terms up to
+a hypernatural, are again internal: they are the internal sets of the termwise unions. So an
+internal ring, each of whose terms is closed under finite unions, is closed under
+_hyperfinite_ unions (Section 16.1, example 5), and an internal ring whose terms are
+sigma-rings, such as the enlargement of a sigma-algebra, is closed under unions of internal
+sequences (the "hyper-sigma-algebra" property of Section 16.1, example 6). Neither is
+closure under countable unions.
+-/
+
+section InternalSequences
+
+variable {β βS : Type u} [StarType β βS]
+
+/-- **Section 16.1, example 6.** The union of an internal sequence of internal sets: the
+internal set of the termwise unions $`\bigcup_k A_{n,k}` is the union, over all hypernatural
+indices $`K = [\kappa_n]`, of the terms $`[A_{n,\kappa_n}]` of the internal sequence. -/
+theorem internalSet_iUnion_eq_iUnion (A : ℕ → ℕ → Set β) :
+    (internalSet (fun n => ⋃ k, A n k) : Set βS) =
+      ⋃ κ : ℕ → ℕ, internalSet fun n => A n (κ n) := by
+  classical
+  apply Subset.antisymm
+  · intro x hx
+    obtain ⟨r, rfl, hr⟩ := mem_internalSet_iff.1 hx
+    refine mem_iUnion.2 ⟨fun n => if h : ∃ k, r n ∈ A n k then h.choose else 0,
+      ofSeq_mem_internalSet.2 ?_⟩
+    filter_upwards [hr] with n hn
+    have h : ∃ k, r n ∈ A n k := mem_iUnion.1 hn
+    rw [dite_eq_left_of_eq_true (eq_true h)]
+    exact h.choose_spec
+  · exact iUnion_subset fun κ => internalSet_subset_iff.2
+      (Eventually.of_forall fun n => subset_iUnion (A n) (κ n))
+
+/-- **Section 16.1, example 5.** A hyperfinite union: for a hypernatural $`K = [\kappa_n]`,
+the internal set of the finite unions $`\bigcup_{k \le \kappa_n} A_{n,k}` is the union of the
+terms $`[A_{n,j_n}]` of the internal sequence over the hypernatural indices
+$`J = [j_n] \le K`. -/
+theorem internalSet_biUnion_le_eq_iUnion (A : ℕ → ℕ → Set β) (κ : ℕ → ℕ) :
+    (internalSet (fun n => ⋃ k ≤ κ n, A n k) : Set βS) =
+      ⋃ (j : ℕ → ℕ) (_ : hnat j ≤ hnat κ), internalSet fun n => A n (j n) := by
+  classical
+  apply Subset.antisymm
+  · intro x hx
+    obtain ⟨r, rfl, hr⟩ := mem_internalSet_iff.1 hx
+    have hj : ∀ᶠ n in hyperfilter ℕ,
+        (if h : ∃ k, k ≤ κ n ∧ r n ∈ A n k then h.choose else 0) ≤ κ n ∧
+          r n ∈ A n (if h : ∃ k, k ≤ κ n ∧ r n ∈ A n k then h.choose else 0) := by
+      filter_upwards [hr] with n hn
+      have h : ∃ k, k ≤ κ n ∧ r n ∈ A n k := by simpa only [mem_iUnion, exists_prop] using hn
+      rw [dite_eq_left_of_eq_true (eq_true h)]
+      exact h.choose_spec
+    exact mem_iUnion₂.2 ⟨_, hnat_le_hnat_iff.2 (hj.mono fun n h => h.1),
+      ofSeq_mem_internalSet.2 (hj.mono fun n h => h.2)⟩
+  · refine iUnion₂_subset fun j hj => internalSet_subset_iff.2 ?_
+    filter_upwards [hnat_le_hnat_iff.1 hj] with n hn
+    exact subset_biUnion_of_mem (u := A n) hn
+
+namespace InternalMeasure
+
+variable (I : InternalMeasure β)
+
+/-- **Section 16.1, example 6.** Every term of the internal sequence $`[(A_{n,k})_k]` belongs
+to the internal ring if and only if, for almost all $`n`, every $`A_{n,k}` belongs to
+$`\mathcal A_n`. This is the instance of transfer that turns the hypothesis "an internal
+sequence of members of the ring" into a statement about representatives. -/
+theorem forall_internalSet_mem_sets_iff (A : ℕ → ℕ → Set β) :
+    (∀ κ : ℕ → ℕ, (internalSet (fun n => A n (κ n)) : Set βS) ∈ I.sets) ↔
+      ∀ᶠ n in hyperfilter ℕ, ∀ k, A n k ∈ I.𝔄 n := by
+  classical
+  constructor
+  · intro h
+    have := I.internalSet_mem_sets.1
+      (h fun n => if h : ∃ k, A n k ∉ I.𝔄 n then h.choose else 0)
+    filter_upwards [this] with n hn
+    by_contra hcon
+    have h' : ∃ k, A n k ∉ I.𝔄 n := not_forall.1 hcon
+    rw [dite_eq_left_of_eq_true (eq_true h')] at hn
+    exact h'.choose_spec hn
+  · exact fun h κ => I.internalSet_mem_sets.2 (h.mono fun n hn => hn (κ n))
+
+/-- **Section 16.1, example 5.** The terms of the internal sequence $`[(A_{n,k})_k]` with
+index at most $`K = [\kappa_n]` all belong to the internal ring if and only if, for almost
+all $`n`, $`A_{n,k}` belongs to $`\mathcal A_n` for every $`k \le \kappa_n`. -/
+theorem forall_le_internalSet_mem_sets_iff (A : ℕ → ℕ → Set β) (κ : ℕ → ℕ) :
+    (∀ j : ℕ → ℕ, hnat j ≤ hnat κ → (internalSet (fun n => A n (j n)) : Set βS) ∈ I.sets) ↔
+      ∀ᶠ n in hyperfilter ℕ, ∀ k ≤ κ n, A n k ∈ I.𝔄 n := by
+  classical
+  constructor
+  · intro h
+    have hle : hnat (fun n => if h : ∃ k, k ≤ κ n ∧ A n k ∉ I.𝔄 n then h.choose else 0) ≤
+        hnat κ := hnat_le_hnat_iff.2 (Eventually.of_forall fun n => by
+      split_ifs with h'
+      exacts [h'.choose_spec.1, Nat.zero_le _])
+    have := I.internalSet_mem_sets.1 (h _ hle)
+    filter_upwards [this] with n hn
+    by_contra hcon
+    have h' : ∃ k, k ≤ κ n ∧ A n k ∉ I.𝔄 n := by
+      simpa only [not_forall, exists_prop] using hcon
+    rw [dite_eq_left_of_eq_true (eq_true h')] at hn
+    exact h'.choose_spec.2 hn
+  · intro h j hj
+    refine I.internalSet_mem_sets.2 ?_
+    filter_upwards [h, hnat_le_hnat_iff.1 hj] with n hn hjn using hn _ hjn
+
+/-- **Section 16.1, example 5.** An internal ring is closed under hyperfinite unions: if the
+terms of an internal sequence up to the hypernatural $`K = [\kappa_n]` belong to the ring
+(in the form given by {name}`Goldblatt.InternalMeasure.forall_le_internalSet_mem_sets_iff`),
+then so does their union, which is the internal set of the finite unions
+({name}`Goldblatt.internalSet_biUnion_le_eq_iUnion`). This is the transfer of closure of a ring
+under finite unions; for the algebra of internal subsets of a hyperfinite set it is the
+closure property stated in the book. -/
+theorem internalSet_biUnion_le_mem_sets (A : ℕ → ℕ → Set β) (κ : ℕ → ℕ)
+    (hA : ∀ᶠ n in hyperfilter ℕ, ∀ k ≤ κ n, A n k ∈ I.𝔄 n) :
+    (internalSet (fun n => ⋃ k ≤ κ n, A n k) : Set βS) ∈ I.sets := by
+  refine I.internalSet_mem_sets.2 ?_
+  filter_upwards [hA] with n hn
+  have : ⋃ k ≤ κ n, A n k = ⋃ k ∈ Finset.range (κ n + 1), A n k := by
+    ext x; simp
+  rw [this]
+  exact (I.isRing n).biUnion_finset_mem _ fun k hk =>
+    hn k (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk))
+
+/-- **Section 16.1, example 6**, the "hyper-sigma-algebra" property. If almost every
+$`\mathcal A_n` is a sigma-ring, as for the enlargement of a sigma-algebra, then the union of
+an internal sequence of members of the internal ring, indexed by all the hypernaturals, is in
+the ring. The hypothesis on the sequence is the one given by
+{name}`Goldblatt.InternalMeasure.forall_internalSet_mem_sets_iff`, and the union is identified
+by {name}`Goldblatt.internalSet_iUnion_eq_iUnion`. -/
+theorem internalSet_iUnion_mem_sets (hσ : ∀ᶠ n in hyperfilter ℕ, IsSigmaRing (I.𝔄 n))
+    (A : ℕ → ℕ → Set β) (hA : ∀ᶠ n in hyperfilter ℕ, ∀ k, A n k ∈ I.𝔄 n) :
+    (internalSet (fun n => ⋃ k, A n k) : Set βS) ∈ I.sets :=
+  I.internalSet_mem_sets.2 (by filter_upwards [hσ, hA] with n h1 h2 using h1.iUnion_mem h2)
+
+end InternalMeasure
+
+end InternalSequences
+
+/-!
 ## The star-Borel sets
 
 Example 6 of Section 16.1 for the Borel algebra of the real line: its enlargement is an
@@ -636,6 +790,16 @@ theorem Ioo_neg_natCast_mem_sets_starBorel (n : ℕ) :
   ⟨fun _ => Ioo (-(n : ℝ)) n, (internalSet_Ioo (fun _ => -(n : ℝ)) fun _ => (n : ℝ)).symm,
     Eventually.of_forall fun _ =>
       (mem_ofPred.2 measurableSet_Ioo : Ioo (-(n : ℝ)) n ∈ {B : Set ℝ | MeasurableSet B})⟩
+
+/-- **Section 16.1, example 6.** The star-Borel sets are closed under unions of internal
+sequences: if $`A_{n,k}` is a Borel set for almost all $`n` and all $`k`, then the union of
+the internal sequence $`[(A_{n,k})_k]` of star-Borel sets is a star-Borel set. -/
+theorem internalSet_iUnion_mem_sets_starBorel (A : ℕ → ℕ → Set ℝ)
+    (hA : ∀ᶠ n in hyperfilter ℕ, ∀ k, MeasurableSet (A n k)) :
+    (internalSet (fun n => ⋃ k, A n k) : Set ℝ*) ∈ starBorel.sets :=
+  starBorel.internalSet_iUnion_mem_sets
+    (Eventually.of_forall fun _ => (isSigmaAlgebra_measurableSet _).toIsSigmaRing) A
+    (hA.mono fun _ hn k => mem_ofPred.2 (hn k))
 
 /-- **Section 16.1, example 6.** The set of limited hyperreals is not a star-Borel set,
 because it is external. -/
@@ -835,6 +999,64 @@ theorem InternalMeasure.μL_counting_le_one {s : ℕ → Finset β} (B : ℕ →
       _ = 1 := ENNReal.mul_inv_cancel (by exact_mod_cast h.card_ne_zero)
           (ENNReal.natCast_ne_top _)
 
+/-- **Section 16.8** (and Section 16.1, example 5). Every member of the algebra
+$`\mathcal P_I(S)` of internal subsets of a hyperfinite set $`S` is hyperfinite. -/
+theorem InternalMeasure.isHyperfiniteSet_of_mem_sets_weighted {s : ℕ → Finset β} {w : ℕ → β → ℝ≥0∞}
+    {X : Set βS} (hX : X ∈ (InternalMeasure.weighted s w).sets) : IsHyperfiniteSet β X :=
+  (isHyperfiniteSet_internalSet_finset s).subset (InternalMeasure.mem_sets_weighted_iff.1 hX).1
+    (InternalMeasure.mem_sets_weighted_iff.1 hX).2
+
+/-- **Section 16.1, example 5.** The algebra $`\mathcal P_I(S)` of internal subsets of the
+hyperfinite set $`S = [S_n]` is internal: it consists of the sets determined by the members of
+the internal set $`[\mathcal P(S_n)]` of the powersets of the $`S_n`. -/
+theorem InternalMeasure.sets_weighted_eq_image (s : ℕ → Finset β) (w : ℕ → β → ℝ≥0∞) :
+    ((InternalMeasure.weighted s w).sets : Set (Set βS)) =
+      internalSetOfGerm '' (internalSet (fun n => 𝒫 (s n : Set β)) : Set (Ultrapower (Set β))) :=
+  internalCollection_eq_image_internalSetOfGerm _
+
+/-- **Section 16.1, example 5.** The algebra $`\mathcal P_I(S)` of internal subsets of a
+hyperfinite set $`S = [S_n]` is itself hyperfinite: the internal set $`[\mathcal P(S_n)]`
+that presents it ({name}`Goldblatt.InternalMeasure.sets_weighted_eq_image`) is the class of a
+sequence of finite sets. -/
+theorem InternalMeasure.isHyperfiniteSet_internalSet_powerset (s : ℕ → Finset β) :
+    IsHyperfiniteSet (Set β)
+      (internalSet (fun n => 𝒫 (s n : Set β)) : Set (Ultrapower (Set β))) :=
+  isHyperfiniteSet_internalSet_iff.2
+    (Eventually.of_forall fun n => (s n).finite_toSet.finite_subsets)
+
+/-- **Section 16.1, example 5.** The internal cardinality of $`\mathcal P_I(S)` is
+$`2^{|S|}`, the class of the sequence $`(2^{|S_n|})`. -/
+theorem InternalMeasure.internalCard_internalSet_powerset (s : ℕ → Finset β) :
+    internalCard (Set β) (internalSet (fun n => 𝒫 (s n : Set β)) : Set (Ultrapower (Set β))) =
+      hnat fun n => 2 ^ (s n).card := by
+  rw [internalCard_internalSet]
+  refine hnat_eq_hnat_iff.2 (Eventually.of_forall fun n => ?_)
+  rw [Set.ncard_powerset _ (s n).finite_toSet, Set.ncard_coe_finset]
+
+/-- **Section 16.1, example 5**, in general: for every hyperfinite set $`S = [S_n]` that is
+infinite (a _nonstandard_ hyperfinite set), the algebra $`\mathcal P_I(S)` of internal subsets
+of $`S` is not a sigma-ring. The singletons of countably many distinct points of $`S` belong
+to it, but their union is countably infinite, and a countable internal set is finite
+(Section 11.12). The case $`S = \{1, \dots, N\}` of the book, stated for sets of hyperreals,
+is {lit}`Goldblatt.not_isSigmaRing_internal_subsets`. -/
+theorem InternalMeasure.not_isSigmaRing_sets_weighted (s : ℕ → Finset β) (w : ℕ → β → ℝ≥0∞)
+    (hinf : (internalSet (fun n => (s n : Set β)) : Set βS).Infinite) :
+    ¬ IsSigmaRing ((InternalMeasure.weighted s w).sets : Set (Set βS)) := by
+  intro h
+  let e := hinf.natEmbedding
+  have hmem := h.iUnion_mem (A := fun n => {(e n : βS)}) fun n =>
+    InternalMeasure.mem_sets_weighted_iff.2 ⟨isInternalSet_singleton _, singleton_subset_iff.2 (e n).2⟩
+  have hc : (⋃ n : ℕ, ({(e n : βS)} : Set βS)).Countable :=
+    countable_iUnion fun _ => countable_singleton _
+  have hfin := IsInternalSet.finite_of_countable
+    ((InternalMeasure.weighted s w).isInternalSet_of_mem_sets hmem) hc
+  have hinf' : (⋃ n : ℕ, ({(e n : βS)} : Set βS)).Infinite := by
+    have : ⋃ n : ℕ, ({(e n : βS)} : Set βS) = range fun n : ℕ => (e n : βS) := by
+      ext x; simp [eq_comm]
+    rw [this]
+    exact infinite_range_of_injective fun m n hmn => e.injective (Subtype.ext hmn)
+  exact hinf' hfin
+
 end Weighted
 
 /-!
@@ -844,6 +1066,17 @@ Example 5 of Section 16.1: the internal subsets of $`S = \{1, \dots, N\}`, for a
 hypernatural $`N`, form an algebra of subsets of $`S` that is not closed under countable
 unions, because it contains every singleton $`\{n\}` of a standard positive integer but not
 their union, the external set of standard positive integers.
+
+The remaining claims of the example are proved above for an arbitrary hyperfinite set
+$`S = [S_n]` of elements of any star type, with $`\mathcal P_I(S)` presented as the ring of
+the weighted counting functions on $`S`: it is closed under hyperfinite unions
+({name}`Goldblatt.InternalMeasure.internalSet_biUnion_le_mem_sets`), it is internal and
+hyperfinite of internal cardinality $`2^{|S|}`
+({name}`Goldblatt.InternalMeasure.sets_weighted_eq_image`,
+{name}`Goldblatt.InternalMeasure.isHyperfiniteSet_internalSet_powerset`,
+{name}`Goldblatt.InternalMeasure.internalCard_internalSet_powerset`), and it is not a
+sigma-ring whenever $`S` is infinite
+({name}`Goldblatt.InternalMeasure.not_isSigmaRing_sets_weighted`).
 -/
 
 /-- **Section 16.1, example 5.** For any set $`S` of hyperreals, internal or not, the
