@@ -405,6 +405,100 @@ theorem exists_reps_ext_eq_star (hX : IsBaseSet X)
 theorem comprehensive_enlargement (hX : IsBaseSet X) : (enlargement X hX).Comprehensive :=
   comprehensive_framework (ultra X) hX
 
+/-!
+### Countable saturation of the ultrapower, directly
+
+Theorem 15.4.2 derives countable saturation from comprehensiveness by overflow, which needs
+the natural numbers among the individuals. For an ultrapower the property can also be proved
+directly, over any base set, by the diagonal argument of Section 11.10: this needs only that
+the ultrafilter is countably incomplete, which the ultrafilter of Section 14.3 is.
+-/
+
+/-- **Section 15.4 (the argument of Theorem 11.10.1).** The bounded ultrapower modulo a
+countably incomplete ultrafilter is countably saturated, over any base set. Given a
+decreasing sequence $`A_n = [H_n]` of nonempty internal sets with members $`[p_n] \in A_n`,
+let $`J_n` be the set of indices $`i` with $`n \le e(i)` and $`p_n(i) \in H_m(i)` for all
+$`m \le n`, and let $`y(i) = p_n(i)` for the greatest $`n \le e(i)` with $`i \in J_n`. Then
+$`[y] \in A_n` for all $`n`. -/
+theorem countablySaturated_framework (𝓕 : Ultrafilter I) (hX : IsBaseSet X) (e : I → ℕ)
+    (he : ∀ n, ∀ᶠ i in 𝓕, e i ≠ n) : (framework 𝓕 hX).CountablySaturated := by
+  intro A hA hdec hne
+  have hW := (isUniverseOver_superstructure hX).toIsUniverse
+  have hW' := (isUniverseOver_superstructure (isBaseSet_base (𝓕 := 𝓕) hX)).toIsUniverse
+  have hanti : ∀ j k, j ≤ k → A k ⊆ A j := fun j k hjk => by
+    induction hjk with
+    | refl => exact fun _ h => h
+    | step _ ih => exact fun y hy => ih (hdec _ hy)
+  have hexH : ∀ n, ∃ H : I → ZFSet.{u}, Bdd 𝓕 X H ∧ col 𝓕 hX H = A n := fun n => by
+    obtain ⟨T, hT, hAT⟩ := (hA n).1
+    obtain ⟨H, hH, -, hcol⟩ := (mem_star_iff hX hT).1 hAT
+    exact ⟨H, hH, hcol⟩
+  choose H hHb hHc using hexH
+  have hexp : ∀ n, ∃ p : I → ZFSet.{u}, Bdd 𝓕 X p ∧ col 𝓕 hX p ∈ A n := fun n => by
+    obtain ⟨x, hx⟩ := (eq_empty_or_nonempty (A n)).resolve_left (hne n)
+    obtain ⟨p, hp, -, hcol⟩ := exists_of_mem_col hX (hW'.mem_of_mem (hA n).2 hx)
+      ((hHc n).symm ▸ hx)
+    exact ⟨p, hp, hcol ▸ hx⟩
+  choose p hpb hpA using hexp
+  have hpm : ∀ n m, m ≤ n → ∀ᶠ i in 𝓕, p n i ∈ H m i := fun n m hmn =>
+    (col_mem_col_iff hX (hpb n) (hHb m)).1 ((hHc m).symm ▸ hanti m n hmn (hpA n))
+  have hge : ∀ n, ∀ᶠ i in 𝓕, n ≤ e i := by
+    intro n
+    induction n with
+    | zero => exact Eventually.of_forall fun _ => Nat.zero_le _
+    | succ n ih =>
+      filter_upwards [ih, he n] with i h1 h2
+      omega
+  have hJ : ∀ n, ∀ᶠ i in 𝓕, n ≤ e i ∧ ∀ m ≤ n, p n i ∈ H m i := fun n =>
+    (hge n).and ((Filter.eventually_all_finite (Set.finite_Iic n)).2 fun m hm => hpm n m hm)
+  set μ : I → ℕ := fun i =>
+    Nat.findGreatest (fun n => n ≤ e i ∧ ∀ m ≤ n, p n i ∈ H m i) (e i) with hμ
+  have hy : ∀ n, ∀ᶠ i in 𝓕, p (μ i) i ∈ H n i := by
+    intro n
+    filter_upwards [hJ n] with i hi
+    have h1 := Nat.findGreatest_spec (P := fun n => n ≤ e i ∧ ∀ m ≤ n, p n i ∈ H m i) hi.1 hi
+    have h2 := Nat.le_findGreatest (P := fun n => n ≤ e i ∧ ∀ m ≤ n, p n i ∈ H m i) hi.1 hi
+    exact h1.2 n h2
+  have hnat : ¬ Atomic 𝓕 X (H 0) := fun hat =>
+    (hA 0).2.2 ((hHc 0) ▸ isIndividual_col hX hat)
+  have hyb : Bdd 𝓕 X fun i => p (μ i) i := by
+    refine bdd_of_eventually_mem hX (hHb 0) ?_
+    filter_upwards [hy 0, (hHb 0).eventually_mem, not_atomic_iff.1 hnat] with i h1 h2 h3
+    exact ⟨hW.mem_of_mem ((isSetOf_superstructure_iff hX).2 ⟨h2, h3⟩) h1, h1⟩
+  refine ⟨col 𝓕 hX fun i => p (μ i) i, fun n => ?_⟩
+  rw [← hHc n]
+  exact (col_mem_col_iff hX hyb (hHb n)).2 (hy n)
+
+/-- **Section 14.3.** The ultrafilter of the enlargement construction is countably
+incomplete: the number of members of an index $`b`, a finite subset of the superstructure,
+takes each value only off a set of the ultrafilter, because almost every index contains the
+numerals $`0, \dots, n`. -/
+theorem exists_countablyIncomplete_ultra (hX : IsBaseSet X) :
+    ∃ e : Index X → ℕ, ∀ n, ∀ᶠ b in (ultra X : Filter (Index X)), e b ≠ n := by
+  have hW := (isUniverseOver_superstructure hX).toIsUniverse
+  refine ⟨fun b => (b.1 : Set ZFSet.{u}).ncard, fun n => ?_⟩
+  have h1 : ∀ᶠ b in (ultra X : Filter (Index X)), ∀ j ∈ Set.Iic n, num j ∈ b.1 :=
+    (Filter.eventually_all_finite (Set.finite_Iic n)).2 fun j _ =>
+      eventually_mem_index (hW.isSetOf_num j).1
+  filter_upwards [h1] with b hb
+  have hfin : (b.1 : Set ZFSet.{u}).Finite := (mem_finPow.1 b.2).2
+  have hsub : (↑((Finset.range (n + 1)).image (num : ℕ → ZFSet.{u})) : Set ZFSet.{u}) ⊆
+      (b.1 : Set ZFSet.{u}) := by
+    intro y hy
+    obtain ⟨j, hj, rfl⟩ := Finset.mem_image.1 (Finset.mem_coe.1 hy)
+    exact hb j (Nat.lt_succ_iff.1 (Finset.mem_range.1 hj))
+  have hle := Set.ncard_le_ncard hsub hfin
+  rw [Set.ncard_coe_finset, Finset.card_image_of_injective _ num_injective,
+    Finset.card_range] at hle
+  omega
+
+/-- **Section 15.4.** The enlargement constructed in Section 14.3 is countably saturated,
+over any base set. -/
+theorem countablySaturated_enlargement (hX : IsBaseSet X) :
+    (enlargement X hX).CountablySaturated :=
+  let ⟨e, he⟩ := exists_countablyIncomplete_ultra hX
+  countablySaturated_framework (ultra X) hX e he
+
 end BoundedUltrapower
 
 /-!
@@ -424,6 +518,18 @@ theorem exists_comprehensive_enlargement {X : ZFSet.{u}} (hX : IsBaseSet X) :
   ⟨BoundedUltrapower.enlargement X hX, rfl, rfl,
     by rw [BoundedUltrapower.enlargement_star_base hX]; rfl,
     BoundedUltrapower.isEnlargement_enlargement hX, BoundedUltrapower.comprehensive_enlargement hX⟩
+
+/-- **Section 15.4, existence of countably saturated enlargements over any base set.** Over
+any base set $`X` the superstructure $`\mathbb U(X)` has an enlargement of the form
+$`\mathbb U({}^*X)` that is comprehensive and countably saturated. -/
+theorem exists_countablySaturated_enlargement {X : ZFSet.{u}} (hX : IsBaseSet X) :
+    ∃ F : NonstandardFramework.{u}, F.X = X ∧ F.U = superstructure X ∧
+      F.U' = superstructure (F.star X) ∧ F.IsEnlargement ∧ F.Comprehensive ∧
+      F.CountablySaturated :=
+  ⟨BoundedUltrapower.enlargement X hX, rfl, rfl,
+    by rw [BoundedUltrapower.enlargement_star_base hX]; rfl,
+    BoundedUltrapower.isEnlargement_enlargement hX, BoundedUltrapower.comprehensive_enlargement hX,
+    BoundedUltrapower.countablySaturated_enlargement hX⟩
 
 /-- **Section 15.4, existence of countably saturated enlargements over any type.** For
 every type $`\alpha` there is a framework over the real numbers whose set of individuals

@@ -29,8 +29,8 @@ ultrapower of Chapter 14 is comprehensive.
 _Saturation._ A framework is countably saturated when every decreasing sequence of nonempty
 internal sets has a common member. For a framework over the real numbers this is equivalent
 to countable comprehensiveness together with the existence of an unlimited hypernatural
-number. The enlargements of Chapter 14 over the real numbers are countably saturated, and
-these are the frameworks used in Part V of the book. Saturation for collections of larger
+number. The enlargements of Chapter 14 are countably saturated, and these are the
+frameworks used in Part V of the book. Saturation for collections of larger
 cardinality is defined, and its basic properties are proved.
 
 The standing assumption of the chapter is that the framework has the real numbers among its
@@ -112,9 +112,12 @@ Parts 5 and 6. The definitions are {name}`Goldblatt.NonstandardFramework.Compreh
 {name}`Goldblatt.RealFramework.exists_unlimited_lt_of_countable`, and Exercise 15.4.4 is
 {name}`Goldblatt.RealFramework.exists_internal_running_min` and
 {name}`Goldblatt.RealFramework.exists_unlimited_lt_of_internal_seq`. Comprehensive,
-countably saturated enlargements exist
-({name}`Goldblatt.exists_comprehensive_enlargement`,
-{name}`Goldblatt.exists_realFramework_countablySaturated`,
+countably saturated enlargements exist over any base set
+({name}`Goldblatt.exists_countablySaturated_enlargement`; the ultrapower modulo a countably
+incomplete ultrafilter is countably saturated by a direct diagonal argument,
+{name}`Goldblatt.BoundedUltrapower.countablySaturated_framework`), and over the real numbers
+together with any given type of further individuals
+({name}`Goldblatt.exists_realFramework_countablySaturated`,
 {name}`Goldblatt.exists_realFramework_countablySaturated_of_type`). In a countably saturated
 framework every infinite internal set is uncountable
 ({name}`Goldblatt.NonstandardFramework.CountablySaturated.not_countable_of_infinite`), with
