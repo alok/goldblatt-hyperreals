@@ -65,7 +65,10 @@ functions of the width, are {name}`Goldblatt.upperSum`, {name}`Goldblatt.lowerSu
 {name}`Goldblatt.hyperOrdSum`. The transferred inequalities are
 {name}`Goldblatt.hyperLowerSum_hyperOrdSum_hyperUpperSum_chain` and
 {name}`Goldblatt.hyperLowerSum_le_hyperUpperSum`. For an infinitesimal width the number of
-subintervals is unlimited ({name}`Goldblatt.hyperMeshCard_mem_unlimitedHyperNat`).
+subintervals is unlimited ({name}`Goldblatt.hyperMeshCard_mem_unlimitedHyperNat`), and for
+every positive hyperreal width it is the least hypernatural $`n` with
+$`a + n\,\Delta x \ge b` ({name}`Goldblatt.hyperMeshCard_spec`,
+{name}`Goldblatt.hyperMeshCard_le_of_le_add_mul`).
 
 Theorem 9.1.1 is {name}`Goldblatt.hyperLowerSum_infClose_hyperUpperSum_of_continuousOn`, with
 its real form {name}`Goldblatt.exists_points_upperSum_sub_lowerSum_le`. Exercise 9.1.2 is
@@ -129,8 +132,9 @@ The sample average is {name}`Goldblatt.sampleAverage` and the exercise is
   integrability as in the book. It is _not_ defined as Mathlib's integral. For continuous
   functions the two agree: this is {name}`Goldblatt.riemannIntegral_eq_intervalIntegral`,
   proved from Theorems 9.4.1 and 9.4.2.
-* All statements require $`a \le b` (and those in which $`(b - a)/N` must be a positive
-  infinitesimal require $`a < b`). The integral over a degenerate interval is $`0`
+* All statements require $`a \le b`, either as a hypothesis or as a consequence of
+  integrability; the sample averages of Section 9.5, which divide by $`b - a`, require
+  $`a < b`. The integral over a degenerate interval is $`0`
   ({name}`Goldblatt.riemannIntegral_self`). No convention is made for $`\int_a^b` with
   $`b < a`; no function is integrable on a reversed interval in the sense used here.
 * The sums of width $`\Delta x` are total functions of a real $`\Delta x`, as is needed in

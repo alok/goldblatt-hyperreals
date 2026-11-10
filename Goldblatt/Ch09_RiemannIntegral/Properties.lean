@@ -729,7 +729,9 @@ theorem RiemannIntegrableOn.hyperSeq_sampleAverage_infClose (h : RiemannIntegrab
 /-- **Exercise 9.5.** Let $`f` be continuous on $`[a, b]`, $`a < b`. If $`N` is an unlimited
 hypernatural then
 $$`\mathrm{Av}(N) \simeq \frac{1}{b - a}\int_a^b f(x)\,dx,`
-so the average value of $`f` on $`[a, b]` is the shadow of $`\mathrm{Av}(N)`. -/
+so taking the shadow of the sample average at an unlimited index recovers the mean value of
+$`f` over $`[a, b]`. Here $`a < b` is essential, since
+the right-hand side divides by $`b - a`. -/
 theorem hyperSeq_sampleAverage_infClose (hab : a < b) (hf : ContinuousOn f (Icc a b))
     (hN : N ∈ unlimitedHyperNat) :
     hyperSeq (sampleAverage f a b) N ≊ ((1 / (b - a) * riemannIntegral f a b : ℝ) : ℝ*) :=

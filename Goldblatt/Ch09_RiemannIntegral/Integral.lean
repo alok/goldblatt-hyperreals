@@ -604,55 +604,80 @@ theorem posInfinitesimal_width (hab : a < b) (hN : N ∈ unlimitedHyperNat) :
   have hinf := infinitesimal_width hN a b
   exact ⟨hpos, fun r hr => (le_abs_self _).trans_lt (infinitesimal_iff_abs_lt.1 hinf r hr)⟩
 
+/-- On a degenerate interval every sum of width $`\Delta x` is the empty sum, so its
+extension to the hyperreals is the constant $`0`. -/
+theorem starMap_meshSumOf_self (g : ℝ → ℝ → ℝ) (a : ℝ) (Δ : ℝ*) :
+    ⋆(meshSumOf g a a) Δ = 0 := by
+  have h0 : meshSumOf g a a = fun _ => (0 : ℝ) := funext fun t => by simp [meshSumOf, meshCard]
+  rw [h0, starMap_const_apply, Hyperreal.coe_zero]
+
 /-- **Exercise 9.2.1, first part.** If $`f` is Riemann integrable on $`[a, b]` (for instance
 continuous or monotonic) and $`N` is an unlimited hypernatural, then
-$$`L_a^b(f, N) \simeq S_a^b(f, N) \simeq U_a^b(f, N).` -/
+$$`L_a^b(f, N) \simeq S_a^b(f, N) \simeq U_a^b(f, N).`
+No separate hypothesis $`a < b` is needed: integrability gives $`a \le b`, and on a
+degenerate interval all three sums vanish. -/
 theorem RiemannIntegrableOn.hyperSeq_lowerSumN_infClose (h : RiemannIntegrableOn f a b)
-    (hab : a < b) (hN : N ∈ unlimitedHyperNat) :
+    (hN : N ∈ unlimitedHyperNat) :
     hyperSeq (lowerSumN f a b) N ≊ hyperSeq (ordSumN f a b) N ∧
       hyperSeq (ordSumN f a b) N ≊ hyperSeq (upperSumN f a b) N := by
   rw [hyperSeq_lowerSumN f a b hN.1, hyperSeq_ordSumN f a b hN.1, hyperSeq_upperSumN f a b hN.1]
+  rcases h.le.eq_or_lt with rfl | hab
+  · have hL : hyperLowerSum f a a (((a - a : ℝ) : ℝ*) / N) = 0 := starMap_meshSumOf_self _ a _
+    have hS : hyperOrdSum f a a (((a - a : ℝ) : ℝ*) / N) = 0 := starMap_meshSumOf_self _ a _
+    have hU : hyperUpperSum f a a (((a - a : ℝ) : ℝ*) / N) = 0 := starMap_meshSumOf_self _ a _
+    rw [hL, hS, hU]
+    exact ⟨InfClose.refl _, InfClose.refl _⟩
   have hΔ := posInfinitesimal_width hab hN
   exact infClose_between (hyperLowerSum_le_hyperOrdSum h.boundedOn hab.le hΔ.1)
     (hyperOrdSum_le_hyperUpperSum h.boundedOn hab.le hΔ.1)
     (h.hasRiemannIntegral.hyperLowerSum_infClose_hyperUpperSum hΔ)
 
-/-- **Exercise 9.2.1, second part (integrability by counting).** For $`a < b`, a bounded
+/-- **Exercise 9.2.1, second part (integrability by counting).** For $`a \le b`, a bounded
 function is Riemann integrable on $`[a, b]` if and only if
 $`L_a^b(f, N) \simeq U_a^b(f, N)` for every unlimited hypernatural $`N`. -/
-theorem riemannIntegrableOn_iff_forall_unlimited (hab : a < b) :
+theorem riemannIntegrableOn_iff_forall_unlimited (hab : a ≤ b) :
     RiemannIntegrableOn f a b ↔ BoundedOn f (Icc a b) ∧
       ∀ N ∈ unlimitedHyperNat, hyperSeq (lowerSumN f a b) N ≊ hyperSeq (upperSumN f a b) N := by
   constructor
   · intro h
     refine ⟨h.boundedOn, fun N hN => ?_⟩
-    obtain ⟨h1, h2⟩ := h.hyperSeq_lowerSumN_infClose hab hN
+    obtain ⟨h1, h2⟩ := h.hyperSeq_lowerSumN_infClose hN
     exact h1.trans h2
   · rintro ⟨hf, h⟩
+    rcases hab.eq_or_lt with rfl | hab
+    · exact ⟨0, hasRiemannIntegral_self f a⟩
     have hω := omega_mem_unlimitedHyperNat
     have := h _ hω
     rw [hyperSeq_lowerSumN f a b hω.1, hyperSeq_upperSumN f a b hω.1] at this
     exact (riemannIntegrableOn_iff_exists_infClose hab.le).2
       ⟨hf, _, posInfinitesimal_width hab hω, this⟩
 
-/-- **Exercise 9.2.1, second part (the integral by counting).** For a function that is
-Riemann integrable on $`[a, b]`, $`a < b`, and every unlimited hypernatural $`N`,
-$$`\int_a^b f(x)\,dx = \operatorname{sh}\bigl(S_a^b(f, N)\bigr).` -/
-theorem RiemannIntegrableOn.riemannIntegral_eq_sh_hyperSeq (h : RiemannIntegrableOn f a b)
-    (hab : a < b) (hN : N ∈ unlimitedHyperNat) :
-    riemannIntegral f a b = sh (hyperSeq (ordSumN f a b) N) := by
+/-- **Exercise 9.2.1.** For a Riemann integrable $`f` and an unlimited hypernatural $`N`, the
+Riemann sum $`S_a^b(f, N)` is infinitely close to the integral (also when $`a = b`). -/
+theorem RiemannIntegrableOn.hyperSeq_ordSumN_infClose (h : RiemannIntegrableOn f a b)
+    (hN : N ∈ unlimitedHyperNat) :
+    hyperSeq (ordSumN f a b) N ≊ ((riemannIntegral f a b : ℝ) : ℝ*) := by
   rw [hyperSeq_ordSumN f a b hN.1]
-  exact h.riemannIntegral_eq_sh (posInfinitesimal_width hab hN)
+  rcases h.le.eq_or_lt with rfl | hab
+  · have hS : hyperOrdSum f a a (((a - a : ℝ) : ℝ*) / N) = 0 := starMap_meshSumOf_self _ a _
+    rw [hS, riemannIntegral_self, Hyperreal.coe_zero]
+  · exact h.hyperOrdSum_infClose (posInfinitesimal_width hab hN)
+
+/-- **Exercise 9.2.1, second part (the integral by counting).** For a function that is
+Riemann integrable on $`[a, b]` and every unlimited hypernatural $`N`,
+$$`\int_a^b f(x)\,dx = \operatorname{sh}\bigl(S_a^b(f, N)\bigr).`
+The degenerate case $`a = b`, where both sides are $`0`, is included. -/
+theorem RiemannIntegrableOn.riemannIntegral_eq_sh_hyperSeq (h : RiemannIntegrableOn f a b)
+    (hN : N ∈ unlimitedHyperNat) :
+    riemannIntegral f a b = sh (hyperSeq (ordSumN f a b) N) :=
+  (sh_eq_of_infClose (h.hyperSeq_ordSumN_infClose hN)).symm
 
 /-- **Exercise 9.2.1, second part (the integral as the limit of a sequence).** For a
-function that is Riemann integrable on $`[a, b]`, $`a < b`, the sequence of Riemann sums
+function that is Riemann integrable on $`[a, b]`, the sequence of Riemann sums
 $`S_a^b(f, n)` converges to the integral. -/
-theorem RiemannIntegrableOn.tendsto_ordSumN (h : RiemannIntegrableOn f a b) (hab : a < b) :
-    Tendsto (ordSumN f a b) atTop (𝓝 (riemannIntegral f a b)) := by
-  rw [tendsto_iff_forall_unlimited_infClose]
-  intro N hN
-  rw [hyperSeq_ordSumN f a b hN.1]
-  exact h.hyperOrdSum_infClose (posInfinitesimal_width hab hN)
+theorem RiemannIntegrableOn.tendsto_ordSumN (h : RiemannIntegrableOn f a b) :
+    Tendsto (ordSumN f a b) atTop (𝓝 (riemannIntegral f a b)) :=
+  tendsto_iff_forall_unlimited_infClose.2 fun _ hN => h.hyperSeq_ordSumN_infClose hN
 
 end ByCount
 

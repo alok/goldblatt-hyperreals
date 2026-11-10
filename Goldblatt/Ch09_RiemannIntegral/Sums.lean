@@ -144,8 +144,8 @@ theorem infOn_eq_neg_supOn_neg (f : ℝ → ℝ) (x y : ℝ) :
     infOn f x y = -supOn (fun t => -f t) x y := by
   rw [infOn, supOn, Real.sInf_def, ← Set.image_neg_eq_neg, Set.image_image]
 
-/-- If the supremum of $`f` on a nonempty interval is bounded by $`B` in absolute value when
-$`f` is. -/
+/-- The supremum of $`f` on a nonempty interval is bounded by $`B` in absolute value whenever
+$`|f| \le B` on the interval. -/
 theorem abs_supOn_le (hxy : x ≤ y) {B : ℝ} (hB : ∀ t ∈ Icc x y, |f t| ≤ B) :
     |supOn f x y| ≤ B :=
   abs_le.2 ⟨(neg_le_of_abs_le (hB x (left_mem_Icc.2 hxy))).trans
@@ -415,8 +415,9 @@ theorem sum_mul_le_sum_mul (c d : ℝ → ℝ → ℝ)
   · rw [← h0, mul_zero, mul_zero]
   · exact mul_le_mul_of_nonneg_right (h i hi' j hj' (lt_of_intervalOverlap_pos h0)) h0.le
 
-/-- **Section 9.1.** Any lower sum is less than or equal to any upper sum:
-$`L_a^b(f, P_1) \le U_a^b(f, P_2)` for all partitions $`P_1`, $`P_2` of $`[a, b]`. The book
+/-- **Section 9.1.** No lower sum exceeds an upper sum, even when the two sums come from
+different partitions: $`L_a^b(f, P_1) \le U_a^b(f, P_2)` for all partitions $`P_1`, $`P_2`
+of $`[a, b]`. The book
 refers to the standard argument by refinement; here it is the comparison
 {name}`IntervalPartition.sum_mul_le_sum_mul`, applied to the infimum on a subinterval of the
 first partition and the supremum on an overlapping subinterval of the second, which are
@@ -529,9 +530,10 @@ theorem meshCard_eq_one (hab : a < b) (h : b - a ≤ Δ) : meshCard a b Δ = 1 :
   rw [meshCard, Nat.ceil_eq_iff one_ne_zero]
   exact ⟨by simpa using div_pos (sub_pos.2 hab) hΔ, by simpa using (div_le_one hΔ).2 h⟩
 
-/-- **Section 9.1.** The partition $`P_{\Delta x}` of $`[a, b]` into subintervals of equal
-width $`\Delta x`, with a possibly smaller last subinterval. If $`\Delta x \ge b - a > 0` it
-is the partition with the two points $`a` and $`b`. -/
+/-- **Section 9.1.** The partition $`P_{\Delta x}` of $`[a, b]`: step from $`a` in
+increments of $`\Delta x` and stop at $`b`, so that every piece except possibly the last has
+width exactly $`\Delta x`. When $`\Delta x \ge b - a > 0` the only points are $`a` and $`b`
+({name}`meshCard_eq_one`). -/
 def meshPartition (hab : a ≤ b) (hΔ : 0 < Δ) : IntervalPartition a b where
   n := meshCard a b Δ
   pt := meshPoint a b Δ
@@ -991,14 +993,62 @@ theorem coe_mul_posInfinitesimal_lt (c : ℝ) (hΔ : PosInfinitesimal Δ) {δ : 
   exact (le_abs_self _).trans_lt (infinitesimal_iff_abs_lt.1 this δ hδ)
 
 /-- **Section 9.1.** The number $`n` of subintervals of the partition of $`[a, b]` of width
-$`\Delta x`, extended to hyperreal widths: the least hyperinteger $`n` with
-$`a + n\,\Delta x \ge b`. -/
+$`\Delta x`, extended to hyperreal widths. It is the extension of the real function
+$`\Delta x \mapsto` {name}`meshCard`; for a positive hyperreal width it is the least
+hypernatural $`n` with $`a + n\,\Delta x \ge b`, which is the content of
+the theorems {lit}`le_add_hyperMeshCard_mul` and {lit}`hyperMeshCard_le_of_le_add_mul` below. -/
 def hyperMeshCard (a b : ℝ) : ℝ* → ℝ* := ⋆(fun t : ℝ => (meshCard a b t : ℝ))
 
 /-- The number of subintervals of a partition of hyperreal width is a hypernatural. -/
 theorem hyperMeshCard_mem_hyperNat (a b : ℝ) (Δ : ℝ*) : hyperMeshCard a b Δ ∈ ℕ* := by
   obtain ⟨r, rfl⟩ := hyperreal_exists_rep Δ
   exact mem_hyperNat_iff.2 ⟨fun n => meshCard a b (r n), rfl⟩
+
+/-- **Section 9.1.** For a positive hyperreal width the count $`n` of subintervals reaches
+the right end point: $`b \le a + n\,\Delta x`. This is the transfer of the real statement
+contained in {name}`lt_meshCard_iff`. -/
+theorem le_add_hyperMeshCard_mul (a b : ℝ) (hΔ : 0 < Δ) :
+    (b : ℝ*) ≤ a + hyperMeshCard a b Δ * Δ := by
+  obtain ⟨s, rfl⟩ := hyperreal_exists_rep Δ
+  change Hyperreal.ofSeq (fun _ => b) ≤
+    Hyperreal.ofSeq (fun n => a + (meshCard a b (s n) : ℝ) * s n)
+  refine ofSeq_le_ofSeq_iff.2 ?_
+  filter_upwards [zero_lt_ofSeq_iff.1 hΔ] with n hn
+  exact not_lt.1 fun h => lt_irrefl _ ((lt_meshCard_iff hn).2 h)
+
+/-- **Section 9.1.** For $`a < b` and a positive hyperreal width, one step fewer than the
+count $`n` of subintervals stops short of the right end point:
+$`a + (n - 1)\,\Delta x < b`. -/
+theorem add_hyperMeshCard_sub_one_mul_lt (hab : a < b) (hΔ : 0 < Δ) :
+    (a : ℝ*) + (hyperMeshCard a b Δ - 1) * Δ < b := by
+  obtain ⟨s, rfl⟩ := hyperreal_exists_rep Δ
+  change Hyperreal.ofSeq (fun n => a + ((meshCard a b (s n) : ℝ) - 1) * s n) <
+    Hyperreal.ofSeq (fun _ => b)
+  refine ofSeq_lt_ofSeq_iff.2 ?_
+  filter_upwards [zero_lt_ofSeq_iff.1 hΔ] with n hn
+  have h0 : 0 < meshCard a b (s n) := (lt_meshCard_iff hn).2 (by simpa using hab)
+  have := (lt_meshCard_iff hn (k := meshCard a b (s n) - 1)).1 (Nat.sub_lt h0 one_pos)
+  rwa [Nat.cast_pred h0] at this
+
+/-- **Section 9.1 (leastness of the count).** For a positive hyperreal width, the count of
+subintervals is the least hypernatural $`n` with $`a + n\,\Delta x \ge b`: every
+hypernatural $`K` with $`b \le a + K\,\Delta x` is at least the count. -/
+theorem hyperMeshCard_le_of_le_add_mul (hΔ : 0 < Δ) {K : ℝ*} (hK : K ∈ ℕ*)
+    (h : (b : ℝ*) ≤ a + K * Δ) : hyperMeshCard a b Δ ≤ K := by
+  obtain ⟨s, rfl⟩ := hyperreal_exists_rep Δ
+  obtain ⟨k, rfl⟩ := mem_hyperNat_iff.1 hK
+  change Hyperreal.ofSeq (fun n => (meshCard a b (s n) : ℝ)) ≤ Hyperreal.ofSeq fun n => (k n : ℝ)
+  refine ofSeq_le_ofSeq_iff.2 ?_
+  have h' : Hyperreal.ofSeq (fun _ => b) ≤ Hyperreal.ofSeq (fun n => a + (k n : ℝ) * s n) := h
+  filter_upwards [zero_lt_ofSeq_iff.1 hΔ, ofSeq_le_ofSeq_iff.1 h'] with n hn hb
+  exact Nat.cast_le.2 (not_lt.1 fun hlt => absurd ((lt_meshCard_iff hn).1 hlt) (not_lt.2 hb))
+
+/-- **Section 9.1.** The two inequalities that pin down the count $`n` of subintervals for
+$`a < b` and a positive hyperreal width:
+$`a + (n - 1)\,\Delta x < b \le a + n\,\Delta x`. -/
+theorem hyperMeshCard_spec (hab : a < b) (hΔ : 0 < Δ) :
+    (a : ℝ*) + (hyperMeshCard a b Δ - 1) * Δ < b ∧ (b : ℝ*) ≤ a + hyperMeshCard a b Δ * Δ :=
+  ⟨add_hyperMeshCard_sub_one_mul_lt hab hΔ, le_add_hyperMeshCard_mul a b hΔ⟩
 
 /-- **Section 9.1.** When $`\Delta x` is a positive infinitesimal and $`a < b`, the number
 $`n` of subintervals of the partition of width $`\Delta x` is unlimited: by transfer
@@ -1125,9 +1175,11 @@ theorem hyperLowerSum_infClose_hyperUpperSum_of_antitoneOn (hab : a ≤ b)
     (hyperUpperSum_sub_hyperLowerSum_le_of_antitoneOn hab hf hΔ.1)
     (Infinitesimal.mul_limited (Or.inl hΔ) (limited_coe _))
 
-/-- **Exercise 9.1.2.** A function is _monotonic_ on $`[a, b]` if it is nondecreasing or
-nonincreasing there. Theorem 9.1.1 holds for monotonic functions: for every positive
-infinitesimal $`\Delta x`, $`L_a^b(f, \Delta x) \simeq U_a^b(f, \Delta x)`. -/
+/-- **Exercise 9.1.2.** Call $`f` _monotonic_ on $`[a, b]` when it is nondecreasing there or
+nonincreasing there (a disjunction of {name}`MonotoneOn` and {name}`AntitoneOn`). The
+conclusion of Theorem 9.1.1 then holds for $`f` without any continuity assumption:
+$`L_a^b(f, \Delta x) \simeq U_a^b(f, \Delta x)` whenever $`\Delta x` is a positive
+infinitesimal. -/
 theorem hyperLowerSum_infClose_hyperUpperSum_of_monotonic (hab : a ≤ b)
     (hf : MonotoneOn f (Icc a b) ∨ AntitoneOn f (Icc a b)) (hΔ : PosInfinitesimal Δ) :
     hyperLowerSum f a b Δ ≊ hyperUpperSum f a b Δ :=
