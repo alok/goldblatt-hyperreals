@@ -24,10 +24,10 @@ This chapter is the foundation for Chapters 14 to 19, so the notions are set up 
 generality and independently of the ultrapower of Parts I to III. Existence of frameworks is
 not proved here; that is Chapter 14.
 
-The formalization is long and is split over five pages; this page is the overview, the
+The formalization is long and is split over six pages; this page is the overview, the
 record of the design decisions, and the index.
 
-## The five parts
+## The six parts
 
 * {lit}`Goldblatt.Ch13_Universes.Sets` covers Sections 13.1 to 13.6: pairs, tuples, relations
   and functions as sets, strong transitivity, universes and every closure property in the
@@ -45,8 +45,12 @@ record of the design decisions, and the index.
   individuals: the examples of Section 13.9 (initial segments, intervals, Exercise 13.9.1),
   the internal least number principle, internal induction and order-completeness, the
   exercises of Section 13.13, Theorem 13.14.1 on external images, hyperfinite sets with
-  Theorem 13.17.1, internal cardinality, the exercises of Section 13.18, and the sum of a
-  hyperfinite set of hyperreals.
+  Theorem 13.17.1, internal cardinality, and the exercises of Section 13.18.
+* {lit}`Goldblatt.Ch13_Universes.Sums` covers what needs the arithmetic of the real numbers:
+  the transforms of the operations on the reals and the example of Section 13.8 of a function
+  whose transform does not extend it, the uniform partitions that illustrate Sections 13.10,
+  13.15 and 13.16, the sum of a hyperfinite set and of an internal function over a hyperfinite
+  set (Section 13.19), and the exercises of Section 13.20.
 
 ## The sections of the chapter
 
@@ -57,19 +61,20 @@ record of the design decisions, and the index.
 * 13.5 Universes (part 1).
 * 13.6 Superstructures (part 1).
 * 13.7 The Language of a Universe (part 2).
-* 13.8 Nonstandard Frameworks (part 3).
+* 13.8 Nonstandard Frameworks (part 3; the operations on the reals and the last example in
+  part 6).
 * 13.9 Standard Entities (part 3; the examples with numbers in part 5).
-* 13.10 Internal Entities (part 4).
+* 13.10 Internal Entities (part 4; the examples in parts 5 and 6).
 * 13.11 Closure Properties of Internal Sets (part 4).
 * 13.12 Transformed Power Sets (part 4; the applications to the natural numbers in part 5).
 * 13.13 Exercises on Internal Sets and Functions (part 5).
 * 13.14 External Images Are External (part 5).
-* 13.15 Internal Set Definition Principle (part 4).
-* 13.16 Internal Function Definition Principle (part 4).
+* 13.15 Internal Set Definition Principle (part 4; the illustration in part 6).
+* 13.16 Internal Function Definition Principle (part 4; the illustration in part 6).
 * 13.17 Hyperfiniteness (part 5).
 * 13.18 Exercises on Hyperfinite Sets and Sizes (part 5).
-* 13.19 Hyperfinite Summation (part 5).
-* 13.20 Exercises on Hyperfinite Sums (part 5).
+* 13.19 Hyperfinite Summation (part 6).
+* 13.20 Exercises on Hyperfinite Sums (part 6).
 
 ## Design of the formalization
 
@@ -115,7 +120,15 @@ formulas whose terms are always defined.
 *Frameworks.* {name}`Goldblatt.NonstandardFramework` is a structure whose fields are the
 book's axioms: a universe over $`X`, a second universe, a map between them that fixes the
 members of $`X` and the empty set, and transfer for all sentences of the deep embedding.
-Every result of Sections 13.8 to 13.17 is proved from these fields. Where the book assumes
+Because every sentence has a truth value here, the transfer field also covers sentences with
+undefined terms, and so it asserts in addition that definedness of terms is preserved. This
+is stronger than the book's transfer principle for defined sentences, and an existence proof
+(Chapter 14) has to establish the stronger form. It is within reach because definedness is a
+bounded property: {name}`Goldblatt.Term.sat_definedF` exhibits, for a term whose function
+parts are sets of pairs from a set $`T` of the universe, a bounded formula that is true
+exactly when the term is defined.
+
+Every result of Sections 13.8 to 13.20 is proved from these fields. Where the book assumes
 that the real numbers are individuals, the structure {name}`Goldblatt.RealFramework` adds an
 injection of the reals into $`X`.
 
@@ -134,10 +147,24 @@ constants are internal, follows by replacing the constants by variables, which i
 book's proof begins ({name}`Goldblatt.NonstandardFramework.internal_sep_of_internal_consts`,
 {name}`Goldblatt.NonstandardFramework.internal_of_term_of_internal_consts`).
 
-*What is not formalized.* The book defines the sum of an internal function over a
-hyperfinite set as the sum of the set of its values, which is the intended sum only for
-injective functions. The sum of a hyperfinite set of hyperreals is defined here
-({name}`Goldblatt.RealFramework.hsum`), but the sum of a function and the exercises of
-Section 13.20 about it are not formalized. The same holds for one illustration, the example
-at the end of Section 13.8 of a function whose transform does not extend it.
+*Corrections to the book.* The book defines the sum of an internal function $`f` over a
+hyperfinite set $`B` as the sum of the set $`f(B)` of its values, which is the intended sum
+only when $`f` is injective on $`B`. The formalization defines the sum by transferring the
+summation operator on pairs of a function and a finite set
+({name}`Goldblatt.RealFramework.hfsum`), proves the four properties of Exercise 13.20 (1) for
+it, and recovers the book's formula in the injective case
+({name}`Goldblatt.RealFramework.hfsum_eq_hsum_relImage`). Exercise 13.18 (3) needs the word
+"nonempty".
+
+*Arithmetic.* The operations on the real numbers are entities of the universe
+({name}`Goldblatt.RealFramework.binFn`), and their transforms are written
+{name}`Goldblatt.RealFramework.hadd` and {name}`Goldblatt.RealFramework.hmul`. The uniform
+partition of Sections 13.10, 13.15 and 13.16 is formed with one function of the universe that
+computes the partition points, in place of a composite of addition, multiplication and
+division.
+
+*What is left as prose.* The wish list of Section 13.1, the remark in Section 13.4 on
+transitive closures, and the informal discussion that opens Sections 13.7 and 13.8 have no
+formal content of their own. Existence of frameworks, and of nonstandard elements, is the
+subject of Chapter 14; where a result needs a nonstandard hypernatural, that is a hypothesis.
 -/

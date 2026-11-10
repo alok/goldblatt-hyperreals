@@ -10,9 +10,9 @@ whose transform does not extend it, the uniform partitions that illustrate Secti
 13.15 and 13.16, hyperfinite summation (Section 13.19) and the exercises on hyperfinite sums
 (Section 13.20).
 
-The sections of this page follow the book's order, but the page as a whole comes after
-part 5 because every item here needs both the real numbers of part 5 and, for the partitions
-and the sums, the hyperfinite sets defined there.
+The sections of this page follow the book's order. The page as a whole comes after part 5
+because every item here needs the real numbers introduced there, and the sums need the
+hyperfinite sets of Section 13.17.
 -/
 
 noncomputable section
@@ -30,7 +30,7 @@ open Formula Term NonstandardFramework
 variable (F : RealFramework.{u}) {A B C D T f g h a b c n x y p : ZFSet.{u}}
 
 /-!
-## 13.8 Operations on the real numbers as entities of the universe
+## 13.8 Nonstandard Frameworks: operations on the real numbers
 
 Section 13.8 observes that when the real numbers are individuals, the operations and
 relations on them are entities of $`\mathbb U`, so each has a transform. A binary operation
@@ -151,7 +151,7 @@ theorem star_N_subset_star_R : F.star F.N ⊆ F.star F.R :=
     exact F.mem_R.2 ⟨k, rfl⟩
 
 /-!
-## 13.8 A function whose transform does not extend it
+### A function whose transform does not extend it
 
 For functions and relations between individuals the star may be dropped, because the
 transform agrees with the original on standard arguments. For a function whose values are
@@ -229,6 +229,233 @@ theorem app_star_rayFn_ne (hω : ∃ n, n ∈ F.star F.N ∧ n ∉ F.N) :
   rw [heq, F.app_rayFn] at hmem
   obtain ⟨r, rfl⟩ := F.mem_R.1 (mem_sep.1 hmem).1
   exact hnN (F.mem_N_of_standard (F.standard_of_mem_base (F.real_mem r)) hn)
+
+/-!
+## 13.10 Internal Entities: uniform partitions (also Sections 13.15 and 13.16)
+
+The book illustrates internal sets three times with the same example, the uniform partition
+$`P_n^{[a, b]} = \{a + k(b - a)/n : k \in {}^*\mathbb Z,\ 0 \le k \le n\}` of a hyperreal
+interval into $`n` parts, for hyperreal $`a, b` and a hypernatural $`n`. It is internal
+because it belongs to $`{}^*\mathcal P(\mathbb R)` (Section 13.10), because it is defined by
+an internal formula (Section 13.15), and because it is the image of an internal function
+(Section 13.16). All three arguments are carried out here. The partition points
+$`a + k(b - a)/n` are formed with a single function of the universe, taking
+$`((a, b), (n, k))` to that real number, in place of the composite of addition,
+multiplication and division; the index $`k` ranges over the hypernaturals up to $`n`, which
+are the hyperintegers between $`0` and $`n`, since the natural numbers of the formalization
+start at $`0`.
+-/
+
+/-- **Section 13.10, partition points.** The function taking $`((a, b), (n, k))` to the
+partition point $`a + k(b - a)/n`, as a set of pairs in the universe. -/
+def partFn : ZFSet.{u} :=
+  ZFSet.range fun q : (ℝ × ℝ) × (ℕ × ℕ) =>
+    pair (pair (pair (F.real q.1.1) (F.real q.1.2)) (pair (F.nat q.2.1) (F.nat q.2.2)))
+      (F.real (q.1.1 + q.2.2 * (q.1.2 - q.1.1) / q.2.1))
+
+/-- **Section 13.10.** The value of the partition point function. -/
+theorem pair_mem_partFn {r s : ℝ} {i j : ℕ} :
+    pair (pair (pair (F.real r) (F.real s)) (pair (F.nat i) (F.nat j))) c ∈ F.partFn ↔
+      c = F.real (r + j * (s - r) / i) := by
+  rw [partFn, mem_range]
+  constructor
+  · rintro ⟨q, hq⟩
+    obtain ⟨h1, h2⟩ := pair_inj.1 hq
+    obtain ⟨h3, h4⟩ := pair_inj.1 h1
+    obtain ⟨h5, h6⟩ := pair_inj.1 h3
+    obtain ⟨h7, h8⟩ := pair_inj.1 h4
+    rw [← h2, F.real_injective h5, F.real_injective h6, F.nat_injective h7, F.nat_injective h8]
+  · rintro rfl
+    exact ⟨((r, s), (i, j)), rfl⟩
+
+/-- **Section 13.10.** The partition point function is a function from
+$`(\mathbb R \times \mathbb R) \times (\mathbb N \times \mathbb N)` to $`\mathbb R`. -/
+theorem isFunc_partFn :
+    IsFunc (prod (prod F.R F.R) (prod F.N F.N)) F.R F.partFn := by
+  refine ⟨fun p hp => ?_, fun z hz => ?_⟩
+  · obtain ⟨q, rfl⟩ := mem_range.1 hp
+    exact pair_mem_prod.2 ⟨pair_mem_prod.2 ⟨pair_mem_prod.2 ⟨F.mem_R.2 ⟨_, rfl⟩,
+      F.mem_R.2 ⟨_, rfl⟩⟩, pair_mem_prod.2 ⟨F.mem_N.2 ⟨_, rfl⟩, F.mem_N.2 ⟨_, rfl⟩⟩⟩,
+      F.mem_R.2 ⟨_, rfl⟩⟩
+  · obtain ⟨ab, hab, nk, hnk, rfl⟩ := mem_prod.1 hz
+    obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 hab
+    obtain ⟨n, hn, k, hk, rfl⟩ := mem_prod.1 hnk
+    obtain ⟨r, rfl⟩ := F.mem_R.1 ha
+    obtain ⟨s, rfl⟩ := F.mem_R.1 hb
+    obtain ⟨i, rfl⟩ := F.mem_N.1 hn
+    obtain ⟨j, rfl⟩ := F.mem_N.1 hk
+    exact ⟨_, F.pair_mem_partFn.2 rfl, fun w hw => F.pair_mem_partFn.1 hw⟩
+
+/-- The domain of the partition point function is a set of the universe. -/
+theorem isSetOf_partDom : IsSetOf F.U (prod (prod F.R F.R) (prod F.N F.N)) :=
+  F.hU.isSetOf_prod (F.hU.isSetOf_prod F.isSetOf_R F.isSetOf_R)
+    (F.hU.isSetOf_prod F.isSetOf_N F.isSetOf_N)
+
+/-- **Section 13.10.** The partition point function is an entity of the universe. -/
+theorem isSetOf_partFn : IsSetOf F.U F.partFn :=
+  F.hU.isSetOf_of_isFunc F.isSetOf_partDom F.isSetOf_R F.isFunc_partFn
+
+/-- **Section 13.10.** The transform of the partition point function is a function from
+$`({}^*\mathbb R \times {}^*\mathbb R) \times ({}^*\mathbb N \times {}^*\mathbb N)` to
+$`{}^*\mathbb R`. -/
+theorem isFunc_star_partFn :
+    IsFunc (prod (prod (F.star F.R) (F.star F.R)) (prod (F.star F.N) (F.star F.N)))
+      (F.star F.R) (F.star F.partFn) := by
+  have := F.isFunc_star F.isSetOf_partDom F.isSetOf_R F.isFunc_partFn
+  rwa [F.star_prod (F.hU.isSetOf_prod F.isSetOf_R F.isSetOf_R)
+    (F.hU.isSetOf_prod F.isSetOf_N F.isSetOf_N), F.star_prod F.isSetOf_R F.isSetOf_R,
+    F.star_prod F.isSetOf_N F.isSetOf_N] at this
+
+/-- **Section 13.10, uniform partitions.** The uniform partition
+$`P_n^{[a, b]} = \{a + k(b - a)/n : 0 \le k \le n\}` determined by hyperreals $`a, b` and a
+hypernatural $`n`: the set of hyperreals $`x` such that $`x` is the partition point of some
+hypernatural $`k \le n`. -/
+def partition (a b n : ZFSet.{u}) : ZFSet.{u} :=
+  (F.star F.R).sep fun x => ∃ k ∈ F.star F.N, pair k n ∈ F.star F.Le ∧
+    pair (pair (pair a b) (pair n k)) x ∈ F.star F.partFn
+
+/-- **Section 13.10.** Every uniform partition belongs to $`{}^*\mathcal P(\mathbb R)`, by
+transfer of the statement that for all real $`a, b` and natural $`n` there is a set of real
+numbers consisting of the partition points. -/
+theorem partition_mem_star_powerset (ha : a ∈ F.star F.R) (hb : b ∈ F.star F.R)
+    (hn : n ∈ F.star F.N) : F.partition a b n ∈ F.star (powerset F.R) := by
+  have hPR := F.hU.isSetOf_powerset F.isSetOf_R
+  have htr := F.transfer
+    (.all 1 (.const F.R) (.all 2 (.const F.R) (.all 3 (.const F.N) (.ex 0 (.const (powerset F.R))
+      (.all 4 (.const F.R) (.biimp (.elem (.var 4) (.var 0))
+        (.ex 5 (.const F.N) (.conj (.elem (.opair (.var 5) (.var 3)) (.const F.Le))
+          (.elem (.opair (.opair (.opair (.var 1) (.var 2)) (.opair (.var 3) (.var 5)))
+            (.var 4)) (.const F.partFn))))))))))
+    (by simp [IsSentence, hPR.1, F.isSetOf_R.1, F.isSetOf_N.1, F.isSetOf_Le.1,
+      F.isSetOf_partFn.1])
+  sat_simp at htr
+  have hRU' := F.star_subset_U' F.isSetOf_R
+  have hNU' := F.star_subset_U' F.isSetOf_N
+  obtain ⟨P, -, hP, hPmem⟩ := htr.1 (by
+    intro a' _ _ b' _ _ n' _ _
+    refine ⟨F.R.sep fun x => ∃ k ∈ F.U, k ∈ F.N ∧ pair k n' ∈ F.Le ∧
+      pair (pair (pair a' b') (pair n' k)) x ∈ F.partFn, (F.hU.isSetOf_sep F.isSetOf_R _).1,
+      mem_powerset.2 sep_subset, fun x _ hx => ?_⟩
+    rw [mem_sep]
+    exact ⟨fun h => h.2, fun h => ⟨hx, h⟩⟩) a (hRU' ha) ha b (hRU' hb) hb n (hNU' hn) hn
+  have hPsub := mem_powerset.1 (F.star_powerset_subset F.isSetOf_R hP)
+  have : F.partition a b n = P := by
+    ext x
+    rw [partition, mem_sep]
+    constructor
+    · rintro ⟨hx, k, hk, h⟩
+      exact (hPmem x (hRU' hx) hx).2 ⟨k, hNU' hk, hk, h⟩
+    · intro hx
+      obtain ⟨k, -, hk, h⟩ := (hPmem x (hRU' (hPsub hx)) (hPsub hx)).1 hx
+      exact ⟨hPsub hx, k, hk, h⟩
+  rw [this]
+  exact hP
+
+/-- **Section 13.10.** Every uniform partition is an internal subset of
+$`{}^*\mathbb R`. -/
+theorem internal_partition (ha : a ∈ F.star F.R) (hb : b ∈ F.star F.R) (hn : n ∈ F.star F.N) :
+    F.partition a b n ⊆ F.star F.R ∧ F.Internal (F.partition a b n) :=
+  (F.mem_star_powerset_iff F.isSetOf_R).1 (F.partition_mem_star_powerset ha hb hn)
+
+/-- **Section 13.15, illustration.** The uniform partition is internal by the internal set
+definition principle: it is the subset of the internal set $`{}^*\mathbb R` defined by the
+internal formula "$`x` is the partition point of some $`k \le n`", whose parameters
+$`a, b, n` are internal. -/
+theorem internal_partition_of_definition (ha : a ∈ F.star F.R) (hb : b ∈ F.star F.R)
+    (hn : n ∈ F.star F.N) : F.Internal (F.partition a b n) := by
+  have hv : ∀ y ∈ [1, 2, 3], F.Internal (Function.update (Function.update
+      (Function.update (fun _ => (∅ : ZFSet.{u})) 1 a) 2 b) 3 n y) := by
+    intro y hy
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
+    rcases hy with rfl | rfl | rfl
+    · simpa using F.internal_of_mem_star F.isSetOf_R ha
+    · simpa using F.internal_of_mem_star F.isSetOf_R hb
+    · simpa using F.internal_of_mem_star F.isSetOf_N hn
+  have := F.internal_sep
+    (.ex 5 (.const F.N) (.conj (.elem (.opair (.var 5) (.var 3)) (.const F.Le))
+      (.elem (.opair (.opair (.opair (.var 1) (.var 2)) (.opair (.var 3) (.var 5)))
+        (.var 0)) (.const F.partFn)))) [1, 2, 3] 0
+    (by simp [F.isSetOf_N.1, F.isSetOf_Le.1, F.isSetOf_partFn.1]) _ hv
+    (F.internal_star F.isSetOf_R.1) (F.isSetOf_star F.isSetOf_R)
+  sat_simp at this
+  have e : F.partition a b n = (F.star F.R).sep fun x => ∃ k ∈ F.U', k ∈ F.star F.N ∧
+      pair k n ∈ F.star F.Le ∧ pair (pair (pair a b) (pair n k)) x ∈ F.star F.partFn := by
+    ext x
+    rw [partition, mem_sep, mem_sep]
+    exact ⟨fun ⟨hx, k, hk, h⟩ => ⟨hx, k, F.star_subset_U' F.isSetOf_N hk, hk, h⟩,
+      fun ⟨hx, k, _, hk, h⟩ => ⟨hx, k, hk, h⟩⟩
+  rw [e]
+  exact this
+
+/-- **Section 13.16, illustration.** The uniform partition is the image of an internal
+function: the function on $`\{k \in {}^*\mathbb N : k \le n\}` defined by the internal term
+$`a + x(b - a)/n` is internal by the internal function definition principle, and its range is
+the partition. -/
+theorem partition_eq_ran_internal (ha : a ∈ F.star F.R) (hb : b ∈ F.star F.R)
+    (hn : n ∈ F.star F.N) :
+    ∃ f, F.Internal f ∧
+      IsFunc ((F.star F.N).sep fun k => pair k n ∈ F.star F.Le) (F.star F.R) f ∧
+      (∀ k ∈ dom f, app f k = app (F.star F.partFn) (pair (pair a b) (pair n k))) ∧
+      ran f = F.partition a b n := by
+  set A : ZFSet.{u} := (F.star F.N).sep fun k => pair k n ∈ F.star F.Le with hAdef
+  set f : ZFSet.{u} := (prod A (F.star F.R)).sep fun p => ∃ k y, p = pair k y ∧
+    pair (pair (pair a b) (pair n k)) y ∈ F.star F.partFn with hfdef
+  have hpf := F.isFunc_star_partFn
+  have hmem : ∀ k y, pair k y ∈ f ↔ k ∈ A ∧ y ∈ F.star F.R ∧
+      pair (pair (pair a b) (pair n k)) y ∈ F.star F.partFn := fun k y => by
+    rw [hfdef, mem_sep, pair_mem_prod]
+    constructor
+    · rintro ⟨⟨hk, hy⟩, k', y', hp, h⟩
+      obtain ⟨rfl, rfl⟩ := pair_inj.1 hp
+      exact ⟨hk, hy, h⟩
+    · rintro ⟨hk, hy, h⟩
+      exact ⟨⟨hk, hy⟩, k, y, rfl, h⟩
+  have harg : ∀ k ∈ A, pair (pair a b) (pair n k) ∈ dom (F.star F.partFn) := fun k hk => by
+    rw [hpf.dom_eq]
+    exact pair_mem_prod.2 ⟨pair_mem_prod.2 ⟨ha, hb⟩, pair_mem_prod.2 ⟨hn, (mem_sep.1 hk).1⟩⟩
+  have hpt : ∀ k ∈ A, pair k (app (F.star F.partFn) (pair (pair a b) (pair n k))) ∈ f :=
+    fun k hk => by
+      have h := hpf.isFunction.pair_app_mem (harg k hk)
+      exact (hmem _ _).2 ⟨hk, (pair_mem_prod.1 (hpf.1 h)).2, h⟩
+  have hfunc : IsFunc A (F.star F.R) f :=
+    ⟨sep_subset, fun k hk => ⟨_, hpt k hk, fun w hw =>
+      hpf.isFunction.2 _ _ _ ((hmem _ _).1 hw).2.2 ((hmem _ _).1 (hpt k hk)).2.2⟩⟩
+  have happ : ∀ k ∈ A, app f k = app (F.star F.partFn) (pair (pair a b) (pair n k)) :=
+    fun k hk => hfunc.isFunction.app_eq (hpt k hk)
+  have hAint : F.Internal A := by
+    have := F.internal_sep (.elem (.opair (.var 0) (.var 1)) (.const F.Le)) [1] 0
+      (by simp [F.isSetOf_Le.1]) (fun _ => n)
+      (by simpa using F.internal_of_mem_star F.isSetOf_N hn) (F.internal_star F.isSetOf_N.1)
+      (F.isSetOf_star F.isSetOf_N)
+    sat_simp at this
+    exact this
+  have hAset : IsSetOf F.U' A := isSetOf_of_subset hAint.mem_U' fun k hk =>
+    F.star_subset_U' F.isSetOf_N (mem_sep.1 hk).1
+  have hv : ∀ y ∈ [1, 2, 3], F.Internal (Function.update (Function.update
+      (Function.update (fun _ => (∅ : ZFSet.{u})) 1 a) 2 b) 3 n y) := by
+    intro y hy
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
+    rcases hy with rfl | rfl | rfl
+    · simpa using F.internal_of_mem_star F.isSetOf_R ha
+    · simpa using F.internal_of_mem_star F.isSetOf_R hb
+    · simpa using F.internal_of_mem_star F.isSetOf_N hn
+  have hfint : F.Internal f := F.internal_of_term
+    (.app (.const F.partFn) (.opair (.opair (.var 1) (.var 2)) (.opair (.var 3) (.var 0))))
+    [1, 2, 3] 0 (by simp [F.isSetOf_partFn.1]) _ hv hAint hAset
+    (F.internal_star F.isSetOf_R.1) (F.isSetOf_star F.isSetOf_R) hfunc fun k hk => by
+      sat_simp
+      exact ⟨⟨hpf.isFunction, F.relIn_star F.isSetOf_partFn
+        (F.hU.relIn_of_subset_prod F.isSetOf_partDom F.isSetOf_R F.isFunc_partFn.1),
+        harg k hk⟩, happ k hk⟩
+  refine ⟨f, hfint, hfunc, fun k hk => happ k (hfunc.dom_eq ▸ hk), ?_⟩
+  ext y
+  rw [mem_ran, partition, mem_sep]
+  constructor
+  · rintro ⟨k, hky⟩
+    obtain ⟨hk, hy, h⟩ := (hmem k y).1 hky
+    exact ⟨hy, k, (mem_sep.1 hk).1, (mem_sep.1 hk).2, h⟩
+  · rintro ⟨hy, k, hk, hkn, h⟩
+    exact ⟨k, (hmem k y).2 ⟨mem_sep.2 ⟨hk, hkn⟩, hy, h⟩⟩
 
 /-!
 ## 13.19 Hyperfinite Summation
@@ -962,233 +1189,6 @@ theorem isum_nat (hx : x ∈ F.star (powerset (prod F.N F.R))) (hxfun : IsFuncti
     rw [F.isum_succ hx hxfun (hN m) (hN (m + 1)) hsucc (mem_dom.2 ⟨_, hmem⟩),
       ih fun k h1 h2 => hval k h1 (by omega), hxfun.app_eq hmem, hadd, F.hop_real,
       Finset.sum_Icc_succ_top (by omega)]
-
-/-!
-## 13.10, 13.15 and 13.16: uniform partitions
-
-The book illustrates internal sets three times with the same example, the uniform partition
-$`P_n^{[a, b]} = \{a + k(b - a)/n : k \in {}^*\mathbb Z,\ 0 \le k \le n\}` of a hyperreal
-interval into $`n` parts, for hyperreal $`a, b` and a hypernatural $`n`. It is internal
-because it belongs to $`{}^*\mathcal P(\mathbb R)` (Section 13.10), because it is defined by
-an internal formula (Section 13.15), and because it is the image of an internal function
-(Section 13.16). All three arguments are carried out here. The partition points
-$`a + k(b - a)/n` are formed with a single function of the universe, taking
-$`((a, b), (n, k))` to that real number, in place of the composite of addition,
-multiplication and division; the index $`k` ranges over the hypernaturals up to $`n`, which
-are the hyperintegers between $`0` and $`n`, since the natural numbers of the formalization
-start at $`0`.
--/
-
-/-- **Section 13.10, partition points.** The function taking $`((a, b), (n, k))` to the
-partition point $`a + k(b - a)/n`, as a set of pairs in the universe. -/
-def partFn : ZFSet.{u} :=
-  ZFSet.range fun q : (ℝ × ℝ) × (ℕ × ℕ) =>
-    pair (pair (pair (F.real q.1.1) (F.real q.1.2)) (pair (F.nat q.2.1) (F.nat q.2.2)))
-      (F.real (q.1.1 + q.2.2 * (q.1.2 - q.1.1) / q.2.1))
-
-/-- **Section 13.10.** The value of the partition point function. -/
-theorem pair_mem_partFn {r s : ℝ} {i j : ℕ} :
-    pair (pair (pair (F.real r) (F.real s)) (pair (F.nat i) (F.nat j))) c ∈ F.partFn ↔
-      c = F.real (r + j * (s - r) / i) := by
-  rw [partFn, mem_range]
-  constructor
-  · rintro ⟨q, hq⟩
-    obtain ⟨h1, h2⟩ := pair_inj.1 hq
-    obtain ⟨h3, h4⟩ := pair_inj.1 h1
-    obtain ⟨h5, h6⟩ := pair_inj.1 h3
-    obtain ⟨h7, h8⟩ := pair_inj.1 h4
-    rw [← h2, F.real_injective h5, F.real_injective h6, F.nat_injective h7, F.nat_injective h8]
-  · rintro rfl
-    exact ⟨((r, s), (i, j)), rfl⟩
-
-/-- **Section 13.10.** The partition point function is a function from
-$`(\mathbb R \times \mathbb R) \times (\mathbb N \times \mathbb N)` to $`\mathbb R`. -/
-theorem isFunc_partFn :
-    IsFunc (prod (prod F.R F.R) (prod F.N F.N)) F.R F.partFn := by
-  refine ⟨fun p hp => ?_, fun z hz => ?_⟩
-  · obtain ⟨q, rfl⟩ := mem_range.1 hp
-    exact pair_mem_prod.2 ⟨pair_mem_prod.2 ⟨pair_mem_prod.2 ⟨F.mem_R.2 ⟨_, rfl⟩,
-      F.mem_R.2 ⟨_, rfl⟩⟩, pair_mem_prod.2 ⟨F.mem_N.2 ⟨_, rfl⟩, F.mem_N.2 ⟨_, rfl⟩⟩⟩,
-      F.mem_R.2 ⟨_, rfl⟩⟩
-  · obtain ⟨ab, hab, nk, hnk, rfl⟩ := mem_prod.1 hz
-    obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 hab
-    obtain ⟨n, hn, k, hk, rfl⟩ := mem_prod.1 hnk
-    obtain ⟨r, rfl⟩ := F.mem_R.1 ha
-    obtain ⟨s, rfl⟩ := F.mem_R.1 hb
-    obtain ⟨i, rfl⟩ := F.mem_N.1 hn
-    obtain ⟨j, rfl⟩ := F.mem_N.1 hk
-    exact ⟨_, F.pair_mem_partFn.2 rfl, fun w hw => F.pair_mem_partFn.1 hw⟩
-
-/-- The domain of the partition point function is a set of the universe. -/
-theorem isSetOf_partDom : IsSetOf F.U (prod (prod F.R F.R) (prod F.N F.N)) :=
-  F.hU.isSetOf_prod (F.hU.isSetOf_prod F.isSetOf_R F.isSetOf_R)
-    (F.hU.isSetOf_prod F.isSetOf_N F.isSetOf_N)
-
-/-- **Section 13.10.** The partition point function is an entity of the universe. -/
-theorem isSetOf_partFn : IsSetOf F.U F.partFn :=
-  F.hU.isSetOf_of_isFunc F.isSetOf_partDom F.isSetOf_R F.isFunc_partFn
-
-/-- **Section 13.10.** The transform of the partition point function is a function from
-$`({}^*\mathbb R \times {}^*\mathbb R) \times ({}^*\mathbb N \times {}^*\mathbb N)` to
-$`{}^*\mathbb R`. -/
-theorem isFunc_star_partFn :
-    IsFunc (prod (prod (F.star F.R) (F.star F.R)) (prod (F.star F.N) (F.star F.N)))
-      (F.star F.R) (F.star F.partFn) := by
-  have := F.isFunc_star F.isSetOf_partDom F.isSetOf_R F.isFunc_partFn
-  rwa [F.star_prod (F.hU.isSetOf_prod F.isSetOf_R F.isSetOf_R)
-    (F.hU.isSetOf_prod F.isSetOf_N F.isSetOf_N), F.star_prod F.isSetOf_R F.isSetOf_R,
-    F.star_prod F.isSetOf_N F.isSetOf_N] at this
-
-/-- **Section 13.10, uniform partitions.** The uniform partition
-$`P_n^{[a, b]} = \{a + k(b - a)/n : 0 \le k \le n\}` determined by hyperreals $`a, b` and a
-hypernatural $`n`: the set of hyperreals $`x` such that $`x` is the partition point of some
-hypernatural $`k \le n`. -/
-def partition (a b n : ZFSet.{u}) : ZFSet.{u} :=
-  (F.star F.R).sep fun x => ∃ k ∈ F.star F.N, pair k n ∈ F.star F.Le ∧
-    pair (pair (pair a b) (pair n k)) x ∈ F.star F.partFn
-
-/-- **Section 13.10.** Every uniform partition belongs to $`{}^*\mathcal P(\mathbb R)`, by
-transfer of the statement that for all real $`a, b` and natural $`n` there is a set of real
-numbers consisting of the partition points. -/
-theorem partition_mem_star_powerset (ha : a ∈ F.star F.R) (hb : b ∈ F.star F.R)
-    (hn : n ∈ F.star F.N) : F.partition a b n ∈ F.star (powerset F.R) := by
-  have hPR := F.hU.isSetOf_powerset F.isSetOf_R
-  have htr := F.transfer
-    (.all 1 (.const F.R) (.all 2 (.const F.R) (.all 3 (.const F.N) (.ex 0 (.const (powerset F.R))
-      (.all 4 (.const F.R) (.biimp (.elem (.var 4) (.var 0))
-        (.ex 5 (.const F.N) (.conj (.elem (.opair (.var 5) (.var 3)) (.const F.Le))
-          (.elem (.opair (.opair (.opair (.var 1) (.var 2)) (.opair (.var 3) (.var 5)))
-            (.var 4)) (.const F.partFn))))))))))
-    (by simp [IsSentence, hPR.1, F.isSetOf_R.1, F.isSetOf_N.1, F.isSetOf_Le.1,
-      F.isSetOf_partFn.1])
-  sat_simp at htr
-  have hRU' := F.star_subset_U' F.isSetOf_R
-  have hNU' := F.star_subset_U' F.isSetOf_N
-  obtain ⟨P, -, hP, hPmem⟩ := htr.1 (by
-    intro a' _ _ b' _ _ n' _ _
-    refine ⟨F.R.sep fun x => ∃ k ∈ F.U, k ∈ F.N ∧ pair k n' ∈ F.Le ∧
-      pair (pair (pair a' b') (pair n' k)) x ∈ F.partFn, (F.hU.isSetOf_sep F.isSetOf_R _).1,
-      mem_powerset.2 sep_subset, fun x _ hx => ?_⟩
-    rw [mem_sep]
-    exact ⟨fun h => h.2, fun h => ⟨hx, h⟩⟩) a (hRU' ha) ha b (hRU' hb) hb n (hNU' hn) hn
-  have hPsub := mem_powerset.1 (F.star_powerset_subset F.isSetOf_R hP)
-  have : F.partition a b n = P := by
-    ext x
-    rw [partition, mem_sep]
-    constructor
-    · rintro ⟨hx, k, hk, h⟩
-      exact (hPmem x (hRU' hx) hx).2 ⟨k, hNU' hk, hk, h⟩
-    · intro hx
-      obtain ⟨k, -, hk, h⟩ := (hPmem x (hRU' (hPsub hx)) (hPsub hx)).1 hx
-      exact ⟨hPsub hx, k, hk, h⟩
-  rw [this]
-  exact hP
-
-/-- **Section 13.10.** Every uniform partition is an internal subset of
-$`{}^*\mathbb R`. -/
-theorem internal_partition (ha : a ∈ F.star F.R) (hb : b ∈ F.star F.R) (hn : n ∈ F.star F.N) :
-    F.partition a b n ⊆ F.star F.R ∧ F.Internal (F.partition a b n) :=
-  (F.mem_star_powerset_iff F.isSetOf_R).1 (F.partition_mem_star_powerset ha hb hn)
-
-/-- **Section 13.15, illustration.** The uniform partition is internal by the internal set
-definition principle: it is the subset of the internal set $`{}^*\mathbb R` defined by the
-internal formula "$`x` is the partition point of some $`k \le n`", whose parameters
-$`a, b, n` are internal. -/
-theorem internal_partition_of_definition (ha : a ∈ F.star F.R) (hb : b ∈ F.star F.R)
-    (hn : n ∈ F.star F.N) : F.Internal (F.partition a b n) := by
-  have hv : ∀ y ∈ [1, 2, 3], F.Internal (Function.update (Function.update
-      (Function.update (fun _ => (∅ : ZFSet.{u})) 1 a) 2 b) 3 n y) := by
-    intro y hy
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
-    rcases hy with rfl | rfl | rfl
-    · simpa using F.internal_of_mem_star F.isSetOf_R ha
-    · simpa using F.internal_of_mem_star F.isSetOf_R hb
-    · simpa using F.internal_of_mem_star F.isSetOf_N hn
-  have := F.internal_sep
-    (.ex 5 (.const F.N) (.conj (.elem (.opair (.var 5) (.var 3)) (.const F.Le))
-      (.elem (.opair (.opair (.opair (.var 1) (.var 2)) (.opair (.var 3) (.var 5)))
-        (.var 0)) (.const F.partFn)))) [1, 2, 3] 0
-    (by simp [F.isSetOf_N.1, F.isSetOf_Le.1, F.isSetOf_partFn.1]) _ hv
-    (F.internal_star F.isSetOf_R.1) (F.isSetOf_star F.isSetOf_R)
-  sat_simp at this
-  have e : F.partition a b n = (F.star F.R).sep fun x => ∃ k ∈ F.U', k ∈ F.star F.N ∧
-      pair k n ∈ F.star F.Le ∧ pair (pair (pair a b) (pair n k)) x ∈ F.star F.partFn := by
-    ext x
-    rw [partition, mem_sep, mem_sep]
-    exact ⟨fun ⟨hx, k, hk, h⟩ => ⟨hx, k, F.star_subset_U' F.isSetOf_N hk, hk, h⟩,
-      fun ⟨hx, k, _, hk, h⟩ => ⟨hx, k, hk, h⟩⟩
-  rw [e]
-  exact this
-
-/-- **Section 13.16, illustration.** The uniform partition is the image of an internal
-function: the function on $`\{k \in {}^*\mathbb N : k \le n\}` defined by the internal term
-$`a + x(b - a)/n` is internal by the internal function definition principle, and its range is
-the partition. -/
-theorem partition_eq_ran_internal (ha : a ∈ F.star F.R) (hb : b ∈ F.star F.R)
-    (hn : n ∈ F.star F.N) :
-    ∃ f, F.Internal f ∧
-      IsFunc ((F.star F.N).sep fun k => pair k n ∈ F.star F.Le) (F.star F.R) f ∧
-      (∀ k ∈ dom f, app f k = app (F.star F.partFn) (pair (pair a b) (pair n k))) ∧
-      ran f = F.partition a b n := by
-  set A : ZFSet.{u} := (F.star F.N).sep fun k => pair k n ∈ F.star F.Le with hAdef
-  set f : ZFSet.{u} := (prod A (F.star F.R)).sep fun p => ∃ k y, p = pair k y ∧
-    pair (pair (pair a b) (pair n k)) y ∈ F.star F.partFn with hfdef
-  have hpf := F.isFunc_star_partFn
-  have hmem : ∀ k y, pair k y ∈ f ↔ k ∈ A ∧ y ∈ F.star F.R ∧
-      pair (pair (pair a b) (pair n k)) y ∈ F.star F.partFn := fun k y => by
-    rw [hfdef, mem_sep, pair_mem_prod]
-    constructor
-    · rintro ⟨⟨hk, hy⟩, k', y', hp, h⟩
-      obtain ⟨rfl, rfl⟩ := pair_inj.1 hp
-      exact ⟨hk, hy, h⟩
-    · rintro ⟨hk, hy, h⟩
-      exact ⟨⟨hk, hy⟩, k, y, rfl, h⟩
-  have harg : ∀ k ∈ A, pair (pair a b) (pair n k) ∈ dom (F.star F.partFn) := fun k hk => by
-    rw [hpf.dom_eq]
-    exact pair_mem_prod.2 ⟨pair_mem_prod.2 ⟨ha, hb⟩, pair_mem_prod.2 ⟨hn, (mem_sep.1 hk).1⟩⟩
-  have hpt : ∀ k ∈ A, pair k (app (F.star F.partFn) (pair (pair a b) (pair n k))) ∈ f :=
-    fun k hk => by
-      have h := hpf.isFunction.pair_app_mem (harg k hk)
-      exact (hmem _ _).2 ⟨hk, (pair_mem_prod.1 (hpf.1 h)).2, h⟩
-  have hfunc : IsFunc A (F.star F.R) f :=
-    ⟨sep_subset, fun k hk => ⟨_, hpt k hk, fun w hw =>
-      hpf.isFunction.2 _ _ _ ((hmem _ _).1 hw).2.2 ((hmem _ _).1 (hpt k hk)).2.2⟩⟩
-  have happ : ∀ k ∈ A, app f k = app (F.star F.partFn) (pair (pair a b) (pair n k)) :=
-    fun k hk => hfunc.isFunction.app_eq (hpt k hk)
-  have hAint : F.Internal A := by
-    have := F.internal_sep (.elem (.opair (.var 0) (.var 1)) (.const F.Le)) [1] 0
-      (by simp [F.isSetOf_Le.1]) (fun _ => n)
-      (by simpa using F.internal_of_mem_star F.isSetOf_N hn) (F.internal_star F.isSetOf_N.1)
-      (F.isSetOf_star F.isSetOf_N)
-    sat_simp at this
-    exact this
-  have hAset : IsSetOf F.U' A := isSetOf_of_subset hAint.mem_U' fun k hk =>
-    F.star_subset_U' F.isSetOf_N (mem_sep.1 hk).1
-  have hv : ∀ y ∈ [1, 2, 3], F.Internal (Function.update (Function.update
-      (Function.update (fun _ => (∅ : ZFSet.{u})) 1 a) 2 b) 3 n y) := by
-    intro y hy
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
-    rcases hy with rfl | rfl | rfl
-    · simpa using F.internal_of_mem_star F.isSetOf_R ha
-    · simpa using F.internal_of_mem_star F.isSetOf_R hb
-    · simpa using F.internal_of_mem_star F.isSetOf_N hn
-  have hfint : F.Internal f := F.internal_of_term
-    (.app (.const F.partFn) (.opair (.opair (.var 1) (.var 2)) (.opair (.var 3) (.var 0))))
-    [1, 2, 3] 0 (by simp [F.isSetOf_partFn.1]) _ hv hAint hAset
-    (F.internal_star F.isSetOf_R.1) (F.isSetOf_star F.isSetOf_R) hfunc fun k hk => by
-      sat_simp
-      exact ⟨⟨hpf.isFunction, F.relIn_star F.isSetOf_partFn
-        (F.hU.relIn_of_subset_prod F.isSetOf_partDom F.isSetOf_R F.isFunc_partFn.1),
-        harg k hk⟩, happ k hk⟩
-  refine ⟨f, hfint, hfunc, fun k hk => happ k (hfunc.dom_eq ▸ hk), ?_⟩
-  ext y
-  rw [mem_ran, partition, mem_sep]
-  constructor
-  · rintro ⟨k, hky⟩
-    obtain ⟨hk, hy, h⟩ := (hmem k y).1 hky
-    exact ⟨hy, k, (mem_sep.1 hk).1, (mem_sep.1 hk).2, h⟩
-  · rintro ⟨hy, k, hk, hkn, h⟩
-    exact ⟨k, (hmem k y).2 ⟨mem_sep.2 ⟨hk, hkn⟩, hy, h⟩⟩
 
 end RealFramework
 

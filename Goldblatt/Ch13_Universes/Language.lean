@@ -3,7 +3,7 @@ import Goldblatt.Ch13_Universes.Sets
 /-!
 # 13 (part 2). The Language of a Universe: Section 13.7
 
-This is the second of five parts of Chapter 13 (the overview is on the chapter page
+This is the second of six parts of Chapter 13 (the overview is on the chapter page
 {lit}`Goldblatt.Ch13_Universes`). It defines the formal language attached to a universe as a
 deep embedding: an inductive type of terms, an inductive type of formulas whose quantifiers
 are all bounded, the satisfaction relation, and the syntactic notion of a sentence over a
@@ -44,7 +44,10 @@ Conventions of the formalization.
   has a truth value: an atomic formula with an undefined term is false, and a quantifier
   whose bound is undefined ranges over nothing. The two treatments agree on every formula
   whose terms are always defined, and being defined is itself expressible by a bounded
-  formula, so nothing is lost.
+  formula ({lit}`Term.sat_definedF` at the end of this page), so nothing is lost. One
+  consequence must be kept in mind: the transfer axiom of the next part is stated for all
+  sentences, so it also asserts that definedness is preserved, which is more than the book's
+  transfer principle for defined sentences says outright.
 -/
 
 /-- **Section 13.7, terms.** The terms of the language of a universe: variables, constants,
@@ -857,5 +860,117 @@ example {U A : ZFSet.{u}} (hU : IsUniverse U) (hA : IsSetOf U A) :
     Function.update_self, mem_powerset]
   intro a _ haA b _ hba
   simpa using haA hba
+
+/-!
+### Definedness is a bounded property
+
+The book speaks of the truth of a sentence only when its closed terms are defined, and the
+transfer principle of Section 13.8 is asserted for such sentences. In this formalization
+every sentence has a truth value, and atomic formulas with undefined terms are false, so
+transfer for all sentences includes the statement that definedness is preserved. This costs
+nothing: whether a term is defined is itself expressed by a formula with bounded
+quantifiers, as soon as the functions it applies are sets of pairs from a set $`T` of the
+universe. The formula is constructed here.
+-/
+
+/-- **Section 13.7.** A formula that is always true. -/
+def Formula.verum : Formula.{u} := .equal (.const ∅) (.const ∅)
+
+/-- **Section 13.7.** The conjunction of a finite family of formulas. -/
+def Formula.conjFin : (m : ℕ) → (Fin m → Formula.{u}) → Formula.{u}
+  | 0, _ => Formula.verum
+  | m + 1, φ => .conj (φ 0) (Formula.conjFin m fun i => φ i.succ)
+
+/-- A finite conjunction is true exactly when all its members are. -/
+theorem Formula.sat_conjFin (U : ZFSet.{u}) (v : ℕ → ZFSet.{u}) :
+    ∀ (m : ℕ) (φ : Fin m → Formula.{u}), Sat U v (Formula.conjFin m φ) ↔ ∀ i, Sat U v (φ i)
+  | 0, φ => by simp [Formula.conjFin, Formula.verum, Sat]
+  | m + 1, φ => by
+    simp only [Formula.conjFin, Sat, Formula.sat_conjFin U v m, Fin.forall_fin_succ]
+
+namespace Term
+
+/-- **Section 13.7, bounded terms.** A term is bounded by a set $`T` under an assignment when
+every subterm in function position names a set of pairs of members of $`T`. -/
+def BoundedBy (T : ZFSet.{u}) (v : ℕ → ZFSet.{u}) : Term.{u} → Prop
+  | var _ => True
+  | const _ => True
+  | tuple _ ts => ∀ i, (ts i).BoundedBy T v
+  | app f x => f.BoundedBy T v ∧ x.BoundedBy T v ∧ f.val v ⊆ prod T T
+
+/-- **Section 13.7, the formula "the term is defined".** For a term $`\tau` whose variables
+are below $`N`, the formula saying that $`\tau` is defined: for each subterm
+$`\sigma(\rho)` it says that $`\sigma` is single-valued,
+$`(\forall a, b, c \in T)\,((a, b) \in \sigma \land (a, c) \in \sigma \to b = c)`, and that
+$`\rho` is in its domain, $`(\exists b \in T)\,((\rho, b) \in \sigma)`. The quantified
+variables are $`N, N + 1, N + 2`. -/
+def definedF (T : ZFSet.{u}) (N : ℕ) : Term.{u} → Formula.{u}
+  | var _ => Formula.verum
+  | const _ => Formula.verum
+  | tuple m ts => Formula.conjFin (m + 2) fun i => (ts i).definedF T N
+  | app f x => .conj (f.definedF T N) (.conj (x.definedF T N) (.conj
+      (.all N (.const T) (.all (N + 1) (.const T) (.all (N + 2) (.const T) (.imp
+        (.conj (.elem (opair (.var N) (.var (N + 1))) f) (.elem (opair (.var N) (.var (N + 2))) f))
+        (.equal (.var (N + 1)) (.var (N + 2)))))))
+      (.ex N (.const T) (.elem (opair x (.var N)) f))))
+
+/-- **Section 13.7, definedness is bounded.** Let $`T` be a set of members of the universe
+$`\mathbb U` and $`\tau` a term with variables below $`N` that is bounded by $`T`. Then
+$`\tau` is defined if and only if the bounded formula {lit}`Term.definedF` is true. So the
+convention that atomic formulas with undefined terms are false can be removed from any
+sentence by adding these formulas, and transfer for all sentences says no more than transfer
+for sentences whose terms are defined, together with transfer of these bounded formulas. -/
+theorem sat_definedF {U W T : ZFSet.{u}} {N : ℕ} {v : ℕ → ZFSet.{u}} (hT : T ⊆ U) :
+    ∀ {t : Term.{u}}, t.Admissible W {n | n < N} → t.BoundedBy T v →
+      (Sat U v (t.definedF T N) ↔ t.Defined U v)
+  | var _, _, _ => by simp [definedF, Formula.verum, Sat]
+  | const _, _, _ => by simp [definedF, Formula.verum, Sat]
+  | tuple m ts, ht, hb => by
+    simp only [definedF, Formula.sat_conjFin, Defined]
+    exact forall_congr' fun i => sat_definedF hT (ht i) (hb i)
+  | app f x, ht, hb => by
+    obtain ⟨hbf, hbx, hsub⟩ := hb
+    have hvf : ∀ w : ℕ → ZFSet.{u}, (∀ n < N, w n = v n) → f.val w = f.val v ∧
+        (f.Defined U w ↔ f.Defined U v) := fun w hw =>
+      ⟨val_congr ht.1 fun n hn => hw n hn, defined_congr ht.1 fun n hn => hw n hn⟩
+    have hvx : ∀ w : ℕ → ZFSet.{u}, (∀ n < N, w n = v n) → x.val w = x.val v ∧
+        (x.Defined U w ↔ x.Defined U v) := fun w hw =>
+      ⟨val_congr ht.2 fun n hn => hw n hn, defined_congr ht.2 fun n hn => hw n hn⟩
+    have h3 : ∀ a b c : ZFSet.{u}, ∀ n < N,
+        Function.update (Function.update (Function.update v N a) (N + 1) b) (N + 2) c n = v n :=
+      fun a b c n hn => by
+        rw [Function.update_of_ne (by omega), Function.update_of_ne (by omega),
+          Function.update_of_ne (by omega)]
+    have h1 : ∀ a : ZFSet.{u}, ∀ n < N, Function.update v N a n = v n := fun a n hn => by
+      rw [Function.update_of_ne (by omega)]
+    simp only [definedF, Sat, Defined, val, val_opair, defined_opair, true_and, forall_true_left,
+      sat_definedF hT ht.1 hbf, sat_definedF hT ht.2 hbx]
+    constructor
+    · rintro ⟨hf, hx, hsv, a, haU, haT, ⟨hx', -⟩, hf', hmem⟩
+      rw [(hvf _ (h1 a)).1, (hvx _ (h1 a)).1] at hmem
+      refine ⟨hf, hx, ⟨fun p hp => ?_, fun a b c hab hac => ?_⟩, fun p hp => ?_,
+        mem_dom.2 ⟨_, by simpa using hmem⟩⟩
+      · obtain ⟨a, -, b, -, rfl⟩ := mem_prod.1 (hsub hp)
+        exact ⟨a, b, rfl⟩
+      · have hab' := pair_mem_prod.1 (hsub hab)
+        have hac' := pair_mem_prod.1 (hsub hac)
+        have := hsv a (hT hab'.1) hab'.1 b (hT hab'.2) hab'.2 c (hT hac'.2) hac'.2
+        simp only [(hvf _ (h3 a b c)).1, (hvf _ (h3 a b c)).2] at this
+        simpa using this ⟨⟨hf, by simpa using hab⟩, hf, by simpa using hac⟩
+      · obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 (hsub hp)
+        exact ⟨a, hT ha, b, hT hb, rfl⟩
+    · rintro ⟨hf, hx, hfun, -, hdom⟩
+      refine ⟨hf, hx, fun a _ _ b _ _ c _ _ h => ?_, ?_⟩
+      · simp only [(hvf _ (h3 a b c)).1] at h
+        have hab : pair a b ∈ f.val v := by simpa using h.1.2
+        have hac : pair a c ∈ f.val v := by simpa using h.2.2
+        simpa using hfun.2 a b c hab hac
+      · obtain ⟨b, hb⟩ := mem_dom.1 hdom
+        have hbT := (pair_mem_prod.1 (hsub hb)).2
+        refine ⟨b, hT hbT, hbT, ⟨(hvx _ (h1 b)).2.2 hx, trivial⟩, (hvf _ (h1 b)).2.2 hf, ?_⟩
+        rw [(hvf _ (h1 b)).1, (hvx _ (h1 b)).1]
+        simpa using hb
+
+end Term
 
 end Goldblatt

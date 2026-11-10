@@ -3,7 +3,7 @@ import Goldblatt.Ch13_Universes.Framework
 /-!
 # 13 (part 4). Internal Entities: Sections 13.10 to 13.12, 13.15 and 13.16
 
-This is the fourth of five parts of Chapter 13 (the overview is on the chapter page
+This is the fourth of six parts of Chapter 13 (the overview is on the chapter page
 {lit}`Goldblatt.Ch13_Universes`). It defines internal entities, proves that they form a
 strongly transitive collection, establishes the internal set definition principle and the
 internal function definition principle, derives the closure properties of internal sets, and
@@ -12,7 +12,8 @@ identifies the transform of a power set with the set of internal subsets.
 The internal set definition principle is Section 13.15 of the book, but it is proved here
 before the closure properties of Section 13.11, because each of those is an instance of it.
 The book proves one closure property by hand, as a model for the others, and that argument is
-the proof of the principle.
+the proof of the principle. So the sections appear on this page in the order 13.10, 13.15,
+13.11, 13.12, 13.16; this is the only departure from the book's order.
 -/
 
 noncomputable section

@@ -3,7 +3,7 @@ import Mathlib
 /-!
 # 13 (part 1). Sets, Universes and Superstructures: Sections 13.1 to 13.6
 
-This is the first of five parts of Chapter 13 (the overview and the design notes are on the
+This is the first of six parts of Chapter 13 (the overview and the design notes are on the
 chapter page {lit}`Goldblatt.Ch13_Universes`). It sets up the set-theoretic world in which
 Part IV of the book takes place: ordered pairs, tuples, relations and functions coded as sets,
 transitive and strongly transitive sets, universes with all their closure properties, and the

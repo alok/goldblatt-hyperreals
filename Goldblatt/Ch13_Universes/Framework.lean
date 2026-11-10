@@ -3,7 +3,7 @@ import Goldblatt.Ch13_Universes.Language
 /-!
 # 13 (part 3). Nonstandard Frameworks and Standard Entities: Sections 13.8 and 13.9
 
-This is the third of five parts of Chapter 13 (the overview is on the chapter page
+This is the third of six parts of Chapter 13 (the overview is on the chapter page
 {lit}`Goldblatt.Ch13_Universes`). It defines nonstandard frameworks, a universe together with
 a transfer map into a second universe, as a structure whose fields are the book's axioms, and
 derives from the transfer principle the list of set-theoretic operations that the transfer
@@ -40,7 +40,16 @@ $`a \mapsto {}^*a` taking members of $`\mathbb U` to members of $`\mathbb U'`, w
 $`{}^*a = a` for $`a \in X`, with $`{}^*\emptyset = \emptyset`, and such that every sentence
 of the language of $`\mathbb U` is true in $`\mathbb U` exactly when its transform is true in
 $`\mathbb U'`. The map is a function on all of {name}`ZFSet`; only its values on
-$`\mathbb U` matter. -/
+$`\mathbb U` matter.
+
+The transfer field is slightly stronger than the book's axiom. The book asserts transfer for
+sentences whose terms are defined. Here every sentence has a truth value (an atomic formula
+with an undefined term is false, and a quantifier with an undefined bound ranges over
+nothing), and the field quantifies over all sentences, so it also says that definedness of
+terms is preserved by the transfer map. An existence proof for frameworks (Chapter 14) has
+to establish this stronger form. What makes that possible is that definedness of a term is
+itself expressed by a formula with bounded quantifiers ({lit}`Term.sat_definedF`), as soon
+as the functions the term applies are sets of pairs from a set of the universe. -/
 structure NonstandardFramework where
   /-- The standard universe $`\mathbb U`. -/
   U : ZFSet.{u}
