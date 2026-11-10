@@ -488,6 +488,81 @@ def framework (hX : IsBaseSet X) : NonstandardFramework.{u} where
     simp only [col_const_empty, eventually_const] at key
     exact key.symm
 
+theorem mem_star_iff (hX : IsBaseSet X) {a y : ZFSet.{u}}
+    (ha : IsSetOf (superstructure X) a) :
+    y ∈ star 𝓕 hX a ↔ ∃ f, Bdd 𝓕 X f ∧ (∀ᶠ i in 𝓕, f i ∈ a) ∧ col 𝓕 hX f = y := by
+  have hA : ¬ Atomic 𝓕 X (fun _ : I => a) := fun h => by
+    obtain ⟨_, hi⟩ := h.exists
+    exact ha.2 (hX _ hi)
+  rw [star, mem_col hX hA]
+  exact ⟨fun ⟨f, hE, h⟩ => ⟨f, hE.1, hE.2.2, h⟩, fun ⟨f, h1, h2, h3⟩ =>
+    ⟨f, ⟨h1, bdd_const ha.1, h2⟩, h3⟩⟩
+
+theorem mem_star_cumPow_iff (hX : IsBaseSet X) (n : ℕ) {y : ZFSet.{u}} :
+    y ∈ star 𝓕 hX (cumPow X n) ↔ ∃ f, (∀ᶠ i in 𝓕, f i ∈ cumPow X n) ∧ col 𝓕 hX f = y := by
+  rw [mem_star_iff hX (isSetOf_of_subset (cumPow_mem_superstructure n)
+    (cumPow_subset_superstructure n))]
+  exact ⟨fun ⟨f, _, h2, h3⟩ => ⟨f, h2, h3⟩, fun ⟨f, h2, h3⟩ => ⟨f, ⟨n, h2⟩, h2, h3⟩⟩
+
+omit [Small.{u} I] in
+theorem existsUnique_rank {f : I → ZFSet.{u}} (hf : Bdd 𝓕 X f) :
+    ∃! k, ∀ᶠ i in 𝓕, rank X (f i) = k := by
+  obtain ⟨n, hn⟩ := hf
+  have h1 : ∀ᶠ i in 𝓕, ∃ k : Fin (n + 1), rank X (f i) = k := hn.mono fun i hi =>
+    ⟨⟨rank X (f i), Nat.lt_succ_of_le (rank_le_of_mem_cumPow hi)⟩, rfl⟩
+  obtain ⟨k, hk⟩ := Ultrafilter.eventually_exists_iff.1 h1
+  refine ⟨k, hk, fun k' hk' => ?_⟩
+  obtain ⟨i, h2, h3⟩ := (hk'.and hk).exists
+  exact h2.symm.trans h3
+
+theorem isFunction_col (hX : IsBaseSet X) {G : I → ZFSet.{u}} (hG : Bdd 𝓕 X G)
+    (hfun : ∀ᶠ i in 𝓕, IsFunction (G i) ∧ RelIn (superstructure X) (G i)) :
+    IsFunction (col 𝓕 hX G) ∧ RelIn (superstructure (base 𝓕 X)) (col 𝓕 hX G) := by
+  have hW := (isUniverseOver_superstructure hX).toIsUniverse
+  by_cases h0 : ∀ᶠ i in 𝓕, G i = ∅
+  · rw [col_congr hX (show G =ᶠ[𝓕] fun _ => ∅ from h0), col_const_empty]
+    exact ⟨⟨fun p hp => absurd hp (notMem_empty p), fun a b c h => absurd h (notMem_empty _)⟩,
+      fun p hp => absurd hp (notMem_empty p)⟩
+  · have h1 : ∀ᶠ i in 𝓕, ∃ x, x ∈ superstructure X ∧ x ∈ dom (G i) := by
+      filter_upwards [Ultrafilter.eventually_not.2 h0, hfun] with i h2 h3
+      obtain ⟨p, hp⟩ := (eq_empty_or_nonempty (G i)).resolve_left h2
+      obtain ⟨a, ha, b, -, rfl⟩ := h3.2 p hp
+      exact ⟨a, ha, mem_dom.2 ⟨b, hp⟩⟩
+    obtain ⟨x, hx⟩ := Filter.skolem.1 h1
+    have hxb : Bdd 𝓕 X x := by
+      obtain ⟨n, hn⟩ := hG
+      refine ⟨n, ?_⟩
+      filter_upwards [hn, hx, hfun] with i c1 c2 c3
+      obtain ⟨b, hb⟩ := mem_dom.1 c2.2
+      obtain ⟨a', ha', b', hb', e⟩ := c3.2 _ hb
+      have p1 := mem_cumPow_of_mem' hX c1 hb (e ▸ (hW.isSetOf_opair ha' hb').1)
+      have p2 := mem_cumPow_of_mem' hX p1 singleton_mem_pair (hW.isSetOf_singleton c2.1).1
+      exact mem_cumPow_of_mem' hX p2 (mem_singleton.2 rfl) c2.1
+    have := (col_appDef hX hG hxb).2 (by
+      filter_upwards [hfun, hx] with i c1 c2
+      exact ⟨c1.1, c1.2, c2.2⟩)
+    exact ⟨this.1, this.2.1⟩
+
+theorem app_col_eq_iff (hX : IsBaseSet X) {G h k : I → ZFSet.{u}} (hG : Bdd 𝓕 X G)
+    (hh : Bdd 𝓕 X h) (hk : Bdd 𝓕 X k)
+    (hfun : ∀ᶠ i in 𝓕, IsFunction (G i) ∧ RelIn (superstructure X) (G i))
+    (hdom : ∀ᶠ i in 𝓕, h i ∈ dom (G i)) :
+    app (col 𝓕 hX G) (col 𝓕 hX h) = col 𝓕 hX k ↔ ∀ᶠ i in 𝓕, app (G i) (h i) = k i := by
+  have hdef := (col_appDef hX hG hh).2 (by
+    filter_upwards [hfun, hdom] with i c1 c2
+    exact ⟨c1.1, c1.2, c2⟩)
+  constructor
+  · intro e
+    have hmem := hdef.1.pair_app_mem hdef.2.2
+    rw [e] at hmem
+    filter_upwards [(col_appVal hX hG hh hk).1 hmem, hfun] with i c1 c2
+    exact c2.1.app_eq c1
+  · intro hev
+    refine hdef.1.app_eq ((col_appVal hX hG hh hk).2 ?_)
+    filter_upwards [hev, hfun, hdom] with i c1 c2 c3
+    rw [← c1]
+    exact c2.1.pair_app_mem c3
+
 end BoundedUltrapower
 
 end Goldblatt
