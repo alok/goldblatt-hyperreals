@@ -7,9 +7,36 @@ order = [
   "Goldblatt.Ch03_Ultrapower.Construction",
   "Goldblatt.Ch03_Ultrapower.Enlargement",
   "Goldblatt.Ch03_Ultrapower.Extension",
+  "Goldblatt.Ch04_Transfer.Language",
+  "Goldblatt.Ch04_Transfer.Los",
+  "Goldblatt.Ch04_Transfer.Applications",
   "Goldblatt.Ch05_GreatAndSmall.Arithmetic",
   "Goldblatt.Ch05_GreatAndSmall.Shadows",
   "Goldblatt.Ch05_GreatAndSmall.Hypernaturals",
+  "Goldblatt.Ch06_Sequences.Convergence",
+  "Goldblatt.Ch06_Sequences.LimSup",
+  "Goldblatt.Ch06_Sequences.Series",
+  "Goldblatt.Ch07_Continuity.Limits",
+  "Goldblatt.Ch07_Continuity.Intervals",
+  "Goldblatt.Ch07_Continuity.FunctionSequences",
+  "Goldblatt.Ch11_InternalSets.Basic",
+  "Goldblatt.Ch11_InternalSets.Definability",
+  "Goldblatt.Ch11_InternalSets.Saturation",
+  "Goldblatt.Ch12_InternalFunctions.Functions",
+  "Goldblatt.Ch12_InternalFunctions.Hyperfinite",
+  "Goldblatt.Ch12_InternalFunctions.Sums",
+  "Goldblatt.Ch13_Universes.Sets",
+  "Goldblatt.Ch13_Universes.Language",
+  "Goldblatt.Ch13_Universes.Framework",
+  "Goldblatt.Ch13_Universes.Internal",
+  "Goldblatt.Ch13_Universes.Hyperfinite",
+  "Goldblatt.Ch13_Universes.HyperfiniteSets",
+  "Goldblatt.Ch13_Universes.Sums",
+  "Goldblatt.Ch14_Enlargements.Enlargement",
+  "Goldblatt.Ch14_Enlargements.Collapse",
+  "Goldblatt.Ch14_Enlargements.Los",
+  "Goldblatt.Ch14_Enlargements.Terms",
+  "Goldblatt.Ch14_Enlargements.Existence",
 ]
 
 [metadata]
@@ -68,3 +95,57 @@ title = "5.1–5.3 Size classes and their arithmetic"
 title = "5.4–5.9 Halos, galaxies and shadows"
 [modules."Goldblatt.Ch05_GreatAndSmall.Hypernaturals"]
 title = "5.10–5.12 Hypernaturals and primes"
+[modules."Goldblatt.Ch04_Transfer.Language"]
+title = "4.2–4.4 The language of a relational structure"
+[modules."Goldblatt.Ch04_Transfer.Los"]
+title = "4.5–4.6 Transfer and the theorem of Łoś"
+[modules."Goldblatt.Ch04_Transfer.Applications"]
+title = "4.1, 4.3–4.7 Transfer at work"
+[modules."Goldblatt.Ch06_Sequences.Convergence"]
+title = "6.1–6.7 Convergence, boundedness and cluster points"
+[modules."Goldblatt.Ch06_Sequences.LimSup"]
+title = "6.8–6.9 Limits superior and inferior"
+[modules."Goldblatt.Ch06_Sequences.Series"]
+title = "6.10–6.11 Series"
+[modules."Goldblatt.Ch07_Continuity.Limits"]
+title = "7.1–7.4 Continuity and limits of functions"
+[modules."Goldblatt.Ch07_Continuity.Intervals"]
+title = "7.5–7.11 Theorems on intervals, uniform continuity, permanence"
+[modules."Goldblatt.Ch07_Continuity.FunctionSequences"]
+title = "7.12–7.15 Sequences of functions"
+[modules."Goldblatt.Ch11_InternalSets.Basic"]
+title = "11.1–11.6 Internal sets and their principles"
+[modules."Goldblatt.Ch11_InternalSets.Definability"]
+title = "11.7–11.9 Defining internal sets"
+[modules."Goldblatt.Ch11_InternalSets.Saturation"]
+title = "11.10–11.14 Saturation and topology"
+[modules."Goldblatt.Ch12_InternalFunctions.Functions"]
+title = "12.1–12.2 Internal functions"
+[modules."Goldblatt.Ch12_InternalFunctions.Hyperfinite"]
+title = "12.3–12.6 Hyperfinite sets"
+[modules."Goldblatt.Ch12_InternalFunctions.Sums"]
+title = "12.7 Integrals as hyperfinite sums"
+[modules."Goldblatt.Ch13_Universes.Sets"]
+title = "13.1–13.6 Sets, universes and superstructures"
+[modules."Goldblatt.Ch13_Universes.Language"]
+title = "13.7 The language of a universe"
+[modules."Goldblatt.Ch13_Universes.Framework"]
+title = "13.8–13.9 Nonstandard frameworks and standard entities"
+[modules."Goldblatt.Ch13_Universes.Internal"]
+title = "13.10–13.16 Internal entities"
+[modules."Goldblatt.Ch13_Universes.Hyperfinite"]
+title = "Numbers in a framework and external images"
+[modules."Goldblatt.Ch13_Universes.HyperfiniteSets"]
+title = "Hyperfinite sets and internal cardinality"
+[modules."Goldblatt.Ch13_Universes.Sums"]
+title = "Arithmetic in a framework and hyperfinite sums"
+[modules."Goldblatt.Ch14_Enlargements.Enlargement"]
+title = "14.1–14.2 Enlargements and concurrence"
+[modules."Goldblatt.Ch14_Enlargements.Collapse"]
+title = "14.3 The bounded ultrapower and its collapse"
+[modules."Goldblatt.Ch14_Enlargements.Los"]
+title = "14.3 Łoś's theorem"
+[modules."Goldblatt.Ch14_Enlargements.Terms"]
+title = "14.3 Transfer for terms and the ultrapower framework"
+[modules."Goldblatt.Ch14_Enlargements.Existence"]
+title = "14.3–14.4 The enlargement theorem"

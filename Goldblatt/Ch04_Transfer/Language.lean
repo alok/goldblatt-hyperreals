@@ -18,7 +18,7 @@ that nothing depends on that choice.
 
 universe u
 
-namespace Goldblatt
+namespace Goldblatt.Transfer
 
 open Set Filter Function Ultrapower
 open scoped Hyperreal
@@ -1054,7 +1054,7 @@ end helpers
 end Formula
 
 /-!
-The notation below is available after {lit}`open scoped Goldblatt.Lang`. It writes formulas
+The notation below is available after {lit}`open scoped Goldblatt.Transfer.Lang`. It writes formulas
 in a shape close to the book's: {lit}`∀' x ∈ P, φ` and {lit}`∃' x ∈ P, φ` for the bounded
 quantifiers, {lit}`⋏`, {lit}`⋎`, {lit}`∼'`, {lit}`⟹`, {lit}`⟺` for the connectives, and primed
 relation and operation signs between terms.
@@ -1453,4 +1453,4 @@ end Formula
 
 end StarNotation
 
-end Goldblatt
+end Goldblatt.Transfer

@@ -13,7 +13,7 @@ Part 2. Each example follows the same pattern:
   its star-transform to be true (this is the content of Exercise 4.4.1: the informal transforms
   of Section 4.1 are what the formal definition produces);
 * the statement about the hyperreals is then obtained from the statement about the reals by
-  {name}`Goldblatt.Formula.transfer`, in whichever direction is wanted.
+  {name}`Goldblatt.Transfer.Formula.transfer`, in whichever direction is wanted.
 
 The examples of Section 4.1 open the book's chapter, before the formal language exists; here
 they come after it, since they are proved with it.
@@ -21,7 +21,7 @@ they come after it, since they are proved with it.
 
 universe u
 
-namespace Goldblatt
+namespace Goldblatt.Transfer
 
 open Set Filter Function Ultrapower Term Formula
 open scoped Hyperreal Lang
@@ -554,7 +554,7 @@ end SetOperations
 The book's natural numbers start at $`1`; Lean's start at $`0`, and the hypernatural numbers
 of Chapter 3 are the enlargement of Lean's. So the least-element statement is given twice: as
 $`x \ge 0` for the hypernaturals of this project, and as the book's $`x \ge 1` for the
-enlargement of the positive naturals {name}`Goldblatt.posNat`.
+enlargement of the positive naturals {name}`Goldblatt.Transfer.posNat`.
 -/
 
 /-- **Section 4.1, example 5.** For a natural number $`n`, the sentence
@@ -975,17 +975,17 @@ theorem bounded_of_hyperSeq_limited (s : ℕ → ℝ)
 Which of Exercises 3.10 can be proved by transfer? Every part that asserts something, that is,
 all but part (4), which asks a question whose answer is no. In detail:
 
-* (1), a finite set is its own enlargement: {name}`Goldblatt.starSet_of_finite_by_transfer`.
-* (2), inclusion and equality of sets: {name}`Goldblatt.starSet_subset_starSet_by_transfer` and
-  {name}`Goldblatt.starSet_eq_starSet_by_transfer`.
+* (1), a finite set is its own enlargement: {name}`Goldblatt.Transfer.starSet_of_finite_by_transfer`.
+* (2), inclusion and equality of sets: {name}`Goldblatt.Transfer.starSet_subset_starSet_by_transfer` and
+  {name}`Goldblatt.Transfer.starSet_eq_starSet_by_transfer`.
 * (3), union, intersection, difference and the empty set:
-  {name}`Goldblatt.starSet_union_by_transfer`, {name}`Goldblatt.starSet_inter_by_transfer`,
-  {name}`Goldblatt.starSet_diff_by_transfer`, {name}`Goldblatt.starSet_empty_by_transfer`.
+  {name}`Goldblatt.Transfer.starSet_union_by_transfer`, {name}`Goldblatt.Transfer.starSet_inter_by_transfer`,
+  {name}`Goldblatt.Transfer.starSet_diff_by_transfer`, {name}`Goldblatt.Transfer.starSet_empty_by_transfer`.
 * (4), countable unions: a union of infinitely many sets is not described by a sentence, which
   would need an infinite disjunction, and the statement is in fact false
   ({name}`Goldblatt.starSet_iUnion_ne_iUnion_starSet`).
-* (5), the standard members of an enlargement: {name}`Goldblatt.of_mem_starSet_by_transfer`.
-* (6), closed intervals: {name}`Goldblatt.starSet_Icc_by_transfer`.
+* (5), the standard members of an enlargement: {name}`Goldblatt.Transfer.of_mem_starSet_by_transfer`.
+* (6), closed intervals: {name}`Goldblatt.Transfer.starSet_Icc_by_transfer`.
 * (7), the hyperintegers are closed under addition, subtraction and multiplication:
   {lit}`hyperInt_closed_by_transfer` below, a case of the general statement
   {lit}`starMap₂_mem_starSet_by_transfer` that an enlargement is closed under the
@@ -1081,7 +1081,7 @@ theorem starSet_Ioi_zero_by_transfer : ⋆(Ioi (0 : ℝ)) = Ioi (0 : ℝ*) := by
 Section 4.6 of the book introduces the notation $`\varphi(x_1, \dots, x_p)` for a formula with
 its free variables displayed, and $`\varphi(s_1, \dots, s_p)` for the result of substituting
 constants. Its example is formalized here, and the theorem of Łoś
-({name}`Goldblatt.Formula.isTrue_star_subst_ofSeq`) is applied to it: with a hyperreal
+({name}`Goldblatt.Transfer.Formula.isTrue_star_subst_ofSeq`) is applied to it: with a hyperreal
 $`[r]` in place of the first variable, the transformed sentence is true exactly when its
 instances at the terms $`r_n` are true for almost all $`n`.
 -/
@@ -1103,7 +1103,7 @@ theorem isTrue_sumSquaresFormula_subst (a b : ℝ) :
 $`b`, the sentence $`{}^*\varphi([r], b)`, which says
 $`(\exists y \in {}^*\mathbb Q)([r]^2 + b^2 < y)`, is true if and only if
 $`(\exists y \in \mathbb Q)(r_n^2 + b^2 < y)` for almost all $`n`. This is
-{name}`Goldblatt.Formula.isTrue_star_subst_ofSeq` applied to $`\varphi(x_1, b)`. -/
+{name}`Goldblatt.Transfer.Formula.isTrue_star_subst_ofSeq` applied to $`\varphi(x_1, b)`. -/
 theorem isTrue_star_sumSquaresFormula_subst_ofSeq (r : ℕ → ℝ) (b : ℝ) :
     (((sumSquaresFormula.subst 2 b).star : Formula ℝ*).subst 1 (ofSeq r)).IsTrue ↔
       ∀ᶠ n in hyperfilter ℕ, ∃ y ∈ ℚᵣ, r n * r n + b * b < y := by
@@ -1138,7 +1138,7 @@ Section 4.7 of the book makes three points, each of which has a precise counterp
 
 _Other structures._ Nothing in the construction is special to the reals. The whole chapter was
 carried out for an arbitrary type, and the transfer principle
-{name}`Goldblatt.Formula.transfer` holds for the full structure on any type and its ultrapower.
+{name}`Goldblatt.Transfer.Formula.transfer` holds for the full structure on any type and its ultrapower.
 The complex numbers are singled out below.
 
 _Nonstandard constants._ The transfer principle is about star-transforms, and the constants of
@@ -1146,9 +1146,9 @@ a star-transform are standard. A sentence about the hyperreals that mentions a n
 constant, such as $`\omega`, is not a transform. What remains true for such sentences is the
 theorem of Łoś: replace each constant by a representing sequence, and the sentence is true
 exactly when its instances are true at almost all indices
-({name}`Goldblatt.Formula.isTrue_star_subst_ofSeq`). Such a sentence is still a sentence of the
+({name}`Goldblatt.Transfer.Formula.isTrue_star_subst_ofSeq`). Such a sentence is still a sentence of the
 language of the enlarged structure, since substituting a constant does not leave that language
-({name}`Goldblatt.Formula.Over.subst`), and it may imply a transform, obtained by quantifying
+({name}`Goldblatt.Transfer.Formula.Over.subst`), and it may imply a transform, obtained by quantifying
 the constant away; that is how the book uses them, and the example of Section 4.5 is revisited
 below.
 
@@ -1159,7 +1159,7 @@ for a fixed set $`A`, "if $`A` is bounded above then it has a least upper bound"
 with $`A` as a relation symbol. So every enlargement that is bounded above has a least upper
 bound, while some sets of hyperreals that are bounded above have none. Consequently no formula
 can say "Dedekind complete" of both structures at once
-(the theorem {lit}`Goldblatt.no_formula_expresses_dedekind` below). The sets of the second
+(the theorem {lit}`Goldblatt.Transfer.no_formula_expresses_dedekind` below). The sets of the second
 kind are therefore not enlargements; Chapter 11 of the book calls them external.
 -/
 
@@ -1214,11 +1214,11 @@ end Constants
 
 /-- **Sections 4.5 and 4.7, nonstandard constants.** The sentence
 $`(\forall n \in {}^*\mathbb N)(|{}^*s(n)| < \omega)` belongs to the language of
-$`{}^*\mathfrak R` ({name}`Goldblatt.omegaBoundSentence_over`), but it is not the star-transform
+$`{}^*\mathfrak R` ({name}`Goldblatt.Transfer.omegaBoundSentence_over`), but it is not the star-transform
 of any formula of the language of the reals, because the constant $`\omega` occurs in it. So
 the transfer principle does not apply to it directly; one first passes to the existential
 sentence it implies
-({name}`Goldblatt.isTrue_star_boundedSentence_of_omegaBoundSentence`). -/
+({name}`Goldblatt.Transfer.isTrue_star_boundedSentence_of_omegaBoundSentence`). -/
 theorem omegaBoundSentence_ne_star (s : ℕ → ℝ) (φ : Formula ℝ) :
     φ.star ≠ omegaBoundSentence s := by
   intro h
@@ -1298,7 +1298,7 @@ reals expresses Dedekind completeness uniformly, that is, in such a way that the
 "every nonempty set bounded above has a least upper bound" of the reals and its star-transform
 says the same of the hyperreals. By the transfer principle the formula and its transform have
 the same truth value, whereas completeness holds of the reals and fails of the hyperreals
-({name}`Goldblatt.not_dedekindComplete_hyperreal`). The book's remark is that the completeness
+({name}`Goldblatt.Transfer.not_dedekindComplete_hyperreal`). The book's remark is that the completeness
 statement, which quantifies over sets, is no sentence of the language; this theorem is the
 provable form of that remark: whatever a formula says, it cannot be completeness on both
 sides. -/
@@ -1330,7 +1330,7 @@ theorem ne_starSet_of_not_exists_isLUB {S : Set ℝ*} (hne : S.Nonempty) (hb : B
 The book closes the chapter by listing what the next chapters need: the hyperreals form an
 ordered field containing the reals, there is an unlimited hypernatural number, whose reciprocal
 is then a positive infinitesimal, and the transfer principle holds. The first is Mathlib's field
-structure together with Section 3.7; the last is {name}`Goldblatt.Formula.transfer`; the middle
+structure together with Section 3.7; the last is {name}`Goldblatt.Transfer.Formula.transfer`; the middle
 one is recorded here.
 -/
 
@@ -1349,4 +1349,4 @@ theorem exists_unlimited_hyperNat :
   rw [inv_lt_comm₀ hpos hr', ← Hyperreal.coe_inv]
   exact real_lt_omega _
 
-end Goldblatt
+end Goldblatt.Transfer

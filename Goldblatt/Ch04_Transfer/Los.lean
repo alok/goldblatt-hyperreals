@@ -15,7 +15,7 @@ of Section 4.5 is deduced from the theorem of Section 4.6.
 
 universe u
 
-namespace Goldblatt
+namespace Goldblatt.Transfer
 
 open Set Filter Function Ultrapower
 open scoped Hyperreal
@@ -431,4 +431,4 @@ theorem isTrue_star_subst_of (φ : Formula α) (x : ℕ) (s : α) :
 
 end Formula
 
-end Goldblatt
+end Goldblatt.Transfer

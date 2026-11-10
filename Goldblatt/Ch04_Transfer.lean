@@ -23,6 +23,10 @@ exercises of the chapter are then formal sentences, settled by applying the tran
 
 The formalization is split over three pages; this page is the overview and the index.
 
+Everything in this chapter lives in the namespace {lit}`Goldblatt.Transfer`, because Chapter 13
+defines a second formal language, for universes, whose terms and formulas would otherwise
+have the same names.
+
 ## The three parts
 
 * {lit}`Goldblatt.Ch04_Transfer.Language` covers Sections 4.2 to 4.4: relational structures,
@@ -46,77 +50,77 @@ applying it. The sections below follow the book's numbering and say where each i
 ## 4.1 Transforming Statements
 
 Six statements about the reals and their counterparts about the hyperreals: the
-Eudoxus–Archimedes principle ({name}`Goldblatt.exists_hyperNat_gt`, and
-{name}`Goldblatt.exists_hyperNat_gt'` for the book's first formulation), density of the rationals
-({name}`Goldblatt.exists_hyperRat_btwn`), finiteness
-({name}`Goldblatt.starSet_of_finite_by_transfer`), finitary set operations
-({name}`Goldblatt.starSet_union_by_transfer`), discreteness of the natural numbers
-({name}`Goldblatt.hyperNat_eq_or_eq_add_one`, {name}`Goldblatt.one_le_of_mem_starSet_posNat`)
-and unbounded sets ({name}`Goldblatt.exists_gt_of_exists_unlimited_mem_starSet`). These same
+Eudoxus–Archimedes principle ({name}`Goldblatt.Transfer.exists_hyperNat_gt`, and
+{name}`Goldblatt.Transfer.exists_hyperNat_gt'` for the book's first formulation), density of the rationals
+({name}`Goldblatt.Transfer.exists_hyperRat_btwn`), finiteness
+({name}`Goldblatt.Transfer.starSet_of_finite_by_transfer`), finitary set operations
+({name}`Goldblatt.Transfer.starSet_union_by_transfer`), discreteness of the natural numbers
+({name}`Goldblatt.Transfer.hyperNat_eq_or_eq_add_one`, {name}`Goldblatt.Transfer.one_le_of_mem_starSet_posNat`)
+and unbounded sets ({name}`Goldblatt.Transfer.exists_gt_of_exists_unlimited_mem_starSet`). These same
 theorems answer Exercise 4.1.1. They are in part 3, proved by transfer.
 
 ## 4.2 Relational Structures
 
-{name}`Goldblatt.RelStructure`, the full structure {name}`Goldblatt.RelStructure.full` and the
-enlarged structure {name}`Goldblatt.RelStructure.star`, with Exercise 4.2.1
-({name}`Goldblatt.unaryRel_image_of_notMem_star`,
-{name}`Goldblatt.number_systems_ne_starSet`). Part 1.
+{name}`Goldblatt.Transfer.RelStructure`, the full structure {name}`Goldblatt.Transfer.RelStructure.full` and the
+enlarged structure {name}`Goldblatt.Transfer.RelStructure.star`, with Exercise 4.2.1
+({name}`Goldblatt.Transfer.unaryRel_image_of_notMem_star`,
+{name}`Goldblatt.Transfer.number_systems_ne_starSet`). Part 1.
 
 ## 4.3 The Language of a Relational Structure
 
-Terms and formulas ({name}`Goldblatt.Term`, {name}`Goldblatt.Formula`), what a term names
-({name}`Goldblatt.Term.Names`), defined terms and formulas, sentences
-({name}`Goldblatt.Formula.IsSentence`), the truth conditions ({name}`Goldblatt.Formula.Holds`,
-{name}`Goldblatt.Formula.isTrue_all_iff`, {name}`Goldblatt.Formula.isTrue_ex_iff`) and the
-language of a structure ({name}`Goldblatt.Formula.Over`). Part 1; the book's two illustrations,
-of free and bound occurrences ({name}`Goldblatt.freeBoundExample'`) and of an undefined term
-({name}`Goldblatt.isTrue_tanOddSentence`), are in part 3.
+Terms and formulas ({name}`Goldblatt.Transfer.Term`, {name}`Goldblatt.Transfer.Formula`), what a term names
+({name}`Goldblatt.Transfer.Term.Names`), defined terms and formulas, sentences
+({name}`Goldblatt.Transfer.Formula.IsSentence`), the truth conditions ({name}`Goldblatt.Transfer.Formula.Holds`,
+{name}`Goldblatt.Transfer.Formula.isTrue_all_iff`, {name}`Goldblatt.Transfer.Formula.isTrue_ex_iff`) and the
+language of a structure ({name}`Goldblatt.Transfer.Formula.Over`). Part 1; the book's two illustrations,
+of free and bound occurrences ({name}`Goldblatt.Transfer.freeBoundExample'`) and of an undefined term
+({name}`Goldblatt.Transfer.isTrue_tanOddSentence`), are in part 3.
 
 ## 4.4 Star-Transforms
 
-The transform {name}`Goldblatt.Formula.star`, the fact that it lands in the language of the
-enlarged structure ({name}`Goldblatt.Formula.star_over`), and the lemmas that justify dropping
+The transform {name}`Goldblatt.Transfer.Formula.star`, the fact that it lands in the language of the
+enlarged structure ({name}`Goldblatt.Transfer.Formula.star_over`), and the lemmas that justify dropping
 the stars from familiar symbols. Part 1. The two transforms the book displays
-({name}`Goldblatt.holds_star_pi_lt_app`, {name}`Goldblatt.holds_star_sin_exp_mem_rat`) and
+({name}`Goldblatt.Transfer.holds_star_pi_lt_app`, {name}`Goldblatt.Transfer.holds_star_sin_exp_mem_rat`) and
 Exercise 4.4.1 are in part 3.
 
 ## 4.5 The Transfer Principle
 
-{name}`Goldblatt.Formula.transfer`, with {name}`Goldblatt.Formula.universal_transfer` and
-{name}`Goldblatt.Formula.existential_transfer`, in part 2. The examples are in part 3: the field
+{name}`Goldblatt.Transfer.Formula.transfer`, with {name}`Goldblatt.Transfer.Formula.universal_transfer` and
+{name}`Goldblatt.Transfer.Formula.existential_transfer`, in part 2. The examples are in part 3: the field
 axioms, the enlargement of an interval, identities between extended functions, the bounded
-sequence ({name}`Goldblatt.bounded_of_hyperSeq_limited`), and Exercise 4.5.1, for which every
+sequence ({name}`Goldblatt.Transfer.bounded_of_hyperSeq_limited`), and Exercise 4.5.1, for which every
 assertion of Exercises 3.10 is proved again by transfer.
 
 ## 4.6 Justifying Transfer
 
-The theorem of Łoś, {name}`Goldblatt.Formula.los`, proved by induction on formulas, and the
+The theorem of Łoś, {name}`Goldblatt.Transfer.Formula.los`, proved by induction on formulas, and the
 almost-all criteria of Chapter 3 recovered as its atomic cases. Part 2, where it precedes
 Section 4.5 because transfer is deduced from it. The section's example of substitution
 notation, with the theorem of Łoś applied to it
-({name}`Goldblatt.isTrue_star_sumSquaresFormula_subst_ofSeq`), is in part 3.
+({name}`Goldblatt.Transfer.isTrue_star_sumSquaresFormula_subst_ofSeq`), is in part 3.
 
 ## 4.7 Extending Transfer
 
-Transfer for other structures ({name}`Goldblatt.transfer_complex`); sentences with nonstandard
+Transfer for other structures ({name}`Goldblatt.Transfer.transfer_complex`); sentences with nonstandard
 constants, which belong to the language of the enlarged structure but are not transforms
-({name}`Goldblatt.omegaBoundSentence_over`, {name}`Goldblatt.omegaBoundSentence_ne_star`,
-{name}`Goldblatt.Formula.consts_star_subset`); and Dedekind completeness, each instance of which
-transfers ({name}`Goldblatt.exists_isLUB_starSet`) while the statement about all sets fails
-({name}`Goldblatt.not_dedekindComplete_hyperreal`), so that no formula expresses completeness
-in both structures ({name}`Goldblatt.no_formula_expresses_dedekind`). Part 3.
+({name}`Goldblatt.Transfer.omegaBoundSentence_over`, {name}`Goldblatt.Transfer.omegaBoundSentence_ne_star`,
+{name}`Goldblatt.Transfer.Formula.consts_star_subset`); and Dedekind completeness, each instance of which
+transfers ({name}`Goldblatt.Transfer.exists_isLUB_starSet`) while the statement about all sets fails
+({name}`Goldblatt.Transfer.not_dedekindComplete_hyperreal`), so that no formula expresses completeness
+in both structures ({name}`Goldblatt.Transfer.no_formula_expresses_dedekind`). Part 3.
 
 ## The main results
 
-* The language: {name}`Goldblatt.Term`, {name}`Goldblatt.Formula`, with semantics
-  {name}`Goldblatt.Term.Names`, {name}`Goldblatt.Formula.Defined` and
-  {name}`Goldblatt.Formula.Holds`, and the star-transform {name}`Goldblatt.Formula.star`.
-* The theorem of Łoś: {name}`Goldblatt.Formula.los`, with its two halves
-  {name}`Goldblatt.Formula.holds_star_germ` and {name}`Goldblatt.Formula.defined_star_germ`.
-* The transfer principle: {name}`Goldblatt.Formula.transfer`, and its companions
-  {name}`Goldblatt.Formula.transfer_defined`, {name}`Goldblatt.Formula.holds_star_of`,
-  {name}`Goldblatt.Formula.universal_transfer` and
-  {name}`Goldblatt.Formula.existential_transfer`.
+* The language: {name}`Goldblatt.Transfer.Term`, {name}`Goldblatt.Transfer.Formula`, with semantics
+  {name}`Goldblatt.Transfer.Term.Names`, {name}`Goldblatt.Transfer.Formula.Defined` and
+  {name}`Goldblatt.Transfer.Formula.Holds`, and the star-transform {name}`Goldblatt.Transfer.Formula.star`.
+* The theorem of Łoś: {name}`Goldblatt.Transfer.Formula.los`, with its two halves
+  {name}`Goldblatt.Transfer.Formula.holds_star_germ` and {name}`Goldblatt.Transfer.Formula.defined_star_germ`.
+* The transfer principle: {name}`Goldblatt.Transfer.Formula.transfer`, and its companions
+  {name}`Goldblatt.Transfer.Formula.transfer_defined`, {name}`Goldblatt.Transfer.Formula.holds_star_of`,
+  {name}`Goldblatt.Transfer.Formula.universal_transfer` and
+  {name}`Goldblatt.Transfer.Formula.existential_transfer`.
 
 ## Conventions of the formalization
 
@@ -128,11 +132,11 @@ in both structures ({name}`Goldblatt.no_formula_expresses_dedekind`). Part 3.
 * There is one type of formulas for each universe, namely the language of the full structure on
   it. The star-transform maps formulas over a type to formulas over its star type, and its
   values lie in the language of the enlarged structure
-  ({name}`Goldblatt.Formula.star_over`). Truth in the enlarged structure is truth of a formula
+  ({name}`Goldblatt.Transfer.Formula.star_over`). Truth in the enlarged structure is truth of a formula
   over the star type; no second definition of truth is needed.
 * Variables are named by natural numbers, and a quantifier names the variable it binds. Where
   the book substitutes constants for free variables, we give the variables values; the two agree
-  ({name}`Goldblatt.Formula.holds_subst`). A valuation may leave variables without a value,
+  ({name}`Goldblatt.Transfer.Formula.holds_subst`). A valuation may leave variables without a value,
   which is how "closed term" and "defined formula" are expressed.
 * The book's transfer principle is stated for defined sentences. The theorems here need neither
   hypothesis: they hold for every formula, evaluated under the empty valuation, and say in
