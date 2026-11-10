@@ -19,6 +19,15 @@ order = [
   "Goldblatt.Ch07_Continuity.Limits",
   "Goldblatt.Ch07_Continuity.Intervals",
   "Goldblatt.Ch07_Continuity.FunctionSequences",
+  "Goldblatt.Ch08_Differentiation.Derivative",
+  "Goldblatt.Ch08_Differentiation.Partial",
+  "Goldblatt.Ch08_Differentiation.Taylor",
+  "Goldblatt.Ch08_Differentiation.IncrementalEquation",
+  "Goldblatt.Ch09_RiemannIntegral.Sums",
+  "Goldblatt.Ch09_RiemannIntegral.Integral",
+  "Goldblatt.Ch09_RiemannIntegral.Properties",
+  "Goldblatt.Ch10_Topology.Reals",
+  "Goldblatt.Ch10_Topology.Hyperreals",
   "Goldblatt.Ch11_InternalSets.Basic",
   "Goldblatt.Ch11_InternalSets.Definability",
   "Goldblatt.Ch11_InternalSets.Saturation",
@@ -37,6 +46,11 @@ order = [
   "Goldblatt.Ch14_Enlargements.Los",
   "Goldblatt.Ch14_Enlargements.Terms",
   "Goldblatt.Ch14_Enlargements.Existence",
+  "Goldblatt.Ch16_LoebMeasure.Rings",
+  "Goldblatt.Ch16_LoebMeasure.Outer",
+  "Goldblatt.Ch16_LoebMeasure.Loeb",
+  "Goldblatt.Ch16_LoebMeasure.Internal",
+  "Goldblatt.Ch16_LoebMeasure.Lebesgue",
 ]
 
 [metadata]
@@ -149,3 +163,31 @@ title = "14.3 Łoś's theorem"
 title = "14.3 Transfer for terms and the ultrapower framework"
 [modules."Goldblatt.Ch14_Enlargements.Existence"]
 title = "14.3–14.4 The enlargement theorem"
+[modules."Goldblatt.Ch08_Differentiation.Derivative"]
+title = "8.1–8.6 The derivative of a function of one variable"
+[modules."Goldblatt.Ch08_Differentiation.Partial"]
+title = "8.7–8.8 Partial derivatives"
+[modules."Goldblatt.Ch08_Differentiation.Taylor"]
+title = "8.9–8.10 Taylor series and Taylor's formula"
+[modules."Goldblatt.Ch08_Differentiation.IncrementalEquation"]
+title = "8.11–8.12 The incremental equation at nonreal points"
+[modules."Goldblatt.Ch09_RiemannIntegral.Sums"]
+title = "9.1 Riemann sums"
+[modules."Goldblatt.Ch09_RiemannIntegral.Integral"]
+title = "9.2 The integral as the shadow of Riemann sums"
+[modules."Goldblatt.Ch09_RiemannIntegral.Properties"]
+title = "9.3–9.5 Properties of the integral and the fundamental theorem"
+[modules."Goldblatt.Ch10_Topology.Reals"]
+title = "10.1–10.4 Points, open and closed sets, compactness"
+[modules."Goldblatt.Ch10_Topology.Hyperreals"]
+title = "10.5 Topologies on the hyperreals"
+[modules."Goldblatt.Ch16_LoebMeasure.Rings"]
+title = "16.1–16.2 Rings, algebras and measures"
+[modules."Goldblatt.Ch16_LoebMeasure.Outer"]
+title = "16.3–16.4 Outer measures and Lebesgue measure"
+[modules."Goldblatt.Ch16_LoebMeasure.Loeb"]
+title = "16.5–16.7 Loeb measures and approximability"
+[modules."Goldblatt.Ch16_LoebMeasure.Internal"]
+title = "Internal measures in the ultrapower"
+[modules."Goldblatt.Ch16_LoebMeasure.Lebesgue"]
+title = "16.8 Lebesgue measure via Loeb measure"

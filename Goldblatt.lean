@@ -5,10 +5,14 @@ import Goldblatt.Ch04_Transfer
 import Goldblatt.Ch05_GreatAndSmall
 import Goldblatt.Ch06_Sequences
 import Goldblatt.Ch07_Continuity
+import Goldblatt.Ch08_Differentiation
+import Goldblatt.Ch09_RiemannIntegral
+import Goldblatt.Ch10_Topology
 import Goldblatt.Ch11_InternalSets
 import Goldblatt.Ch12_InternalFunctions
 import Goldblatt.Ch13_Universes
 import Goldblatt.Ch14_Enlargements
+import Goldblatt.Ch16_LoebMeasure
 import Goldblatt.Ch17_Ramsey
 
 /-!
@@ -48,9 +52,9 @@ ultrafilter $`\mathcal{F}` on $`\mathbb{N}`, which is Mathlib's {name}`Hyperreal
 
 6. [Convergence of Sequences and Series](Goldblatt/Ch06_Sequences/)
 7. [Continuous Functions](Goldblatt/Ch07_Continuity/)
-8. Differentiation (in progress)
-9. The Riemann Integral (in progress)
-10. Topology of the Reals (in progress)
+8. [Differentiation](Goldblatt/Ch08_Differentiation/)
+9. [The Riemann Integral](Goldblatt/Ch09_RiemannIntegral/)
+10. [Topology of the Reals](Goldblatt/Ch10_Topology/)
 
 *Part III: Internal and External Entities*
 
@@ -65,7 +69,7 @@ ultrafilter $`\mathcal{F}` on $`\mathbb{N}`, which is Mathlib's {name}`Hyperreal
 
 *Part V: Applications*
 
-16. Loeb Measure (in progress)
+16. [Loeb Measure](Goldblatt/Ch16_LoebMeasure/)
 17. [Ramsey Theory](Goldblatt/Ch17_Ramsey/)
 18. Completion by Enlargement (in progress)
 19. Hyperfinite Approximation (in progress)
