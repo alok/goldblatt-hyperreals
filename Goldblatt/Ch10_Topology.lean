@@ -72,10 +72,13 @@ The chapter is split into two parts, each on its own page.
   the class of a sequence, as in Chapters 6 and 7.
 * Sequences of sets indexed by positive integers in the book are indexed from zero, with
   $`\frac1{n+1}` in place of $`\frac1n` (Exercises 10.2.3 and 10.5.2).
-* In Exercise 10.5.2 the intervals are assumed nonempty, which the exercise needs: for empty
-  intervals the union is empty and its enlargement is S-open.
+* In Exercise 10.5.2 the intervals are taken to be nonempty, as the word interval suggests.
+  Part (ii) needs only one nonempty interval and no bound on the lengths
+  ({name}`Goldblatt.exists_mem_starSet_infClose_notMem_of_exists_lt`); part (iii) needs
+  infinitely many nonempty intervals. If every interval is empty the enlargement is empty and
+  so both real-open and S-open.
 * Section 10.5 asserts that the intersection of the open sets containing a point is the halo
-  of the point "if open means real-open (or S-open)". This holds for S-open sets
+  of the point both for the real-open and for the S-open sets. This holds for S-open sets
   ({name}`Goldblatt.iInter_isSOpen_eq_hal`) but not for real-open sets, where the intersection
   is the point alone ({name}`Goldblatt.iInter_isRealOpen_eq_singleton`). What is true for
   real radii is that the neighbourhoods centred at the point intersect in its halo
@@ -87,6 +90,13 @@ The chapter is split into two parts, each on its own page.
   from it, that a topology containing the real-radius neighbourhoods contains every
   interval-open set, is true and is proved by covering an interval with subintervals of length
   at most $`2` ({name}`Goldblatt.isOpen_of_isIntervalOpen_of_realNhd`).
+* The book describes membership of an S-neighbourhood in two ways, by a shadow
+  ({name}`Goldblatt.mem_sNeighbourhood_iff`) and by an appreciable difference
+  ({name}`Goldblatt.mem_sNeighbourhood_iff_appreciable`); in the second the difference must
+  also be positive, which the book leaves implicit.
+* The failure of real-open sets to be closed under intersection is proved in the book's
+  generality ({name}`Goldblatt.not_isRealOpen_realNhd_inter_of_infClose`) and then for a
+  specific pair of neighbourhoods ({name}`Goldblatt.exists_realNhd_inter_not_isRealOpen`).
 * Two statements go slightly beyond the book: the interval topology is identified with the
   order topology of the hyperreal line
   ({name}`Goldblatt.intervalTopology_eq_orderTopology`), and the S-topology is shown not to

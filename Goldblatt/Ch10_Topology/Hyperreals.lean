@@ -234,28 +234,48 @@ theorem not_isRealOpen_Ioo_of_infClose {a b : ℝ*} (hab : a < b) (h : a ≊ b) 
   rw [abs_of_pos (sub_pos.2 hab)] at this
   exact lt_asymm hlt this
 
+/-- **Section 10.5.** Two real-radius neighbourhoods $`(r - e, r + e)` and $`(s - d, s + d)`
+that overlap, with the left end point $`s - d` of the second infinitely close to the right end
+point $`r + e` of the first, have an intersection that is not real-open: the intersection is
+the nonempty interval $`(s - d, r + e)`, which has infinitesimal width. -/
+theorem not_isRealOpen_realNhd_inter_of_infClose (he : 0 < e) (hd : 0 < d)
+    (hlt : s - (d : ℝ*) < r + e) (h : s - (d : ℝ*) ≊ r + e) :
+    ¬ IsRealOpen (realNhd r e ∩ realNhd s d) := by
+  intro hA
+  have he' : (0 : ℝ*) < e := Hyperreal.coe_pos.2 he
+  have hd' : (0 : ℝ*) < d := Hyperreal.coe_pos.2 hd
+  have h1 := abs_lt.1 (infClose_iff_abs_lt.1 h e he)
+  have h2 := abs_lt.1 (infClose_iff_abs_lt.1 h d hd)
+  have hsub : realNhd r e ∩ realNhd s d ⊆ Ioo (s - (d : ℝ*)) (r + e) :=
+    fun x hx => ⟨hx.2.1, hx.1.2⟩
+  have hne : (realNhd r e ∩ realNhd s d).Nonempty := by
+    refine ⟨(s - (d : ℝ*) + (r + e)) / 2, ?_, ?_⟩
+    · unfold realNhd
+      constructor <;> linarith [h1.1]
+    · unfold realNhd
+      constructor <;> linarith [h2.1]
+  obtain ⟨c, hc, hclt⟩ := hA.exists_real_lt_sub hne hsub
+  have h3 := abs_lt.1 (infClose_iff_abs_lt.1 h c hc)
+  linarith [h3.1]
+
 /-- **Section 10.5.** The real-open sets do not form a topology: there are two real-radius
-neighbourhoods whose intersection is not real-open. The neighbourhoods $`(-1, 1)` and
-$`(1 - \varepsilon, 3 - \varepsilon)` overlap in $`(1 - \varepsilon, 1)`, which has
-infinitesimal width. -/
+neighbourhoods whose intersection is not real-open. This is the instance
+$`r = 0`, $`s = 2 - \varepsilon`, $`e = d = 1` of
+{name}`Goldblatt.not_isRealOpen_realNhd_inter_of_infClose`: the neighbourhoods $`(-1, 1)` and
+$`(1 - \varepsilon, 3 - \varepsilon)` overlap in $`(1 - \varepsilon, 1)`. -/
 theorem exists_realNhd_inter_not_isRealOpen :
     ∃ (r s : ℝ*) (e d : ℝ), 0 < e ∧ 0 < d ∧ ¬ IsRealOpen (realNhd r e ∩ realNhd s d) := by
-  refine ⟨0, 2 - ε, 1, 1, one_pos, one_pos, fun hA => ?_⟩
   have hε := epsilon_pos_infinitesimal
-  have hε1 : (ε : ℝ*) < 1 := by simpa using hε.2 1 one_pos
-  have hsub : realNhd 0 1 ∩ realNhd (2 - ε) 1 ⊆ Ioo (1 - ε) 1 := by
-    rintro x ⟨h1, h2⟩
-    rw [realNhd_one] at h1 h2
-    exact ⟨by linarith [h2.1], by linarith [h1.2]⟩
-  have hne : (realNhd 0 1 ∩ realNhd (2 - ε) 1).Nonempty := by
-    refine ⟨1 - ε / 2, ?_, ?_⟩
-    · rw [realNhd_one]
-      constructor <;> linarith [hε.1]
-    · rw [realNhd_one]
-      constructor <;> linarith [hε.1]
-  obtain ⟨e, he, hlt⟩ := hA.exists_real_lt_sub hne hsub
-  have := hε.2 e he
-  linarith
+  refine ⟨0, 2 - ε, 1, 1, one_pos, one_pos,
+    not_isRealOpen_realNhd_inter_of_infClose one_pos one_pos ?_ ?_⟩
+  · simp only [Hyperreal.coe_one]
+    linarith [hε.1]
+  · rw [infClose_iff_abs_lt]
+    intro c hc
+    have := hε.2 c hc
+    simp only [Hyperreal.coe_one]
+    rw [abs_lt]
+    constructor <;> linarith [hε.1]
 
 /-! ### The S-topology -/
 
@@ -321,6 +341,35 @@ theorem sNeighbourhood_mono (h : e ≤ d) : sNeighbourhood r e ⊆ sNeighbourhoo
   intro x hx
   rw [mem_sNeighbourhood_iff] at hx ⊢
   exact ⟨hx.1, lt_of_lt_of_le hx.2 h⟩
+
+/-- **Section 10.5.** The second description of the S-neighbourhood: $`x` belongs to
+$`((r - e, r + e))` if and only if $`e - |r - x|` is positive and appreciable. The book says
+only that $`e - |r - x|` is appreciable; positivity is implicit there and has to be stated,
+because for a point far outside the interval the difference is appreciable and negative. -/
+theorem mem_sNeighbourhood_iff_appreciable :
+    x ∈ sNeighbourhood r e ↔ 0 < (e : ℝ*) - |r - x| ∧ Appreciable ((e : ℝ*) - |r - x|) := by
+  rw [mem_sNeighbourhood_iff]
+  constructor
+  · rintro ⟨hl, hs⟩
+    obtain ⟨m, hm1, hm2⟩ := exists_between hs
+    have hlt : |r - x| < (m : ℝ*) := (limited_abs hl).lt_of_sh_lt hm1
+    have hme : (m : ℝ*) < e := Hyperreal.coe_lt_coe.2 hm2
+    have hpos : (0 : ℝ*) < (e : ℝ*) - |r - x| := by linarith
+    refine ⟨hpos, appreciable_iff_abs.2 ⟨e - m, e + 1, by linarith, ?_, ?_⟩⟩
+    · rw [abs_of_pos hpos]
+      push_cast
+      linarith
+    · rw [abs_of_pos hpos]
+      push_cast
+      linarith [abs_nonneg (r - x)]
+  · rintro ⟨hpos, happ⟩
+    obtain ⟨p, -, hp, hlt, -⟩ := appreciable_iff_abs.1 happ
+    rw [abs_of_pos hpos] at hlt
+    have hlt' : |r - x| < ((e - p : ℝ) : ℝ*) := by
+      push_cast
+      linarith
+    have hl : Limited (r - x) := limited_iff_abs_lt.2 ⟨e - p, hlt'⟩
+    exact ⟨hl, lt_of_le_of_lt ((limited_abs hl).sh_le hlt'.le) (by linarith)⟩
 
 /-- **Section 10.5.** Each point of the S-neighbourhood $`((r - e, r + e))` is at appreciable
 distance from both end points $`r - e` and $`r + e`. -/
@@ -611,8 +660,9 @@ def intervalTopology : TopologicalSpace ℝ* where
 /-- The open sets of the interval topology are the interval-open sets. -/
 theorem isOpen_intervalTopology_iff : IsOpen[intervalTopology] A ↔ IsIntervalOpen A := Iff.rfl
 
-/-- **Section 10.5.** A set is interval-open if and only if it is open in the order topology
-of the hyperreal line, the topology generated by the open rays. -/
+/-- **Section 10.5, supplementary remark.** A set is interval-open if and only if it is open
+in the order topology of the hyperreal line, the topology generated by the open rays. The book
+does not state this. -/
 theorem isIntervalOpen_iff_isOpen_orderTopology :
     IsIntervalOpen A ↔ IsOpen[Preorder.topology ℝ*] A := by
   let _ : TopologicalSpace ℝ* := Preorder.topology ℝ*
@@ -620,7 +670,8 @@ theorem isIntervalOpen_iff_isOpen_orderTopology :
   rw [isIntervalOpen_iff, isOpen_iff_mem_nhds]
   exact forall₂_congr fun x _ => mem_nhds_iff_exists_Ioo_subset.symm
 
-/-- **Section 10.5.** The interval topology is the order topology of the hyperreal line. -/
+/-- **Section 10.5, supplementary remark.** The interval topology is the order topology of the
+hyperreal line. The book does not state this. -/
 theorem intervalTopology_eq_orderTopology : intervalTopology = Preorder.topology ℝ* :=
   TopologicalSpace.ext_iff.2 fun _ => isIntervalOpen_iff_isOpen_orderTopology
 
@@ -822,17 +873,17 @@ section DisjointIntervals
 
 variable {a b : ℕ → ℝ}
 
-/-- The right end point of one of a family of pairwise disjoint nonempty open intervals
+/-- The right end point of a nonempty member of a family of pairwise disjoint open intervals
 belongs to none of them. -/
-private theorem right_endpoint_notMem (hab : ∀ n, a n < b n)
-    (hdisj : Pairwise (Function.onFun Disjoint fun n => Ioo (a n) (b n))) (n : ℕ) :
+private theorem right_endpoint_notMem {n : ℕ} (hn : a n < b n)
+    (hdisj : Pairwise (Function.onFun Disjoint fun n => Ioo (a n) (b n))) :
     b n ∉ ⋃ m, Ioo (a m) (b m) := by
   intro h
   obtain ⟨m, hm⟩ := mem_iUnion.1 h
   have hne : m ≠ n := by
     rintro rfl
     exact lt_irrefl _ hm.2
-  have h1 : max (a n) (a m) < b n := max_lt (hab n) hm.1
+  have h1 : max (a n) (a m) < b n := max_lt hn hm.1
   have hz_m : (max (a n) (a m) + b n) / 2 ∈ Ioo (a m) (b m) :=
     ⟨by linarith [le_max_right (a n) (a m)], by linarith [hm.2]⟩
   have hz_n : (max (a n) (a m) + b n) / 2 ∈ Ioo (a n) (b n) :=
@@ -856,11 +907,46 @@ private theorem left_endpoint_notMem (hab : ∀ n, a n < b n)
     ⟨by linarith, by linarith [min_le_left (b n) (b m)]⟩
   exact Set.disjoint_left.1 (hdisj hne) hz_m hz_n
 
+/-- **Exercise 10.5.2(ii), under weaker hypotheses.** For the union $`A` of a sequence of
+pairwise disjoint open intervals of which at least one is nonempty, some element of $`{}^*A`
+is infinitely close to something not in $`{}^*A`. The right end point $`b_n` of a nonempty
+interval is a real number outside $`A` that is a closure point of $`A`, so by
+Theorem 10.1.1(3) it is infinitely close to a point of $`{}^*A`. No condition on the lengths
+is used. -/
+theorem exists_mem_starSet_infClose_notMem_of_exists_lt (hab : ∃ n, a n < b n)
+    (hdisj : Pairwise (Function.onFun Disjoint fun n => Ioo (a n) (b n))) :
+    ∃ x ∈ (⋆(⋃ n, Ioo (a n) (b n)) : Set ℝ*),
+      ∃ y ∉ (⋆(⋃ n, Ioo (a n) (b n)) : Set ℝ*), x ≊ y := by
+  obtain ⟨n, hn⟩ := hab
+  have hcl : IsClosurePoint (⋃ m, Ioo (a m) (b m)) (b n) := by
+    intro e he
+    have h1 : max (a n) (b n - e) < b n := max_lt hn (sub_lt_self (b n) he)
+    have h2 := le_max_left (a n) (b n - e)
+    have h3 := le_max_right (a n) (b n - e)
+    exact ⟨(max (a n) (b n - e) + b n) / 2, ⟨by linarith, by linarith⟩,
+      mem_iUnion.2 ⟨n, by linarith, by linarith⟩⟩
+  obtain ⟨x, hx, hbx⟩ := isClosurePoint_iff_exists_infClose.1 hcl
+  exact ⟨x, hx, b n, fun h => right_endpoint_notMem hn hdisj (coe_mem_starSet.1 h), hbx.symm⟩
+
+/-- **Exercise 10.5.2(ii), conclusion under weaker hypotheses.** The enlargement of the union
+of a sequence of pairwise disjoint open intervals, at least one of them nonempty, is not
+S-open. -/
+theorem not_isSOpen_starSet_iUnion_Ioo_of_exists_lt (hab : ∃ n, a n < b n)
+    (hdisj : Pairwise (Function.onFun Disjoint fun n => Ioo (a n) (b n))) :
+    ¬ IsSOpen (⋆(⋃ n, Ioo (a n) (b n)) : Set ℝ*) := by
+  intro h
+  obtain ⟨x, hx, y, hy, hxy⟩ := exists_mem_starSet_infClose_notMem_of_exists_lt hab hdisj
+  exact hy (h.hal_subset hx hxy)
+
 /-- **Exercise 10.5.2(ii).** Let $`A` be the union of a sequence of pairwise disjoint nonempty
 open intervals $`A_n = (a_n, b_n)` with the length of $`A_n` less than $`\frac1{n+1}` (the
 book indexes from $`1` and writes $`\frac1n`). Then some element of $`{}^*A` is infinitely
 close to something not in $`{}^*A`: the class of the midpoints is in $`{}^*A`, the class of
-the right end points is not, and their difference is infinitesimal. -/
+the right end points is not, and their difference is infinitesimal.
+
+The intervals are taken to be nonempty, as the word interval suggests. This part does not need
+all of that, nor the bound on the lengths: one nonempty interval is enough, see
+{name}`Goldblatt.exists_mem_starSet_infClose_notMem_of_exists_lt`. -/
 theorem exists_mem_starSet_infClose_notMem (hab : ∀ n, a n < b n)
     (hdisj : Pairwise (Function.onFun Disjoint fun n => Ioo (a n) (b n)))
     (hlen : ∀ n, b n - a n < 1 / ((n : ℝ) + 1)) :
@@ -871,7 +957,7 @@ theorem exists_mem_starSet_infClose_notMem (hab : ∀ n, a n < b n)
       mem_iUnion.2 ⟨n, by linarith [hab n], by linarith [hab n]⟩)
   · intro h
     obtain ⟨n, hn⟩ := (hyperreal_ofSeq_mem_starSet.1 h).exists
-    exact right_endpoint_notMem hab hdisj n hn
+    exact right_endpoint_notMem (hab n) hdisj hn
   · rw [ofSeq_infClose_ofSeq_iff]
     intro η hη
     have := (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).eventually (eventually_lt_nhds hη)
@@ -893,7 +979,11 @@ theorem not_isSOpen_starSet_iUnion_Ioo (hab : ∀ n, a n < b n)
 belongs to no real-radius neighbourhood included in $`{}^*A`. The point is the class of the
 midpoints: a real-radius neighbourhood $`([s_n - e], [s_n + e])` containing it is, at almost
 every index, longer than $`A_n`, so it reaches an end point of $`A_n`, and the class of those
-end points lies in the neighbourhood but not in $`{}^*A`. -/
+end points lies in the neighbourhood but not in $`{}^*A`.
+
+Here the nonemptiness of the intervals matters: the conclusion needs infinitely many of them
+to be nonempty, since the enlargement of a finite union of nonempty open intervals is
+real-open. The statement assumes all of them nonempty. -/
 theorem exists_mem_starSet_forall_realNhd_not_subset (hab : ∀ n, a n < b n)
     (hdisj : Pairwise (Function.onFun Disjoint fun n => Ioo (a n) (b n)))
     (hlen : ∀ n, b n - a n < 1 / ((n : ℝ) + 1)) :
@@ -936,7 +1026,7 @@ theorem exists_mem_starSet_forall_realNhd_not_subset (hab : ∀ n, a n < b n)
   · simp only [hc, ↓reduceIte] at hn
     exact left_endpoint_notMem hab hdisj n hn
   · simp only [hc, ↓reduceIte] at hn
-    exact right_endpoint_notMem hab hdisj n hn
+    exact right_endpoint_notMem (hab n) hdisj hn
 
 /-- **Exercise 10.5.2(iii), conclusion.** For $`A` as in the exercise, $`{}^*A` is not
 real-open. -/
