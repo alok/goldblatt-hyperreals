@@ -59,13 +59,17 @@ def dom (R : ZFSet.{u}) : ZFSet.{u} := (⋃₀ (⋃₀ R)).sep fun a => ∃ b, p
 (a, b) \in R\}` of a set of pairs. -/
 def ran (R : ZFSet.{u}) : ZFSet.{u} := (⋃₀ (⋃₀ R)).sep fun b => ∃ a, pair a b ∈ R
 
+/-- **Section 13.3.** The singleton $`\{a\}` is a member of the pair $`(a, b)`. -/
 theorem singleton_mem_pair : ({a} : ZFSet) ∈ pair a b := by simp [pair]
 
+/-- **Section 13.3.** The set $`\{a, b\}` is a member of the pair $`(a, b)`. -/
 theorem pair_mem_pair : ({a, b} : ZFSet) ∈ pair a b := by simp [pair]
 
+/-- The first component of a pair in $`R` belongs to $`\bigcup \bigcup R`. -/
 theorem fst_mem_sUnion_sUnion (h : pair a b ∈ R) : a ∈ ⋃₀ (⋃₀ R) :=
   mem_sUnion.2 ⟨{a}, mem_sUnion.2 ⟨_, h, singleton_mem_pair⟩, mem_singleton.2 rfl⟩
 
+/-- The second component of a pair in $`R` belongs to $`\bigcup \bigcup R`. -/
 theorem snd_mem_sUnion_sUnion (h : pair a b ∈ R) : b ∈ ⋃₀ (⋃₀ R) :=
   mem_sUnion.2 ⟨{a, b}, mem_sUnion.2 ⟨_, h, pair_mem_pair⟩, by simp⟩
 
@@ -169,16 +173,19 @@ theorem isFunc_iff :
     · obtain ⟨b, -, hb⟩ := h3 a ha
       exact ⟨b, hb, fun c hc => h2 a c b hc hb⟩
 
+/-- **Section 13.2.** A function from $`A` to $`B` is a function. -/
 theorem _root_.ZFSet.IsFunc.isFunction (h : IsFunc A B f) : IsFunction f :=
   let h' := isFunc_iff.1 h
   ⟨h'.1, h'.2.2.1⟩
 
+/-- **Section 13.2.** The domain of a function from $`A` to $`B` is $`A`. -/
 theorem _root_.ZFSet.IsFunc.dom_eq (h : IsFunc A B f) : dom f = A := by
   obtain ⟨-, h1, -, h3⟩ := isFunc_iff.1 h
   ext a
   rw [mem_dom]
   exact ⟨fun ⟨b, hb⟩ => (h1 a b hb).1, fun ha => let ⟨b, _, hb⟩ := h3 a ha; ⟨b, hb⟩⟩
 
+/-- **Section 13.2.** The range of a function from $`A` to $`B` is included in $`B`. -/
 theorem _root_.ZFSet.IsFunc.ran_subset (h : IsFunc A B f) : ran f ⊆ B := by
   intro b hb
   obtain ⟨a, ha⟩ := mem_ran.1 hb
@@ -211,11 +218,13 @@ theorem IsFunction.pair_app_mem (hf : IsFunction f) (ha : a ∈ dom f) : pair a 
   obtain ⟨b, hb⟩ := mem_dom.1 ha
   rwa [hf.app_eq hb]
 
+/-- **Section 13.2.** $`(a, b) \in f` exactly when $`a` is in the domain and $`f(a) = b`. -/
 theorem IsFunction.pair_mem_iff (hf : IsFunction f) :
     pair a b ∈ f ↔ a ∈ dom f ∧ app f a = b :=
   ⟨fun h => ⟨mem_dom.2 ⟨b, h⟩, hf.app_eq h⟩, fun ⟨ha, hb⟩ => hb ▸ hf.pair_app_mem ha⟩
 
-/-- A function is injective when no two pairs share their second component. -/
+/-- **Section 13.2, injective functions.** A function is injective when no two pairs share their
+second component. -/
 def IsInjective (f : ZFSet.{u}) : Prop := ∀ a a' b, pair a b ∈ f → pair a' b ∈ f → a = a'
 
 /-- **Section 13.5, numerals.** The von Neumann numeral $`n = \{0, 1, \dots, n - 1\}`. The
@@ -226,6 +235,7 @@ def num : ℕ → ZFSet.{u}
   | 0 => ∅
   | n + 1 => insert (num n) (num n)
 
+/-- A smaller numeral is a member of a larger one. -/
 theorem num_mem_num_of_lt {m n : ℕ} (h : m < n) : (num m : ZFSet.{u}) ∈ num n := by
   induction n with
   | zero => omega
@@ -260,6 +270,7 @@ def tuple (m : ℕ) (a : Fin m → ZFSet.{u}) : ZFSet.{u} :=
 theorem tuple_two (a : Fin 2 → ZFSet.{u}) : tuple 2 a = pair (a 0) (a 1) := by
   simp [tuple]
 
+/-- **Section 13.2.** For $`m \ne 2`, the members of an $`m`-tuple are the pairs $`(i, a_i)`. -/
 theorem mem_tuple {m : ℕ} (hm : m ≠ 2) {a : Fin m → ZFSet.{u}} :
     p ∈ tuple m a ↔ ∃ i : Fin m, p = pair (num (i + 1)) (a i) := by
   simp [tuple, hm, eq_comm]
@@ -299,6 +310,7 @@ theorem tuple_eq_iff {m : ℕ} {a b : Fin m → ZFSet.{u}} :
     have hij : i = j := Fin.ext (by simpa using num_injective h1)
     rw [h2, hij]
 
+/-- **Exercise 13.3.1 (ii).** Forming $`m`-tuples is injective. -/
 theorem tuple_injective (m : ℕ) : Function.Injective (tuple m : (Fin m → ZFSet.{u}) → ZFSet.{u}) :=
   fun _ _ h => funext (tuple_eq_iff.1 h)
 
@@ -441,6 +453,7 @@ structure IsUniverseOver (U X : ZFSet.{u}) : Prop extends IsUniverse U where
 $`\mathbb U`. -/
 def RelIn (U R : ZFSet.{u}) : Prop := ∀ p ∈ R, ∃ a ∈ U, ∃ b ∈ U, p = pair a b
 
+/-- A binary relation of a universe is a set of pairs. -/
 theorem RelIn.isRel (h : RelIn U R) : IsRel R := fun p hp =>
   let ⟨a, _, b, _, h⟩ := h p hp; ⟨a, b, h⟩
 
@@ -457,6 +470,8 @@ theorem subset (hA : IsSetOf U A) : A ⊆ U := hU.stronglyTransitive.subset hA
 theorem isSetOf_iff : IsSetOf U A ↔ A ∈ U ∧ A ⊆ U :=
   ⟨fun h => ⟨h.1, hU.subset h⟩, fun h => isSetOf_of_subset h.1 h.2⟩
 
+/-- **Section 13.4.** In a universe, the members of a set of the universe belong to the universe.
+-/
 theorem mem_of_mem (hA : IsSetOf U A) (ha : a ∈ A) : a ∈ U := hU.subset hA ha
 
 /-- A pair set $`\{a, b\}` of members of the universe is a set of the universe. -/
@@ -491,6 +506,7 @@ theorem isSetOf_empty : IsSetOf U (∅ : ZFSet.{u}) :=
   let ⟨_, hA⟩ := hU.exists_set
   hU.isSetOf_of_subset hA (empty_subset _)
 
+/-- **Section 13.5.** The empty set belongs to every universe. -/
 theorem empty_mem : (∅ : ZFSet.{u}) ∈ U := hU.isSetOf_empty.1
 
 /-- Inserting a member of the universe into a set of the universe gives a set of the
@@ -782,9 +798,11 @@ def cumPow (X : ZFSet.{u}) : ℕ → ZFSet.{u}
 $`\mathbb U(X) = \bigcup_n \mathbb U_n(X)` over $`X`. -/
 def superstructure (X : ZFSet.{u}) : ZFSet.{u} := ⋃₀ (ZFSet.range (cumPow X))
 
+/-- **Section 13.6.** $`\mathbb U_0(X) = X`. -/
 @[simp]
 theorem cumPow_zero : cumPow X 0 = X := rfl
 
+/-- **Section 13.6.** $`\mathbb U_{n+1}(X) = \mathbb U_n(X) \cup \mathcal P(\mathbb U_n(X))`. -/
 theorem cumPow_succ (n : ℕ) : cumPow X (n + 1) = cumPow X n ∪ powerset (cumPow X n) := rfl
 
 /-- An entity is in the superstructure exactly when it is in one of the cumulative power
@@ -798,6 +816,8 @@ theorem mem_superstructure : a ∈ superstructure X ↔ ∃ n, a ∈ cumPow X n 
   · rintro ⟨n, ha⟩
     exact ⟨_, mem_range.2 ⟨n, rfl⟩, ha⟩
 
+/-- **Section 13.6.** The cumulative power sets increase: $`\mathbb U_n(X) \subseteq \mathbb
+U_{n+1}(X)`. -/
 theorem cumPow_subset_succ (n : ℕ) : cumPow X n ⊆ cumPow X (n + 1) := fun _ h =>
   mem_union.2 (Or.inl h)
 
@@ -808,6 +828,7 @@ theorem cumPow_mono {m n : ℕ} (h : m ≤ n) : cumPow X m ⊆ cumPow X n := by
   | refl => exact fun _ h => h
   | step _ ih => exact fun _ h => cumPow_subset_succ _ (ih h)
 
+/-- **Section 13.6.** Each $`\mathbb U_n(X)` is included in the superstructure. -/
 theorem cumPow_subset_superstructure (n : ℕ) : cumPow X n ⊆ superstructure X := fun _ h =>
   mem_superstructure.2 ⟨n, h⟩
 
@@ -1065,6 +1086,99 @@ $`X`, belongs to $`\mathbb U_2(X)`. -/
 theorem mem_cumPow_two_of_subset_powerset {T : ZFSet.{u}} (hT : T ⊆ powerset X) :
     T ∈ cumPow X 2 :=
   mem_cumPow_succ_of_subset fun _ hs => mem_cumPow_succ_of_subset (mem_powerset.1 (hT hs))
+
+/-- **Section 13.6, sets are not individuals.** Over a base set $`X`, a set all of whose
+members belong to the superstructure is not a member of $`X`: an individual is nonempty and
+none of its members is visible. -/
+theorem IsBaseSet.notMem_of_subset (hX : IsBaseSet X) (hA : A ⊆ superstructure X) : A ∉ X := by
+  intro h
+  obtain ⟨hne, hno⟩ := hX A h
+  obtain ⟨y, hy⟩ := (eq_empty_or_nonempty A).resolve_left hne
+  exact hno y (hA hy) hy
+
+/-- **Section 13.6, low ranks.** A subset of $`X` belongs to $`\mathbb U_1(X)`. -/
+theorem mem_cumPow_one_of_subset (hA : A ⊆ X) : A ∈ cumPow X 1 :=
+  mem_cumPow_succ_of_subset hA
+
+/-- **Section 13.6, the set of all topologies.** Any set of collections of subsets of $`X`,
+for instance the set of all topologies on $`X`, is a member of $`\mathbb U_3(X)`. -/
+theorem mem_cumPow_three_of_subset_powerset_powerset {𝒯 : ZFSet.{u}}
+    (h𝒯 : 𝒯 ⊆ powerset (powerset X)) : 𝒯 ∈ cumPow X 3 :=
+  mem_cumPow_succ_of_subset fun _ ht =>
+    mem_cumPow_two_of_subset_powerset (mem_powerset.1 (h𝒯 ht))
+
+/-- **Section 13.6, measures.** A function $`\mu : \mathcal A \to R` from a collection
+$`\mathcal A` of subsets of $`X` to a set $`R \subseteq X` of numbers, for instance a
+real-valued measure on $`X`, belongs to $`\mathbb U_4(X)`: the collection has rank at most
+$`2` and forming the function adds at most $`2`. As elsewhere in this section, the statement
+is membership in $`\mathbb U_n(X)`, that is, a bound on the rank. -/
+theorem mem_cumPow_four_of_subset_prod_powerset (hX : IsBaseSet X) {𝒜 μ : ZFSet.{u}}
+    (h𝒜 : 𝒜 ⊆ powerset X) (hR : R ⊆ X) (hμ : μ ⊆ prod 𝒜 R) : μ ∈ cumPow X 4 :=
+  mem_cumPow_of_subset_prod (n := 2) (mem_cumPow_two_of_subset_powerset h𝒜)
+    (hX.notMem_of_subset fun _ hs => cumPow_subset_superstructure 1
+      (mem_cumPow_one_of_subset (mem_powerset.1 (h𝒜 hs))))
+    (cumPow_mono (Nat.le_succ 1) (mem_cumPow_one_of_subset hR))
+    (hX.notMem_of_subset fun _ hr => cumPow_subset_superstructure 0 (hR hr)) hμ
+
+/-- **Section 13.6, the set of all measures.** A set of functions, each from a collection of
+subsets of $`X` to a subset of $`X`, for instance the set of all real-valued measures on
+$`X`, belongs to $`\mathbb U_5(X)`. -/
+theorem mem_cumPow_five_of_measures (hX : IsBaseSet X) {M : ZFSet.{u}}
+    (hM : ∀ μ ∈ M, ∃ 𝒜 R, 𝒜 ⊆ powerset X ∧ R ⊆ X ∧ μ ⊆ prod 𝒜 R) : M ∈ cumPow X 5 :=
+  mem_cumPow_succ_of_subset fun μ hμ =>
+    let ⟨_, _, h𝒜, hR, hsub⟩ := hM μ hμ
+    mem_cumPow_four_of_subset_prod_powerset hX h𝒜 hR hsub
+
+/-- **Section 13.6, the square of the base set.** $`X \times X` belongs to
+$`\mathbb U_3(X)`: a pair of individuals has rank $`2`. -/
+theorem prod_base_mem_cumPow_three : prod X X ∈ cumPow X 3 :=
+  mem_cumPow_succ_of_subset fun p hp => by
+    obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 hp
+    have h1 : ({a} : ZFSet.{u}) ∈ cumPow X 1 :=
+      mem_cumPow_succ_of_subset fun x hx => mem_singleton.1 hx ▸ ha
+    exact pair_mem_cumPow_succ h1 (pair_mem_cumPow_succ (n := 0) ha hb)
+
+/-- **Section 13.6, metrics.** A function $`d : X \times X \to R` with $`R \subseteq X`, for
+instance a metric on $`X`, belongs to $`\mathbb U_5(X)`, since $`X \times X` has rank
+$`3`. -/
+theorem mem_cumPow_five_of_subset_prod_prod (hX : IsBaseSet X) (hR : R ⊆ X)
+    (hd : d ⊆ prod (prod X X) R) : d ∈ cumPow X 5 :=
+  mem_cumPow_of_subset_prod (n := 3) prod_base_mem_cumPow_three
+    (hX.notMem_of_subset fun p hp => by
+      obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 hp
+      have h1 : ({a} : ZFSet.{u}) ∈ cumPow X 1 :=
+        mem_cumPow_succ_of_subset fun x hx => mem_singleton.1 hx ▸ ha
+      exact cumPow_subset_superstructure 2
+        (pair_mem_cumPow_succ h1 (pair_mem_cumPow_succ (n := 0) ha hb)))
+    (cumPow_mono (by omega) (mem_cumPow_one_of_subset hR))
+    (hX.notMem_of_subset fun _ hr => cumPow_subset_superstructure 0 (hR hr)) hd
+
+/-- **Section 13.6, the set of all metrics.** A set of functions from $`X \times X` to
+subsets of $`X`, for instance the set of all metrics on $`X`, belongs to
+$`\mathbb U_6(X)`. -/
+theorem mem_cumPow_six_of_metrics (hX : IsBaseSet X) {M : ZFSet.{u}}
+    (hM : ∀ d ∈ M, ∃ R, R ⊆ X ∧ d ⊆ prod (prod X X) R) : M ∈ cumPow X 6 :=
+  mem_cumPow_succ_of_subset fun d hd =>
+    let ⟨_, hR, hsub⟩ := hM d hd
+    mem_cumPow_five_of_subset_prod_prod hX hR hsub
+
+/-- **Section 13.6, the Riemann integral.** Let $`I` and $`R` be subsets of $`X` (a closed
+interval and the real numbers) and $`\mathcal R` a set of functions from $`I` to $`R` (the
+integrable ones). Each such function belongs to $`\mathbb U_3(X)`, the set $`\mathcal R` to
+$`\mathbb U_4(X)`, and any function $`J : \mathcal R \to R`, for instance the Riemann
+integral, to $`\mathbb U_6(X)`. -/
+theorem mem_cumPow_six_of_integral (hX : IsBaseSet X) {I ℛ J : ZFSet.{u}} (hI : I ⊆ X)
+    (hR : R ⊆ X) (hℛ : ∀ f ∈ ℛ, f ⊆ prod I R) (hJ : J ⊆ prod ℛ R) :
+    (∀ f ∈ ℛ, f ∈ cumPow X 3) ∧ ℛ ∈ cumPow X 4 ∧ J ∈ cumPow X 6 := by
+  have hInot : I ∉ X := hX.notMem_of_subset fun _ hi => cumPow_subset_superstructure 0 (hI hi)
+  have hRnot : R ∉ X := hX.notMem_of_subset fun _ hr => cumPow_subset_superstructure 0 (hR hr)
+  have h3 : ∀ f ∈ ℛ, f ∈ cumPow X 3 := fun f hf =>
+    mem_cumPow_of_subset_prod (n := 1) (mem_cumPow_one_of_subset hI) hInot
+      (mem_cumPow_one_of_subset hR) hRnot (hℛ f hf)
+  have h4 : ℛ ∈ cumPow X 4 := mem_cumPow_succ_of_subset h3
+  exact ⟨h3, h4, mem_cumPow_of_subset_prod (n := 4) h4
+    (hX.notMem_of_subset fun f hf => cumPow_subset_superstructure 3 (h3 f hf))
+    (cumPow_mono (by omega) (mem_cumPow_one_of_subset hR)) hRnot hJ⟩
 
 /-- **Section 13.6, existence of superstructures.** Every type $`\alpha` (for instance the
 real numbers) has a copy inside {name}`ZFSet` that is a base set: there is an injection of

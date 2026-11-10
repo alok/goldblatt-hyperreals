@@ -70,6 +70,7 @@ open Formula Term
 
 variable (F : NonstandardFramework.{u}) {A B C D R S T f a b c : ZFSet.{u}}
 
+/-- The standard universe of a framework is a universe. -/
 theorem hU : IsUniverse F.U := F.isUniverseOver.toIsUniverse
 
 /-- **Section 13.8, transfer map (1).** $`a = b` if and only if $`{}^*a = {}^*b`. -/
@@ -94,6 +95,7 @@ theorem isSetOf_star (hA : IsSetOf F.U A) : IsSetOf F.U' (F.star A) := by
   · exact ⟨F.star_mem A hA.1, fun h =>
       h.2 _ (F.star_mem y hy) ((F.star_mem_star_iff hy hA.1).2 hyA)⟩
 
+/-- **Section 13.8.** The members of a standard set $`{}^*A` belong to $`\mathbb U'`. -/
 theorem star_subset_U' (hA : IsSetOf F.U A) : F.star A ⊆ F.U' :=
   F.isUniverse'.subset (F.isSetOf_star hA)
 
@@ -656,6 +658,7 @@ and every other variable the empty set. -/
 def _root_.Goldblatt.envOf {n : ℕ} (c : Fin n → ZFSet.{u}) : ℕ → ZFSet.{u} :=
   fun y => if h : y < n then c ⟨y, h⟩ else ∅
 
+/-- The environment built from a finite family takes its $`i`-th value at the variable $`i`. -/
 @[simp]
 theorem _root_.Goldblatt.envOf_coe {n : ℕ} (c : Fin n → ZFSet.{u}) (i : Fin n) :
     envOf c i = c i := by
@@ -834,6 +837,7 @@ def Standard (b : ZFSet.{u}) : Prop := ∃ a ∈ F.U, b = F.star a
 standard. -/
 def Nonstandard (b : ZFSet.{u}) : Prop := b ∈ F.U' ∧ ¬ F.Standard b
 
+/-- **Section 13.9.** The transform of a member of $`\mathbb U` is standard. -/
 theorem standard_star (ha : a ∈ F.U) : F.Standard (F.star a) := ⟨a, ha, rfl⟩
 
 /-- **Section 13.9.** Every element of $`X` is standard. -/
@@ -850,6 +854,8 @@ theorem mem_of_standard_of_mem_star (hAX : A ⊆ F.X) (hs : F.Standard b) (hb : 
   have haA := (F.star_mem_star_iff ha hA.1).1 hb
   rwa [F.star_individual a (hAX haA)]
 
+/-- **Section 13.9.** If $`A` is a set of individuals, every member of $`{}^*A - A` is
+nonstandard. -/
 theorem nonstandard_of_mem_star_sdiff (hAX : A ⊆ F.X) (hb : b ∈ F.star A \ A) :
     F.Nonstandard b := by
   have hA := F.hU.isSetOf_of_subset F.isUniverseOver.base_isSetOf hAX
@@ -860,6 +866,8 @@ theorem nonstandard_of_mem_star_sdiff (hAX : A ⊆ F.X) (hb : b ∈ F.star A \ A
 under the transfer map. -/
 def im (A : ZFSet.{u}) : ZFSet.{u} := ZFSet.range fun a : A => F.star a
 
+/-- **Section 13.9.** The members of $`\operatorname{im} A` are the transforms of the members of
+$`A`. -/
 @[simp]
 theorem mem_im : b ∈ F.im A ↔ ∃ a ∈ A, b = F.star a := by
   rw [im, mem_range]

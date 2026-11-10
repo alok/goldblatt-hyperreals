@@ -59,55 +59,69 @@ open Formula Term NonstandardFramework
 
 variable (F : RealFramework.{u}) {A B C D f a b c n x : ZFSet.{u}}
 
-/-- The individual representing a natural number. -/
+/-- **Section 13.9.** The individual representing a natural number. -/
 def nat (k : ℕ) : ZFSet.{u} := F.real k
 
-/-- The set $`\mathbb R` of real numbers of the framework. -/
+/-- **Section 13.9.** The set $`\mathbb R` of real numbers of the framework. -/
 def R : ZFSet.{u} := ZFSet.range F.real
 
-/-- The set $`\mathbb N` of natural numbers of the framework (starting from $`0`). -/
+/-- **Section 13.9.** The set $`\mathbb N` of natural numbers of the framework (starting from
+$`0`). -/
 def N : ZFSet.{u} := ZFSet.range F.nat
 
-/-- The order relation $`\le` on the real numbers, as a set of pairs in the universe. -/
+/-- **Section 13.8.** The order relation $`\le` on the real numbers, as a set of pairs in the
+universe. -/
 def Le : ZFSet.{u} :=
   (prod F.R F.R).sep fun p => ∃ r s : ℝ, r ≤ s ∧ p = pair (F.real r) (F.real s)
 
-/-- The successor relation $`\{(k, k + 1)\}` on the natural numbers. -/
+/-- **Section 13.8.** The successor relation $`\{(k, k + 1)\}` on the natural numbers, as a set
+of pairs in the universe. -/
 def Succ : ZFSet.{u} := ZFSet.range fun k : ℕ => pair (F.nat k) (F.nat (k + 1))
 
+/-- Distinct natural numbers are represented by distinct individuals. -/
 theorem nat_injective : Function.Injective F.nat := fun _ _ h =>
   Nat.cast_injective (F.real_injective h)
 
+/-- Real numbers are members of the universe. -/
 theorem real_mem_U (r : ℝ) : F.real r ∈ F.U :=
   F.hU.subset F.isUniverseOver.base_isSetOf (F.real_mem r)
 
+/-- Natural numbers are members of the universe. -/
 theorem nat_mem_U (k : ℕ) : F.nat k ∈ F.U := F.real_mem_U k
 
+/-- **Section 13.8.** A real number is its own transform, being an individual. -/
 @[simp]
 theorem star_real (r : ℝ) : F.star (F.real r) = F.real r := F.star_individual _ (F.real_mem r)
 
+/-- **Section 13.8.** A natural number is its own transform. -/
 @[simp]
 theorem star_nat (k : ℕ) : F.star (F.nat k) = F.nat k := F.star_real k
 
+/-- The members of $`\mathbb R` are the individuals representing real numbers. -/
 theorem mem_R : a ∈ F.R ↔ ∃ r, a = F.real r := by
   rw [R, mem_range]
   exact ⟨fun ⟨r, h⟩ => ⟨r, h.symm⟩, fun ⟨r, h⟩ => ⟨r, h.symm⟩⟩
 
+/-- The members of $`\mathbb N` are the individuals representing natural numbers. -/
 theorem mem_N : a ∈ F.N ↔ ∃ k, a = F.nat k := by
   rw [N, mem_range]
   exact ⟨fun ⟨r, h⟩ => ⟨r, h.symm⟩, fun ⟨r, h⟩ => ⟨r, h.symm⟩⟩
 
+/-- $`\mathbb R` is a set of individuals. -/
 theorem R_subset_base : F.R ⊆ F.X := fun a ha => by
   obtain ⟨r, rfl⟩ := F.mem_R.1 ha
   exact F.real_mem r
 
+/-- $`\mathbb N` is a set of individuals. -/
 theorem N_subset_base : F.N ⊆ F.X := fun a ha => by
   obtain ⟨k, rfl⟩ := F.mem_N.1 ha
   exact F.real_mem k
 
+/-- $`\mathbb R` is a set of the universe. -/
 theorem isSetOf_R : IsSetOf F.U F.R :=
   F.hU.isSetOf_of_subset F.isUniverseOver.base_isSetOf F.R_subset_base
 
+/-- $`\mathbb N` is a set of the universe. -/
 theorem isSetOf_N : IsSetOf F.U F.N :=
   F.hU.isSetOf_of_subset F.isUniverseOver.base_isSetOf F.N_subset_base
 
@@ -124,6 +138,7 @@ any member of $`{}^*\mathbb N - \mathbb N` is nonstandard. -/
 theorem mem_N_of_standard (hs : F.Standard a) (ha : a ∈ F.star F.N) : a ∈ F.N :=
   F.mem_of_standard_of_mem_star F.N_subset_base hs ha
 
+/-- The relation {lit}`Le` holds between two real numbers exactly when $`r \le s`. -/
 theorem pair_mem_Le {r s : ℝ} : pair (F.real r) (F.real s) ∈ F.Le ↔ r ≤ s := by
   rw [Le, mem_sep]
   constructor
@@ -132,16 +147,20 @@ theorem pair_mem_Le {r s : ℝ} : pair (F.real r) (F.real s) ∈ F.Le ↔ r ≤ 
     rwa [F.real_injective h1, F.real_injective h2]
   · exact fun h => ⟨pair_mem_prod.2 ⟨F.mem_R.2 ⟨r, rfl⟩, F.mem_R.2 ⟨s, rfl⟩⟩, r, s, h, rfl⟩
 
+/-- The relation {lit}`Le` holds between two natural numbers exactly when $`j \le k`. -/
 theorem pair_nat_mem_Le {j k : ℕ} : pair (F.nat j) (F.nat k) ∈ F.Le ↔ j ≤ k := by
   rw [nat, nat, pair_mem_Le, Nat.cast_le]
 
+/-- The order relation on $`\mathbb R` is a set of the universe. -/
 theorem isSetOf_Le : IsSetOf F.U F.Le :=
   F.hU.isSetOf_of_subset_prod F.isSetOf_R F.isSetOf_R sep_subset
 
+/-- The members of the successor relation are the pairs $`(k, k + 1)`. -/
 theorem mem_Succ : a ∈ F.Succ ↔ ∃ k, a = pair (F.nat k) (F.nat (k + 1)) := by
   rw [Succ, mem_range]
   exact ⟨fun ⟨r, h⟩ => ⟨r, h.symm⟩, fun ⟨r, h⟩ => ⟨r, h.symm⟩⟩
 
+/-- The successor of the natural number $`k` is $`k + 1`. -/
 theorem pair_mem_Succ {k : ℕ} : pair (F.nat k) b ∈ F.Succ ↔ b = F.nat (k + 1) := by
   rw [mem_Succ]
   constructor
@@ -150,6 +169,7 @@ theorem pair_mem_Succ {k : ℕ} : pair (F.nat k) b ∈ F.Succ ↔ b = F.nat (k +
     rw [h2, F.nat_injective h1]
   · exact fun h => ⟨k, by rw [h]⟩
 
+/-- The successor relation is a set of the universe. -/
 theorem isSetOf_Succ : IsSetOf F.U F.Succ :=
   F.hU.isSetOf_of_subset_prod F.isSetOf_N F.isSetOf_N fun p hp => by
     obtain ⟨k, rfl⟩ := F.mem_Succ.1 hp
@@ -165,6 +185,7 @@ instance : Nonempty RealFramework.{u} :=
       real_injective := fun _ _ hrs => congrArg ULift.down (hι hrs)
       real_mem := fun r => mem_range.2 ⟨⟨r⟩, rfl⟩ }⟩
 
+/-- **Section 13.8.** On real numbers the transformed order $`{}^*{\le}` agrees with $`\le`. -/
 theorem pair_real_mem_star_Le {r s : ℝ} :
     pair (F.real r) (F.real s) ∈ F.star F.Le ↔ r ≤ s := by
   have := F.star_mem_star_iff (F.hU.isSetOf_opair (F.real_mem_U r) (F.real_mem_U s)).1
@@ -172,6 +193,7 @@ theorem pair_real_mem_star_Le {r s : ℝ} :
   rw [F.star_opair (F.real_mem_U r) (F.real_mem_U s), F.star_real, F.star_real] at this
   rw [this, F.pair_mem_Le]
 
+/-- **Section 13.8.** On natural numbers the transformed order agrees with $`\le`. -/
 theorem pair_nat_mem_star_Le {j k : ℕ} :
     pair (F.nat j) (F.nat k) ∈ F.star F.Le ↔ j ≤ k := by
   rw [nat, nat, pair_real_mem_star_Le, Nat.cast_le]
@@ -282,7 +304,7 @@ consists exactly of the open intervals of the hyperreal line with hyperreal end 
 standard ones among them are those with real end points.
 -/
 
-/-- The open interval $`(a, b)` of a set $`S` of numbers ordered by the relation $`L`:
+/-- **Section 13.9, open intervals.** The open interval $`(a, b)` of a set $`S` of numbers ordered by the relation $`L`:
 $`\{x \in S : a < x < b\}`, where $`a < x` means $`a \le x` and $`x \ne a`. -/
 def _root_.Goldblatt.ooIn (S L a b : ZFSet.{u}) : ZFSet.{u} :=
   S.sep fun x => (pair a x ∈ L ∧ x ≠ a) ∧ (pair x b ∈ L ∧ x ≠ b)
@@ -292,10 +314,12 @@ line with real end points. -/
 def Int : ZFSet.{u} :=
   ZFSet.range fun p : ℝ × ℝ => ooIn F.R F.Le (F.real p.1) (F.real p.2)
 
+/-- **Section 13.9.** The members of $`\mathrm{Int}` are the real intervals $`(r, s)`. -/
 theorem mem_Int : A ∈ F.Int ↔ ∃ r s : ℝ, A = ooIn F.R F.Le (F.real r) (F.real s) := by
   rw [Int, mem_range]
   exact ⟨fun ⟨p, h⟩ => ⟨p.1, p.2, h.symm⟩, fun ⟨r, s, h⟩ => ⟨(r, s), h.symm⟩⟩
 
+/-- **Section 13.9.** $`\mathrm{Int}` is a set of the universe. -/
 theorem isSetOf_Int : IsSetOf F.U F.Int :=
   F.hU.isSetOf_of_subset (F.hU.isSetOf_powerset F.isSetOf_R) fun A hA => by
     obtain ⟨r, s, rfl⟩ := F.mem_Int.1 hA
@@ -577,14 +601,19 @@ $`B` on $`A`: the set of pairs $`(a, 1)` with $`a \in B` and $`(a, 0)` with
 $`a \in A - B`. -/
 def chi (A B : ZFSet.{u}) : ZFSet.{u} := prod B {num 1} ∪ prod (A \ B) {num 0}
 
+/-- The numerals $`0` and $`1` are different. -/
 theorem num_zero_ne_one : (num 0 : ZFSet.{u}) ≠ num 1 := fun h => by
   have := num_injective h
   omega
 
+/-- The pairs of a characteristic function: $`(a, 1)` for $`a \in B` and $`(a, 0)` for $`a \in A -
+B`. -/
 theorem pair_mem_chi {A B a c : ZFSet.{u}} :
     pair a c ∈ chi A B ↔ (a ∈ B ∧ c = num 1) ∨ (a ∈ A ∧ a ∉ B ∧ c = num 0) := by
   simp [chi, and_assoc]
 
+/-- The characteristic function of a subset of $`A` is a set of pairs from $`A \times \{0, 1\}`.
+-/
 theorem chi_subset {A B : ZFSet.{u}} (hBA : B ⊆ A) : chi A B ⊆ prod A two := by
   intro p hp
   rcases mem_union.1 hp with hp | hp
@@ -908,6 +937,7 @@ of all finite subsets of $`A`. -/
 def finPow (A : ZFSet.{u}) : ZFSet.{u} :=
   (powerset A).sep fun B => (B : Set ZFSet.{u}).Finite
 
+/-- **Section 13.17.** The members of $`\mathcal P_F(A)` are the finite subsets of $`A`. -/
 theorem mem_finPow {A B : ZFSet.{u}} : B ∈ finPow A ↔ B ⊆ A ∧ (B : Set ZFSet.{u}).Finite := by
   rw [finPow, mem_sep, mem_powerset]
 
@@ -1048,7 +1078,7 @@ $`f` is a bijection from the initial segment determined by $`n` onto $`Z`. The f
 meaning are set up first.
 -/
 
-/-- The statement, with all quantifiers bounded and ranging over a universe $`W`, that $`V` is
+/-- **Theorem 13.17.1, the statement transferred.** The statement, with all quantifiers bounded and ranging over a universe $`W`, that $`V` is
 the initial segment $`\{x \in N : 1 \le x \le n\}` and that $`f` is a bijection from $`V` onto
 $`Z`. Its seven clauses are the seven formulas in the book's proof of Theorem 13.17.1. -/
 def BijSpec (W N' Le' one V Z n f : ZFSet.{u}) : Prop :=
@@ -1062,7 +1092,7 @@ def BijSpec (W N' Le' one V Z n f : ZFSet.{u}) : Prop :=
   (∀ x ∈ W, x ∈ V → ∀ y ∈ W, y ∈ V → ∀ z ∈ W, z ∈ Z →
     pair x z ∈ f ∧ pair y z ∈ f → x = y)
 
-/-- The formula $`\varphi(n, f, Z)` of the proof of Theorem 13.17.1: there is
+/-- **Theorem 13.17.1, the formula of the proof.** The formula $`\varphi(n, f, Z)`: there is
 $`V \in \mathcal P(\mathbb N)` such that $`V = \{1, \dots, n\}` and $`f` is a bijection from
 $`V` onto $`Z`. The variables $`0, 1, 2` stand for $`Z, n, f`. -/
 def bijFormula (PN N' Le' one : ZFSet.{u}) : Formula.{u} :=
@@ -1087,16 +1117,21 @@ def bijFormula (PN N' Le' one : ZFSet.{u}) : Formula.{u} :=
           (.elem (.opair (.var 5) (.var 6)) (.var 2)))
         (.equal (.var 4) (.var 5))))))))))))
 
+/-- The transform of the formula {lit}`bijFormula` is the same formula with transformed constants.
+-/
 theorem star_bijFormula (s : ZFSet.{u} → ZFSet.{u}) (PN N' Le' one : ZFSet.{u}) :
     (bijFormula PN N' Le' one).star s = bijFormula (s PN) (s N') (s Le') (s one) := by
   simp [bijFormula]
 
+/-- The formula {lit}`bijFormula` holds exactly when some $`V` satisfies {lit}`BijSpec`. -/
 theorem sat_bijFormula (W PN N' Le' one : ZFSet.{u}) (v : ℕ → ZFSet.{u}) :
     Sat W v (bijFormula PN N' Le' one) ↔
       ∃ V ∈ W, V ∈ PN ∧ BijSpec W N' Le' one V (v 0) (v 1) (v 2) := by
   simp only [bijFormula, BijSpec]
   sat_simp
 
+/-- The formula {lit}`bijFormula` is a formula of the language of $`\mathbb U` in the variables
+$`0, 1, 2`. -/
 theorem admissible_bijFormula {U PN N' Le' one : ZFSet.{u}} (hPN : PN ∈ U) (hN : N' ∈ U)
     (hLe : Le' ∈ U) (hone : one ∈ U) :
     (bijFormula PN N' Le' one).Admissible U (insert 2 (insert 1 (insert 0 ∅))) := by
@@ -1407,6 +1442,7 @@ theorem isFunc_graph (A B : ZFSet.{u}) (h : A → ZFSet.{u}) (hB : ∀ a, h a �
     have : a = ⟨z, hz⟩ := Subtype.ext h1
     rw [← h2, this]
 
+/-- The value at $`a` of the graph of a map is the value of the map. -/
 theorem app_graph (A B : ZFSet.{u}) (h : A → ZFSet.{u}) (hB : ∀ a, h a ∈ B) (a : A) :
     app (ZFSet.range fun a : A => pair (a : ZFSet.{u}) (h a)) a = h a :=
   (isFunc_graph A B h hB).isFunction.app_eq (mem_range.2 ⟨a, rfl⟩)
@@ -1424,6 +1460,8 @@ def cardFn (A : ZFSet.{u}) : ZFSet.{u} :=
   ZFSet.range fun Z : (finPow A : ZFSet.{u}) =>
     pair (Z : ZFSet.{u}) (F.nat (Nat.card ((Z : ZFSet.{u}) : Set ZFSet.{u})))
 
+/-- **Section 13.17.** The cardinality function is a function from $`\mathcal P_F(A)` to $`\mathbb
+N`. -/
 theorem isFunc_cardFn (A : ZFSet.{u}) : IsFunc (finPow A) F.N (F.cardFn A) :=
   isFunc_graph _ _ _ fun _ => F.mem_N.2 ⟨_, rfl⟩
 
@@ -1539,10 +1577,12 @@ theorem icard_eq_of_bijection (hA : IsSetOf F.U A) (hB : B ∈ F.star (finPow A)
         ⟨rfl, hfunc, hinj, hran⟩⟩
   exact (F.isFunc_star_cardFn hA).1.isFunction.app_eq hmem
 
-/-- The identity function on a set, as a set of pairs. -/
+/-- **Section 13.17.** The identity function on a set, as a set of pairs; it is the internal
+bijection showing that an initial segment has itself as internal cardinality. -/
 def _root_.Goldblatt.idOn (S : ZFSet.{u}) : ZFSet.{u} :=
   (prod S S).sep fun p => ∃ a, p = pair a a
 
+/-- The pairs of the identity function on $`S` are the pairs $`(a, a)` with $`a \in S`. -/
 theorem _root_.Goldblatt.pair_mem_idOn {S : ZFSet.{u}} : pair a b ∈ idOn S ↔ a ∈ S ∧ a = b := by
   rw [idOn, mem_sep, pair_mem_prod]
   constructor
@@ -1552,6 +1592,7 @@ theorem _root_.Goldblatt.pair_mem_idOn {S : ZFSet.{u}} : pair a b ∈ idOn S ↔
   · rintro ⟨ha, rfl⟩
     exact ⟨⟨ha, ha⟩, a, rfl⟩
 
+/-- The identity function on $`S` is a bijection of $`S` onto itself. -/
 theorem _root_.Goldblatt.isFunc_idOn (S : ZFSet.{u}) :
     IsFunc S S (idOn S) ∧ IsInjective (idOn S) ∧ ran (idOn S) = S := by
   refine ⟨⟨sep_subset, fun z hz => ⟨z, pair_mem_idOn.2 ⟨hz, rfl⟩, fun w hw =>
@@ -1674,6 +1715,7 @@ theorem _root_.Goldblatt.finite_coe_powerset {x : ZFSet.{u}} (h : (x : Set ZFSet
   have : Finite (powerset x) := Finite.of_equiv _ (powersetEquiv x).symm
   exact Set.toFinite _
 
+/-- The power set of a finite set with $`k` elements has $`2^k` elements. -/
 theorem _root_.Goldblatt.card_coe_powerset {x : ZFSet.{u}} (h : (x : Set ZFSet.{u}).Finite) :
     Nat.card ((powerset x : ZFSet.{u}) : Set ZFSet.{u}) = 2 ^ Nat.card (x : Set ZFSet.{u}) := by
   have e : Nat.card ((powerset x : ZFSet.{u}) : Set ZFSet.{u}) =
@@ -1685,10 +1727,12 @@ $`\mathcal P_I(A) = \mathcal P(A) \cap {}^*\mathbb U = \{B \subseteq A : B \text
 internal}\}`. -/
 def internalPowerset (A : ZFSet.{u}) : ZFSet.{u} := (powerset A).sep F.Internal
 
-/-- The function $`k \mapsto 2^k` on the natural numbers, as a set of pairs in the
-universe. -/
+/-- **Exercise 13.18 (4).** The function $`k \mapsto 2^k` on the natural numbers, as a set of
+pairs in the universe. -/
 def powFn : ZFSet.{u} := ZFSet.range fun k : ℕ => pair (F.nat k) (F.nat (2 ^ k))
 
+/-- **Exercise 13.18 (4).** The function $`k \mapsto 2^k` is a function from $`\mathbb N` to
+$`\mathbb N`. -/
 theorem isFunc_powFn : IsFunc F.N F.N F.powFn := by
   refine ⟨fun p hp => ?_, fun z hz => ?_⟩
   · obtain ⟨k, rfl⟩ := mem_range.1 hp

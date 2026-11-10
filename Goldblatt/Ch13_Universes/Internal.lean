@@ -49,6 +49,7 @@ def External (a : ZFSet.{u}) : Prop := a ∈ F.U' ∧ ¬ F.Internal a
 
 variable {F}
 
+/-- **Section 13.10.** Internal entities are members of $`\mathbb U'`. -/
 theorem Internal.mem_U' (h : F.Internal a) : a ∈ F.U' :=
   let ⟨_, hB, ha⟩ := h
   F.star_subset_U' hB ha
@@ -60,6 +61,7 @@ theorem internal_star (ha : a ∈ F.U) : F.Internal (F.star a) :=
   ⟨{a}, F.hU.isSetOf_singleton ha,
     (F.star_mem_star_iff ha (F.hU.isSetOf_singleton ha).1).2 (mem_singleton.2 rfl)⟩
 
+/-- **Section 13.10.** Every standard entity is internal. -/
 theorem internal_of_standard (h : F.Standard a) : F.Internal a := by
   obtain ⟨b, hb, rfl⟩ := h
   exact F.internal_star hb
@@ -132,6 +134,7 @@ applications. The principle for a formula with internal constants
 out that replacement.
 -/
 
+/-- For any finite list of variables there is a bound above which all variables are fresh. -/
 theorem _root_.Goldblatt.exists_fresh_var (ys : List ℕ) (x : ℕ) :
     ∃ N, x < N ∧ ∀ y ∈ ys, y < N := by
   induction ys with
@@ -413,6 +416,7 @@ theorem internal_sUnion (hA : F.Internal A) (hAset : IsSetOf F.U' A)
   rw [e]
   exact this
 
+/-- The union of a collection of sets of $`\mathbb U'` consists of members of $`\mathbb U'`. -/
 theorem sUnion_subset_U' (hsets : ∀ s ∈ A, IsSetOf F.U' s) : ⋃₀ A ⊆ F.U' := fun _ ha =>
   let ⟨s, hs, has⟩ := mem_sUnion.1 ha
   F.isUniverse'.subset (hsets s hs) has

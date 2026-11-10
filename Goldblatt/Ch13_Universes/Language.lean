@@ -104,16 +104,19 @@ attribute [simp] val Defined star Admissible
 /-- The pair term $`(\sigma, \tau)`, the tuple of two terms. -/
 def opair (s t : Term.{u}) : Term.{u} := tuple 0 ![s, t]
 
+/-- The value of a pair term is the ordered pair of the values. -/
 @[simp]
 theorem val_opair (v : ℕ → ZFSet.{u}) (s t : Term.{u}) :
     (opair s t).val v = pair (s.val v) (t.val v) := by
   simp [opair]
 
+/-- A pair term is defined exactly when both components are. -/
 @[simp]
 theorem defined_opair (U : ZFSet.{u}) (v : ℕ → ZFSet.{u}) (s t : Term.{u}) :
     (opair s t).Defined U v ↔ s.Defined U v ∧ t.Defined U v := by
   simp [opair, Fin.forall_fin_two]
 
+/-- The transform of a pair term is the pair of the transforms. -/
 @[simp]
 theorem star_opair (σ : ZFSet.{u} → ZFSet.{u}) (s t : Term.{u}) :
     (opair s t).star σ = opair (s.star σ) (t.star σ) := by
@@ -122,6 +125,7 @@ theorem star_opair (σ : ZFSet.{u} → ZFSet.{u}) (s t : Term.{u}) :
   funext i
   fin_cases i <;> rfl
 
+/-- A pair term is admissible exactly when both components are. -/
 @[simp]
 theorem admissible_opair (U : ZFSet.{u}) (b : Set ℕ) (s t : Term.{u}) :
     (opair s t).Admissible U b ↔ s.Admissible U b ∧ t.Admissible U b := by
@@ -129,6 +133,7 @@ theorem admissible_opair (U : ZFSet.{u}) (b : Set ℕ) (s t : Term.{u}) :
 
 variable {U U' : ZFSet.{u}} {b b' : Set ℕ} {v w : ℕ → ZFSet.{u}}
 
+/-- Admissibility of a term is preserved when the set of allowed variables grows. -/
 theorem Admissible.mono {t : Term.{u}} (h : t.Admissible U b) (hb : b ⊆ b') :
     t.Admissible U b' := by
   induction t with
@@ -273,6 +278,7 @@ attribute [simp] star Admissible
 
 variable {U U' : ZFSet.{u}} {b b' : Set ℕ} {v w : ℕ → ZFSet.{u}}
 
+/-- Admissibility of a formula is preserved when the set of allowed free variables grows. -/
 theorem Admissible.mono {φ : Formula.{u}} (h : φ.Admissible U b) (hb : b ⊆ b') :
     φ.Admissible U b' := by
   induction φ generalizing b b' with
@@ -384,6 +390,7 @@ def reach (U : ZFSet.{u}) : List (ℕ × ZFSet.{u}) → (ℕ → ZFSet.{u}) → 
   | [], v => {v}
   | (x, T) :: l, v => {w | ∃ a ∈ U, a ∈ T ∧ w ∈ reach U l (Function.update v x a)}
 
+/-- Truth of a formula under a block of bounded universal quantifiers. -/
 theorem sat_alls {l : List (ℕ × ZFSet.{u})} {φ : Formula.{u}} :
     Sat U v (alls l φ) ↔ ∀ w ∈ reach U l v, Sat U w φ := by
   induction l generalizing v with
@@ -393,6 +400,7 @@ theorem sat_alls {l : List (ℕ × ZFSet.{u})} {φ : Formula.{u}} :
     simp only [alls, Sat, Term.Defined, Term.val, forall_true_left, ih, reach, Set.mem_ofPred_eq]
     exact ⟨fun h w ⟨a, ha, haT, hw⟩ => h a ha haT w hw, fun h a ha haT w hw => h w ⟨a, ha, haT, hw⟩⟩
 
+/-- Truth of a formula under a block of bounded existential quantifiers. -/
 theorem sat_exs {l : List (ℕ × ZFSet.{u})} {φ : Formula.{u}} :
     Sat U v (exs l φ) ↔ ∃ w ∈ reach U l v, Sat U w φ := by
   induction l generalizing v with
@@ -476,6 +484,7 @@ theorem mem_reach_ofFn_iff (n : ℕ) (A : Fin n → ZFSet.{u}) :
     obtain ⟨i, rfl⟩ := hp
     exact h1 i
 
+/-- A block of bounded universal quantifiers preserves admissibility. -/
 theorem admissible_alls {l : List (ℕ × ZFSet.{u})} {φ : Formula.{u}} (hl : ∀ p ∈ l, p.2 ∈ U)
     (hφ : φ.Admissible U (b ∪ {y | y ∈ l.map Prod.fst})) : (alls l φ).Admissible U b := by
   induction l generalizing b with
@@ -488,6 +497,7 @@ theorem admissible_alls {l : List (ℕ × ZFSet.{u})} {φ : Formula.{u}} (hl : �
       Set.mem_insert_iff] at hy ⊢
     tauto
 
+/-- A block of bounded existential quantifiers preserves admissibility. -/
 theorem admissible_exs {l : List (ℕ × ZFSet.{u})} {φ : Formula.{u}} (hl : ∀ p ∈ l, p.2 ∈ U)
     (hφ : φ.Admissible U (b ∪ {y | y ∈ l.map Prod.fst})) : (exs l φ).Admissible U b := by
   induction l generalizing b with
@@ -500,12 +510,15 @@ theorem admissible_exs {l : List (ℕ × ZFSet.{u})} {φ : Formula.{u}} (hl : �
       Set.mem_insert_iff] at hy ⊢
     tauto
 
+/-- **Section 13.8.** The transform of a block of universal quantifiers transforms each bound. -/
 theorem star_alls (s : ZFSet.{u} → ZFSet.{u}) (l : List (ℕ × ZFSet.{u})) (φ : Formula.{u}) :
     (alls l φ).star s = alls (l.map fun p => (p.1, s p.2)) (φ.star s) := by
   induction l with
   | nil => rfl
   | cons p l ih => simp only [alls, star, Term.star, ih, List.map_cons]
 
+/-- **Section 13.8.** The transform of a block of existential quantifiers transforms each bound.
+-/
 theorem star_exs (s : ZFSet.{u} → ZFSet.{u}) (l : List (ℕ × ZFSet.{u})) (φ : Formula.{u}) :
     (exs l φ).star s = exs (l.map fun p => (p.1, s p.2)) (φ.star s) := by
   induction l with
@@ -540,6 +553,8 @@ def Below (N : ℕ) (K : ZFSet.{u} → Prop) : Term.{u} → Prop
 variable {N N' : ℕ} {K K' : ZFSet.{u} → Prop} {e : ZFSet.{u} → ℕ} {t : Term.{u}}
   {U U' : ZFSet.{u}} {b : Set ℕ} {w : ℕ → ZFSet.{u}}
 
+/-- The condition {lit}`Term.Below` is monotone in the variable bound and in the predicate on
+constants. -/
 theorem Below.mono (h : t.Below N K) (hN : N ≤ N') (hK : ∀ c, K c → K' c) : t.Below N' K' := by
   induction t with
   | var n => exact lt_of_lt_of_le h hN
@@ -547,6 +562,8 @@ theorem Below.mono (h : t.Below N K) (hN : N ≤ N') (hK : ∀ c, K c → K' c) 
   | tuple m ts ih => exact fun i => ih i (h i)
   | app f x ihf ihx => exact ⟨ihf h.1, ihx h.2⟩
 
+/-- The constants of a term satisfying a predicate lie in a finite list, with a possibly larger
+variable bound. -/
 theorem exists_below {P : ZFSet.{u} → Prop} (h : t.Below N P) :
     ∃ N', ∃ L : List ZFSet.{u}, (∀ c ∈ L, P c) ∧ t.Below N' (· ∈ L) := by
   induction t with
@@ -573,6 +590,8 @@ theorem exists_below {P : ZFSet.{u} → Prop} (h : t.Below N P) :
     · exact hP1 c hc
     · exact hP2 c hc
 
+/-- Abstracting constants into variables does not change the value of a term, if those variables
+are assigned the constants. -/
 theorem val_abs (h : t.Below N K) (hw : ∀ c, K c → w (e c) = c) :
     (t.abs e).val w = t.val w := by
   induction t with
@@ -585,6 +604,7 @@ theorem val_abs (h : t.Below N K) (hw : ∀ c, K c → w (e c) = c) :
     exact ih i (h i)
   | app f x ihf ihx => simp only [abs, val, ihf h.1, ihx h.2]
 
+/-- Abstracting constants into variables does not change whether a term is defined. -/
 theorem defined_abs (h : t.Below N K) (hw : ∀ c, K c → w (e c) = c) :
     (t.abs e).Defined U w ↔ t.Defined U w := by
   induction t with
@@ -596,6 +616,7 @@ theorem defined_abs (h : t.Below N K) (hw : ∀ c, K c → w (e c) = c) :
   | app f x ihf ihx =>
     simp only [abs, Defined, ihf h.1, ihx h.2, val_abs h.1 hw, val_abs h.2 hw]
 
+/-- A term without constants is its own transform. -/
 theorem star_abs (s : ZFSet.{u} → ZFSet.{u}) (t : Term.{u}) : (t.abs e).star s = t.abs e := by
   induction t with
   | var n => rfl
@@ -603,6 +624,7 @@ theorem star_abs (s : ZFSet.{u} → ZFSet.{u}) (t : Term.{u}) : (t.abs e).star s
   | tuple m ts ih => simp only [abs, star, ih]
   | app f x ihf ihx => simp only [abs, star, ihf, ihx]
 
+/-- The abstraction of a term is admissible for the variables that replace its constants. -/
 theorem admissible_abs (h : t.Admissible U' b) (hB : t.Below N K) :
     (t.abs e).Admissible U (b ∪ {n | ∃ c, K c ∧ e c = n}) := by
   induction t with
@@ -647,6 +669,8 @@ def ConstsSat (P : ZFSet.{u} → Prop) (φ : Formula.{u}) : Prop := ∃ N, φ.Be
 variable {N N' : ℕ} {K K' : ZFSet.{u} → Prop} {e : ZFSet.{u} → ℕ} {φ : Formula.{u}}
   {U U' : ZFSet.{u}} {b : Set ℕ} {w : ℕ → ZFSet.{u}}
 
+/-- The condition {lit}`Formula.Below` is monotone in the variable bound and in the predicate on
+constants. -/
 theorem Below.mono (h : φ.Below N K) (hN : N ≤ N') (hK : ∀ c, K c → K' c) : φ.Below N' K' := by
   induction φ with
   | equal s t => exact ⟨h.1.mono hN hK, h.2.mono hN hK⟩
@@ -659,6 +683,8 @@ theorem Below.mono (h : φ.Below N K) (hN : N ≤ N') (hK : ∀ c, K c → K' c)
   | all x τ φ ih => exact ⟨lt_of_lt_of_le h.1 hN, h.2.1.mono hN hK, ih h.2.2⟩
   | ex x τ φ ih => exact ⟨lt_of_lt_of_le h.1 hN, h.2.1.mono hN hK, ih h.2.2⟩
 
+/-- The constants of a formula satisfying a predicate lie in a finite list, with a possibly larger
+variable bound. -/
 theorem exists_below {P : ZFSet.{u} → Prop} (h : φ.Below N P) :
     ∃ N', ∃ L : List ZFSet.{u}, (∀ c ∈ L, P c) ∧ φ.Below N' (· ∈ L) := by
   have two : ∀ {N1 N2 : ℕ} {L1 L2 : List ZFSet.{u}}, (∀ c ∈ L1, P c) → (∀ c ∈ L2, P c) →
@@ -774,6 +800,7 @@ theorem star_abs (s : ZFSet.{u} → ZFSet.{u}) (φ : Formula.{u}) :
   | all x τ φ ih => simp only [abs, star, Term.star_abs, ih]
   | ex x τ φ ih => simp only [abs, star, Term.star_abs, ih]
 
+/-- The abstraction of a formula is admissible for the variables that replace its constants. -/
 theorem admissible_abs (h : φ.Admissible U' b) (hB : φ.Below N K) (he : ∀ c, K c → N ≤ e c) :
     (φ.abs e).Admissible U (b ∪ {n | ∃ c, K c ∧ e c = n}) := by
   have hq : ∀ {x : ℕ} {b : Set ℕ}, x < N →
