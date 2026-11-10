@@ -148,14 +148,50 @@ theorem tendsto_pow_powLimit {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
         (eventually_atTop.2 ⟨1, fun n hn => (zero_pow (by omega)).symm⟩)
     · exact tendsto_pow_zero_of_pos_of_lt_one h0 h1
 
-/-- **Section 7.12, example.** There are a point $`x < 1` of the enlargement of $`[0, 1]`
-and an unlimited hypernatural $`N` with $`x^N = 1/2`: take $`x` to be the class of the
-sequence of $`(n+1)`-st roots of $`1/2` and $`N` the class of $`n + 1`. The book reaches a
-point with $`x^N \not\simeq 0` by a permanence argument that is only available later; this
-explicit choice serves the same purpose. -/
+/-- **Section 7.12, example, tool.** The extension of the $`n`-th power function is the
+$`n`-th power. -/
+theorem starMap_pow_apply (n : ℕ) (x : ℝ*) : ⋆(fun t : ℝ => t ^ n) x = x ^ n := by
+  obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
+  rfl
+
+/-- **Section 7.12, example, tool.** If $`x \simeq 1` then $`x^n \simeq 1` for every
+standard $`n`, by induction on $`n` from the fact that a product of limited numbers
+infinitely close to $`1` is infinitely close to $`1` (Exercise 5.7(1)). -/
+theorem pow_infClose_one (n : ℕ) (hx : x ≊ ((1 : ℝ) : ℝ*)) : x ^ n ≊ ((1 : ℝ) : ℝ*) := by
+  rw [Hyperreal.coe_one] at *
+  induction n with
+  | zero => rw [pow_zero]
+  | succ n ih =>
+    have := ih.mul hx (limited_one.of_infClose ih.symm) (limited_one.of_infClose hx.symm)
+    rwa [← pow_succ, one_mul] at this
+
+/-- **Section 7.12, example, limited indices.** For a standard $`n`, if $`x \simeq 1` then
+$`f_n(x) = x^n \simeq 1`. So for such $`x` all the standard terms of the hypersequence lie
+in the halo of $`1`, and any index at which $`x^N` is infinitesimal must be unlimited. -/
+theorem hyperFunSeq_pow_infClose_one (n : ℕ) (hx : x ≊ ((1 : ℝ) : ℝ*)) :
+    hyperFunSeq (fun n t => t ^ n) (n : ℝ*) x ≊ ((1 : ℝ) : ℝ*) := by
+  rw [hyperFunSeq_natCast, starMap_pow_apply]
+  exact pow_infClose_one n hx
+
+/-- **Section 7.12, example, the point at which uniformity fails.** There is a point $`x` of
+the enlargement of $`[0, 1]` with $`x < 1` and $`x \simeq 1`, so that $`{}^*f(x) = 0`, for
+which
+
+* some unlimited $`N` has $`x^N = 1/2`, which is not infinitely close to $`0`, and
+* some unlimited $`M` has $`x^K \simeq 0` for every hypernatural $`K \ge M`.
+
+Together with {name}`hyperFunSeq_pow_infClose_one`, which says that $`x^n \simeq 1` for
+standard $`n`, this is the picture described in the book: it takes infinitely long for the
+powers of $`x` to become infinitesimal. Here $`x` is the class of the sequence of
+$`(n+1)`-st roots of $`1/2`, $`N` is the class of $`n + 1`, and $`M` is the class of
+$`(n+1)^2`. The book obtains $`M` by transfer of pointwise convergence for an arbitrary such
+$`x`, and $`N` from a permanence principle that only becomes available in Chapter 15; the
+explicit choice replaces both. -/
 theorem exists_hyperFunSeq_pow_eq_half :
-    ∃ x ∈ ⋆(Icc (0 : ℝ) 1), ∃ N ∈ unlimitedHyperNat,
-      hyperFunSeq (fun n t => t ^ n) N x = ((1 / 2 : ℝ) : ℝ*) ∧ ⋆powLimit x = 0 := by
+    ∃ x ∈ ⋆(Icc (0 : ℝ) 1), x < 1 ∧ x ≊ ((1 : ℝ) : ℝ*) ∧ ⋆powLimit x = 0 ∧
+      (∃ N ∈ unlimitedHyperNat, hyperFunSeq (fun n t => t ^ n) N x = ((1 / 2 : ℝ) : ℝ*)) ∧
+      ∃ M ∈ unlimitedHyperNat, ∀ K ∈ ℕ*, M ≤ K →
+        hyperFunSeq (fun n t => t ^ n) K x ≊ 0 := by
   let r : ℕ → ℝ := fun n => (1 / 2 : ℝ) ^ (1 / ((n : ℝ) + 1))
   have hpos : ∀ n : ℕ, (0 : ℝ) < 1 / ((n : ℝ) + 1) := fun n => by positivity
   have hr0 : ∀ n, 0 < r n := fun n => Real.rpow_pos_of_pos (by norm_num) _
@@ -167,14 +203,36 @@ theorem exists_hyperFunSeq_pow_eq_half :
       push_cast
       field_simp
     rw [this, Real.rpow_one]
+  have hlim : Tendsto r atTop (𝓝 1) := by
+    have h := (Real.continuousAt_const_rpow (a := (1 / 2 : ℝ)) (b := 0)
+      (by norm_num)).tendsto.comp tendsto_one_div_add_atTop_nhds_zero_nat
+    rwa [Real.rpow_zero] at h
   refine ⟨Hyperreal.ofSeq r,
     hyperreal_ofSeq_mem_starSet.2 (Eventually.of_forall fun n => ⟨(hr0 n).le, (hr1 n).le⟩),
-    hnat fun n => n + 1, hnat_mem_unlimitedHyperNat_iff.2
-      ((tendsto_add_atTop_nat 1).mono_left Nat.hyperfilter_le_atTop), ?_, ?_⟩
-  · rw [hyperFunSeq_hnat, coe_eq_ofSeq_const]
-    exact congrArg Hyperreal.ofSeq (funext hrp)
+    ?_, ofSeq_infClose_coe_iff.2 (hlim.mono_left Nat.hyperfilter_le_atTop), ?_,
+    ⟨hnat fun n => n + 1, hnat_mem_unlimitedHyperNat_iff.2
+      ((tendsto_add_atTop_nat 1).mono_left Nat.hyperfilter_le_atTop), ?_⟩,
+    ⟨hnat fun n => (n + 1) ^ 2, hnat_mem_unlimitedHyperNat_iff.2 (Tendsto.mono_left
+      (tendsto_atTop_mono (fun n => (Nat.le_succ n).trans (Nat.le_self_pow two_ne_zero _))
+        tendsto_id) Nat.hyperfilter_le_atTop), ?_⟩⟩
+  · rw [← Hyperreal.coe_one, coe_eq_ofSeq_const, ofSeq_lt_ofSeq_iff]
+    exact Eventually.of_forall hr1
   · rw [starMap_hyperreal_ofSeq, ← Hyperreal.coe_zero, coe_eq_ofSeq_const]
     exact congrArg Hyperreal.ofSeq (funext fun n => ite_eq_right (hr1 n).ne)
+  · rw [hyperFunSeq_hnat, coe_eq_ofSeq_const]
+    exact congrArg Hyperreal.ofSeq (funext hrp)
+  · intro K hK hMK
+    obtain ⟨k, rfl⟩ := exists_hnat_eq hK
+    rw [hnat_le_hnat_iff] at hMK
+    rw [hyperFunSeq_hnat, ← Hyperreal.coe_zero, ofSeq_infClose_coe_iff]
+    have hgeo : Tendsto (fun n : ℕ => (1 / 2 : ℝ) ^ (n + 1)) (hyperfilter ℕ) (𝓝 0) :=
+      ((tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num) (by norm_num)).comp
+        (tendsto_add_atTop_nat 1)).mono_left Nat.hyperfilter_le_atTop
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hgeo
+      (Eventually.of_forall fun n => (pow_pos (hr0 n) _).le) (hMK.mono fun n hn => ?_)
+    calc r n ^ k n ≤ r n ^ ((n + 1) ^ 2) := pow_le_pow_of_le_one (hr0 n).le (hr1 n).le hn
+      _ = (r n ^ (n + 1)) ^ (n + 1) := by rw [← pow_mul, sq]
+      _ = (1 / 2 : ℝ) ^ (n + 1) := by rw [hrp]
 
 /-- **Section 7.12, example.** The convergence of $`x^n` on $`[0, 1]` is not uniform, by
 Theorem 7.12.2: there are $`x` in the enlargement of $`[0, 1]` and an unlimited $`N` with
@@ -182,19 +240,10 @@ $`f_N(x) = 1/2` and $`{}^*f(x) = 0`, and these are not infinitely close. -/
 theorem not_tendstoUniformlyOn_pow :
     ¬ TendstoUniformlyOn (fun n t => t ^ n) powLimit atTop (Icc (0 : ℝ) 1) := by
   intro h
-  obtain ⟨x, hx, N, hN, h1, h2⟩ := exists_hyperFunSeq_pow_eq_half
+  obtain ⟨x, hx, -, -, h2, ⟨N, hN, h1⟩, -⟩ := exists_hyperFunSeq_pow_eq_half
   have := h.hyperFunSeq_infClose hx hN
   rw [h1, h2, ← Hyperreal.coe_zero, infClose_coe_iff] at this
   norm_num at this
-
-/-- **Section 7.12, example.** For a standard $`n`, if $`x \simeq 1` then $`x^n \simeq 1`:
-the standard terms of the hypersequence are continuous at $`1`. So the index $`N` at which
-$`x^N` leaves the halo of $`1` must be unlimited. -/
-theorem hyperFunSeq_pow_infClose_one (n : ℕ) (hx : x ≊ ((1 : ℝ) : ℝ*)) :
-    hyperFunSeq (fun n t => t ^ n) (n : ℝ*) x ≊ ((1 : ℝ) : ℝ*) := by
-  rw [hyperFunSeq_natCast]
-  have := (continuous_pow (M := ℝ) n).continuousAt.starMap_infClose hx
-  simpa using this
 
 end FunctionSequences
 
@@ -219,8 +268,9 @@ section UniformLimit
 
 variable {F : ℕ → ℝ → ℝ} {f : ℝ → ℝ} {A : Set ℝ} {N x y : ℝ*}
 
-/-- **Theorem 7.13.1.** If the functions $`f_n` are all continuous on $`A` and the sequence
-converges uniformly on $`A` to $`f`, then $`f` is continuous on $`A`. This is the book's
+/-- **Theorem 7.13.1.** Uniform convergence preserves continuity: the limit $`f` of a
+sequence of functions $`f_n` that converges uniformly on $`A` is continuous on $`A` as soon
+as every $`f_n` is. This is the book's
 first proof, with the $`\varepsilon/4` estimate. -/
 theorem continuousOn_of_tendstoUniformlyOn (hF : ∀ n, ContinuousOn (F n) A)
     (hu : TendstoUniformlyOn F f atTop A) : ContinuousOn f A := by

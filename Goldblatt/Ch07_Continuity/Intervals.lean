@@ -105,25 +105,26 @@ theorem exists_partitionPoint_crossing (ha : f a < d) (hb : d ≤ f b) {n : ℕ}
   have := T.le_max' _ hmem
   omega
 
-/-- A hyperreal between two reals is limited. -/
+/-- **Section 7.5, tool.** A hyperreal between two reals is limited. -/
 theorem limited_of_mem_Icc (h : x ∈ Icc (a : ℝ*) b) : Limited x := by
   refine ⟨a - 1, b + 1, lt_of_lt_of_le ?_ h.1, lt_of_le_of_lt h.2 ?_⟩
   · exact Hyperreal.coe_lt_coe.2 (by linarith)
   · exact Hyperreal.coe_lt_coe.2 (by linarith)
 
-/-- The shadow of a hyperreal between the reals $`a` and $`b` lies in $`[a, b]`. This is the
+/-- **Section 7.5, tool.** The shadow of a hyperreal between the reals $`a` and $`b` lies in
+$`[a, b]`. This is the
 property of closed bounded intervals on which the theorems of this part rest. -/
 theorem sh_mem_Icc (h : x ∈ Icc (a : ℝ*) b) : sh x ∈ Icc a b :=
   ⟨(limited_of_mem_Icc h).le_sh h.1, (limited_of_mem_Icc h).sh_le h.2⟩
 
-/-- A member of the enlargement of $`[a, b]` is infinitely close to its shadow, which lies in
-$`[a, b]`. -/
+/-- **Section 7.5, tool.** A member of the enlargement of $`[a, b]` is infinitely close to its
+shadow, which lies in $`[a, b]`. -/
 theorem infClose_sh_of_mem_starSet_Icc (h : x ∈ ⋆(Icc a b)) : x ≊ sh x ∧ sh x ∈ Icc a b := by
   rw [starSet_Icc_real] at h
   exact ⟨(limited_of_mem_Icc h).infClose_sh, sh_mem_Icc h⟩
 
-/-- The width $`(b - a)/N` of the division of $`[a, b]` into an unlimited number $`N` of
-parts is infinitesimal. -/
+/-- **Section 7.5, tool.** The width $`(b - a)/N` of the division of $`[a, b]` into an
+unlimited number $`N` of parts is infinitesimal. -/
 theorem infinitesimal_width {N : ℝ*} (hN : N ∈ unlimitedHyperNat) (a b : ℝ) :
     Infinitesimal (((b - a : ℝ) : ℝ*) / N) :=
   (limited_coe _).div_unlimited (mem_unlimitedHyperNat.1 hN).2
@@ -188,9 +189,9 @@ theorem intermediate_value_Icc_of_lt (hab : a ≤ b) (hf : ContinuousOn f (Icc a
     rw [h] at hfc
     linarith
 
-/-- **Section 7.5 (Intermediate Value Theorem).** If the real function $`f` is continuous on
-the closed interval $`[a, b]`, then for every real $`d` strictly between $`f(a)` and
-$`f(b)` there is a real $`c \in (a, b)` with $`f(c) = d`. The case $`f(b) < d < f(a)` is
+/-- **Section 7.5 (Intermediate Value Theorem).** Let $`f` be continuous on $`[a, b]` and let
+$`d` lie strictly between the end values $`f(a)` and $`f(b)`. Then $`d` is attained:
+$`f(c) = d` for some $`c` with $`a < c < b`. The case $`f(b) < d < f(a)` is
 reduced to the increasing case by passing to $`-f`. -/
 theorem intermediate_value_Icc (hab : a ≤ b) (hf : ContinuousOn f (Icc a b))
     (hd : (f a < d ∧ d < f b) ∨ (f b < d ∧ d < f a)) : ∃ c ∈ Ioo a b, f c = d := by
@@ -317,10 +318,10 @@ theorem exists_forall_ge_Icc (hab : a ≤ b) (hf : ContinuousOn f (Icc a b)) :
   obtain ⟨c, hc, h⟩ := exists_forall_le_Icc (f := fun t => -f t) hab hf.neg
   exact ⟨c, hc, fun t ht => by linarith [h t ht]⟩
 
-/-- **Section 7.6 (Extreme Value Theorem).** If the real function $`f` is continuous on the
-closed interval $`[a, b]`, then $`f` attains an absolute minimum and an absolute maximum on
-$`[a, b]`: there are $`c, d \in [a, b]` with $`f(c) \le f(x) \le f(d)` for all
-$`x \in [a, b]`. -/
+/-- **Section 7.6 (Extreme Value Theorem).** A function continuous on $`[a, b]` has a least
+and a greatest value there, and both are attained: the interval contains points $`c` and
+$`d` such that every value $`f(x)` with $`a \le x \le b` lies between $`f(c)` and
+$`f(d)`. -/
 theorem extreme_value_Icc (hab : a ≤ b) (hf : ContinuousOn f (Icc a b)) :
     ∃ c ∈ Icc a b, ∃ d ∈ Icc a b, ∀ t ∈ Icc a b, f c ≤ f t ∧ f t ≤ f d := by
   obtain ⟨c, hc, h1⟩ := exists_forall_ge_Icc hab hf
@@ -411,8 +412,8 @@ theorem _root_.UniformContinuousOn.starMap_infClose (h : UniformContinuousOn f A
     (hx : x ∈ ⋆A) (hy : y ∈ ⋆A) (hxy : x ≊ y) : ⋆f x ≊ ⋆f y :=
   uniformContinuousOn_iff_infClose.1 h x hx y hy hxy
 
-/-- **Theorem 7.7.2.** If the real function $`f` is continuous on the closed interval
-$`[a, b]`, then it is uniformly continuous on $`[a, b]`. Given $`x \simeq y` in the
+/-- **Theorem 7.7.2.** On a closed bounded interval $`[a, b]`, continuity is automatically
+uniform. Given $`x \simeq y` in the
 enlargement of $`[a, b]`, let $`c` be the shadow of $`x`. Then $`c \in [a, b]`, so $`f` is
 continuous at $`c`, and both $`{}^*f(x)` and $`{}^*f(y)` are infinitely close to
 $`f(c)`. -/
@@ -432,8 +433,11 @@ end UniformContinuity
 
 (1) The proof of Theorem 7.7.2 uses that the shadow of a member of the enlargement of
 $`[a, b]` exists and lies in $`[a, b]`. For an interval that is not closed the shadow may
-fall outside it, as for $`a + \varepsilon` in the enlargement of $`(a, b)`; for an unbounded
-interval the member may be unlimited and have no shadow at all, as for $`\omega`.
+fall outside it, as for $`a + \varepsilon` in the enlargement of $`(a, b)` or of $`(a, b]`,
+and for $`b - \varepsilon` in the enlargement of $`[a, b)`; for an unbounded interval the
+member may be unlimited and have no shadow at all, as for $`\omega` in the enlargement of
+$`(a, +\infty)` and $`-\omega` in that of $`(-\infty, b)`. Each of the four kinds of
+interval listed in the exercise has its witness below.
 
 (2) The function $`1/x` is continuous but not uniformly continuous on $`(0, 1)`: the points
 $`\varepsilon` and $`\varepsilon/2` are infinitely close, but their reciprocals $`\omega` and
@@ -473,6 +477,46 @@ theorem exists_mem_starSet_Ioi_not_limited (a : ℝ) : ∃ x ∈ ⋆(Ioi a), ¬ 
   refine ⟨ω, ?_, unlimited_omega.not_limited⟩
   rw [starSet_Ioi_real]
   exact posUnlimited_omega a
+
+/-- **Exercise 7.8(1), intervals open on the left.** For $`a < b` the enlargement of
+$`(a, b]` contains $`a + \varepsilon`, whose shadow $`a` is not in $`(a, b]`. -/
+theorem exists_mem_starSet_Ioc_sh_notMem (hab : a < b) :
+    ∃ x ∈ ⋆(Ioc a b), sh x ∉ Ioc a b := by
+  have h1 : (a : ℝ*) + ε ≊ a := infinitesimal_epsilon.add_infClose _
+  refine ⟨a + ε, ?_, ?_⟩
+  · rw [starSet_Ioc_real]
+    refine ⟨lt_add_of_pos_right _ Hyperreal.epsilon_pos, ?_⟩
+    have := epsilon_pos_infinitesimal.2 (b - a) (by linarith)
+    rw [Hyperreal.coe_sub] at this
+    linarith
+  · rw [sh_eq_of_infClose h1]
+    exact fun h => lt_irrefl _ h.1
+
+/-- **Exercise 7.8(1), intervals open on the right.** For $`a < b` the enlargement of
+$`[a, b)` contains $`b - \varepsilon`, whose shadow $`b` is not in $`[a, b)`. -/
+theorem exists_mem_starSet_Ico_sh_notMem (hab : a < b) :
+    ∃ x ∈ ⋆(Ico a b), sh x ∉ Ico a b := by
+  have h1 : (b : ℝ*) - ε ≊ b := by
+    have := infinitesimal_epsilon.neg.add_infClose (b : ℝ*)
+    rwa [← sub_eq_add_neg] at this
+  refine ⟨b - ε, ?_, ?_⟩
+  · rw [starSet_Ico_real]
+    refine ⟨?_, sub_lt_self _ Hyperreal.epsilon_pos⟩
+    have := epsilon_pos_infinitesimal.2 (b - a) (by linarith)
+    rw [Hyperreal.coe_sub] at this
+    linarith
+  · rw [sh_eq_of_infClose h1]
+    exact fun h => lt_irrefl _ h.2
+
+/-- **Exercise 7.8(1), intervals unbounded below.** The enlargement of $`(-\infty, b)` has a
+member, namely $`-\omega`, that is not limited and so is infinitely close to no real
+number. -/
+theorem exists_mem_starSet_Iio_not_limited (b : ℝ) : ∃ x ∈ ⋆(Iio b), ¬ Limited x := by
+  refine ⟨-ω, ?_, unlimited_omega.neg.not_limited⟩
+  rw [starSet_Iio_real]
+  have := posUnlimited_omega (-b)
+  rw [Hyperreal.coe_neg] at this
+  exact neg_lt.1 this
 
 /-- **Exercise 7.8(2), tool.** The extension of the reciprocal function is the reciprocal. -/
 theorem starMap_one_div_apply (x : ℝ*) : ⋆(fun t : ℝ => 1 / t) x = 1 / x := by
@@ -626,9 +670,10 @@ theorem continuousOn_Icc_of_monotoneOn_of_forall_exists (hf : MonotoneOn f (Icc 
     have h4 : ((η / 2 : ℝ) : ℝ*) < (η : ℝ*) := Hyperreal.coe_lt_coe.2 (by linarith)
     linarith
 
-/-- **Exercise 7.8(4).** Let the real function $`f` be monotonic (increasing or decreasing)
-on $`[a, b]`, and suppose that every real $`r` between $`f(a)` and $`f(b)` is a value
-$`f(c)` for some $`c \in [a, b]`. Then $`f` is continuous on $`[a, b]`. The decreasing case
+/-- **Exercise 7.8(4).** A function that is monotone on $`[a, b]`, in either direction, and
+whose values on $`[a, b]` fill the whole range from $`f(a)` to $`f(b)`, has no jumps: it is
+continuous on $`[a, b]`. The range between the end values is the unordered interval
+{name}`Set.uIcc`. The decreasing case
 follows from the increasing case applied to $`-f`. -/
 theorem continuousOn_Icc_of_monotone_or_antitone
     (hf : MonotoneOn f (Icc a b) ∨ AntitoneOn f (Icc a b))
@@ -674,8 +719,13 @@ $`c^N` is infinitesimal). So $`f(L) = L`. Since the fixed point is unique, all e
 terms have the same shadow, and by Theorem 6.1.1 the iterates converge to the fixed point:
 the convergence is a consequence of the proof and not one of its steps.
 
-The Lipschitz condition is stated here directly as the inequality, as in the book. The
-iterates are Mathlib's {lit}`f^[n] x`.
+The Lipschitz condition is stated here directly as the inequality, as in the book, with a
+real constant $`c`. Mathlib's notions are {name}`LipschitzWith` and {name}`ContractingWith`,
+whose constant is a nonnegative real; {lit}`lipschitzWith_iff_abs_sub_le` translates
+between the two forms, and the results of the section are restated for Mathlib's notions as
+{lit}`uniformContinuous_of_lipschitzWith`,
+{lit}`existsUnique_fixedPoint_of_contractingWith` and
+{lit}`tendsto_iterate_of_contractingWith`. The iterates are Mathlib's {lit}`f^[n] x`.
 -/
 
 section Contraction
@@ -812,8 +862,8 @@ theorem contraction_limited_and_sh_fixed (hc0 : 0 < c) (hc1 : c < 1)
     exact (e1.symm.trans e3.symm).trans hsL
   exact infClose_coe_iff.1 e4
 
-/-- A function with Lipschitz constant $`c < 1` also has a Lipschitz constant strictly
-between $`0` and $`1`. -/
+/-- **Theorem 7.9.1, tool.** A function with Lipschitz constant $`c < 1` also has a Lipschitz
+constant strictly between $`0` and $`1`. -/
 theorem exists_pos_contraction_constant (hc : c < 1) (h : ∀ x y, |f x - f y| ≤ c * |x - y|) :
     ∃ c' : ℝ, 0 < c' ∧ c' < 1 ∧ ∀ x y, |f x - f y| ≤ c' * |x - y| :=
   ⟨max c (1 / 2), lt_max_of_lt_right (by norm_num), max_lt hc (by norm_num), fun x y =>
@@ -841,6 +891,34 @@ theorem tendsto_iterate_of_contraction (hc : c < 1) (h : ∀ x y, |f x - f y| �
   obtain ⟨hlim, hfix⟩ := contraction_limited_and_sh_fixed hc0 hc1 h' x hN
   rw [← fixedPoint_unique_of_contraction hc h hfix hL]
   exact hlim.infClose_sh
+
+/-- **Section 7.9, definition of a Lipschitz condition.** Mathlib's {name}`LipschitzWith` for
+a function on the real line, with constant $`K \ge 0`, is the book's inequality
+$`|f(x) - f(y)| \le K\,|x - y|` for all real $`x, y`. -/
+theorem lipschitzWith_iff_abs_sub_le {K : NNReal} :
+    LipschitzWith K f ↔ ∀ x y, |f x - f y| ≤ K * |x - y| := by
+  simp only [lipschitzWith_iff_dist_le_mul, Real.dist_eq]
+
+/-- **Section 7.9**, for Mathlib's notion: a function on the real line that is
+{name}`LipschitzWith` some constant is uniformly continuous, by the infinitesimal argument of
+{name}`uniformContinuous_of_lipschitz`. -/
+theorem uniformContinuous_of_lipschitzWith {K : NNReal} (h : LipschitzWith K f) :
+    UniformContinuous f :=
+  uniformContinuous_of_lipschitz (lipschitzWith_iff_abs_sub_le.1 h)
+
+/-- **Theorem 7.9.1**, for Mathlib's notion of a contraction mapping: a function on the real
+line that is {name}`ContractingWith` some constant has a unique fixed point. -/
+theorem existsUnique_fixedPoint_of_contractingWith {K : NNReal} (h : ContractingWith K f) :
+    ∃! L : ℝ, f L = L :=
+  existsUnique_fixedPoint_of_contraction (c := K) (by exact_mod_cast h.1)
+    (lipschitzWith_iff_abs_sub_le.1 h.2)
+
+/-- **Section 7.9, remark after Theorem 7.9.1**, for Mathlib's notion of a contraction
+mapping: the iterates converge to the fixed point from every starting point. -/
+theorem tendsto_iterate_of_contractingWith {K : NNReal} (h : ContractingWith K f) (x : ℝ)
+    {L : ℝ} (hL : f L = L) : Tendsto (fun n => f^[n] x) atTop (𝓝 L) :=
+  tendsto_iterate_of_contraction (c := K) (by exact_mod_cast h.1)
+    (lipschitzWith_iff_abs_sub_le.1 h.2) x hL
 
 /-- **Section 7.9, example.** The map $`f(x) = x/2 + 1/2` satisfies a Lipschitz condition
 with constant $`1/2`, which answers the book's question about its constant. -/

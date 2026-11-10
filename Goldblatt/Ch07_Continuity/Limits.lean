@@ -32,7 +32,12 @@ extension as defined on the enlargement of $`A`. In this formalization a functio
 of type {lit}`ℝ → ℝ`, and the domain $`A` appears as a restriction in the statement: continuity
 on $`A` is Mathlib's {name}`ContinuousWithinAt` and {name}`ContinuousOn`, and on the hyperreal
 side the points $`x` are required to lie in the enlargement {lit}`⋆A`. The values of $`f`
-outside $`A` never matter. For an open interval the enlargement is the hyperreal interval with
+outside $`A` never matter, and this is a theorem and not just a convention: Chapter 3 defines
+the extension {name}`starMapOn` of a function whose domain is literally $`A`, and
+{name}`starMapOn_eq_starMap` shows that it agrees on the enlargement of $`A` with the
+extension of any total function that restricts to it. The corollary
+{lit}`continuousAt_subtype_iff_infClose` in Section 7.1 restates Theorem 7.1.3 in that
+form, for a function of type {lit}`A → ℝ`. For an open interval the enlargement is the hyperreal interval with
 the same end points ({name}`starSet_Ioo_real`), which is the remark that opens the chapter.
 
 This preliminary section is not a numbered section of the book. It collects, once and for all,
@@ -337,6 +342,30 @@ enlargement. -/
 theorem continuousOn_iff_infClose :
     ContinuousOn f A ↔ ∀ c ∈ A, ∀ x ∈ ⋆A, x ≊ c → ⋆f x ≊ f c :=
   forall₂_congr fun _ _ => continuousWithinAt_iff_infClose
+
+open Classical in
+/-- **Theorem 7.1.3, for a function whose domain is the set.** Let $`f` be a function defined
+only on the set $`A` of reals, with extension {name}`starMapOn` defined only on the
+enlargement of $`A`, as in the book. Then $`f` is continuous at the point $`c` of $`A` if and
+only if $`{}^*f(x) \simeq f(c)` for every $`x` in the enlargement of $`A` with
+$`x \simeq c`. This is {name}`continuousWithinAt_iff_infClose` applied to any total function
+that restricts to $`f`; by {name}`starMapOn_eq_starMap` the choice of the total function
+does not matter. -/
+theorem continuousAt_subtype_iff_infClose {A : Set ℝ} (f : A → ℝ) (c : A) :
+    ContinuousAt f c ↔
+      ∀ x : (⋆A : Set ℝ*), (x : ℝ*) ≊ ((c : ℝ) : ℝ*) → starMapOn A f x ≊ ((f c : ℝ) : ℝ*) := by
+  let g : ℝ → ℝ := fun t => if h : t ∈ A then f ⟨t, h⟩ else 0
+  have hg : ∀ a : A, g a = f a := fun a => dite_eq_left a.2
+  have hr : A.domRestrict g = f := funext hg
+  rw [← hr, ← continuousWithinAt_iff_continuousAt_domRestrict g c.2,
+    continuousWithinAt_iff_infClose, hr, hg c]
+  constructor
+  · intro h x hx
+    rw [starMapOn_eq_starMap hg x]
+    exact h x x.2 hx
+  · intro h x hxA hx
+    have := h ⟨x, hxA⟩ hx
+    rwa [starMapOn_eq_starMap hg] at this
 
 /-- **Theorem 7.1.1**, for continuity everywhere. -/
 theorem continuous_iff_infClose :
@@ -646,8 +675,11 @@ Exercise (3) asks for a discussion, by infinitesimals, of the continuity of five
 The results are:
 
 * $`f_1(x) = \sin(1/x)` (with $`f_1(0) = 0`) is not continuous at $`0`: there are
-  infinitesimals at which its extension takes the value $`1`;
-* $`f_2(x) = x \sin(1/x)` is continuous at $`0`, because $`|f_2(x)| \le |x|` transfers;
+  infinitesimals at which its extension takes the value $`1`. It is continuous at every
+  other point, because a hyperreal infinitely close to a nonzero real is appreciable, so
+  taking reciprocals and then sines preserves infinite closeness;
+* $`f_2(x) = x \sin(1/x)` is continuous everywhere: at $`0` because $`|f_2(x)| \le |x|`
+  transfers, and elsewhere by the argument for $`f_1`;
 * the indicator function $`f_3` of the rationals is continuous nowhere: every real is
   infinitely close to hyperreals of both kinds;
 * $`f_4`, which is $`x` on the rationals and $`-x` on the irrationals, is continuous exactly
@@ -760,8 +792,9 @@ theorem exists_hyperRat_infClose_coe (c : ℝ) : ∃ x ∈ ℚ*, x ≊ c := by
   exact ⟨q, hq, hx.symm⟩
 
 /-- **Exercise 7.4(3), tool.** Every real number is infinitely close to a member of the
-enlargement of the set of irrational numbers. For an irrational number this is the number
-itself; a rational number $`c` is the limit of the irrationals $`c + \sqrt2/(n+1)`. -/
+enlargement of the set of irrational numbers: the class of a sequence of irrationals
+converging to it. Such a sequence exists because the irrationals are dense in the real line,
+a standard fact taken from Mathlib ({name}`dense_irrational`). -/
 theorem exists_irrational_infClose_coe (c : ℝ) : ∃ x ∈ ⋆{t : ℝ | Irrational t}, x ≊ c := by
   obtain ⟨r, hr, hlim⟩ := mem_closure_iff_seq_limit.1 (dense_irrational c)
   exact ⟨Hyperreal.ofSeq r, hyperreal_ofSeq_mem_starSet.2 (Eventually.of_forall hr),
@@ -844,6 +877,75 @@ theorem continuousAt_mulSinInv_zero : ContinuousAt mulSinInv 0 := by
   rw [h0]
   rw [Hyperreal.coe_zero, ← infinitesimal_iff_infClose_zero] at *
   exact infinitesimal_starMap_of_abs_le abs_mulSinInv_le hx
+
+/-- **Exercise 7.4(3), tool.** The enlargement of the set of nonzero reals is the set of
+nonzero hyperreals. -/
+theorem mem_starSet_ne_zero : x ∈ ⋆{t : ℝ | t ≠ 0} ↔ x ≠ 0 := by
+  obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
+  rw [hyperreal_ofSeq_mem_starSet, ← Hyperreal.coe_zero, coe_eq_ofSeq_const, Ne,
+    ofSeq_eq_ofSeq_iff]
+  exact Ultrafilter.eventually_not
+
+/-- **Exercise 7.4(3), first function.** At a nonzero hyperreal $`x` the extension of $`f_1`
+is given by the same formula as $`f_1`: $`{}^*f_1(x) = \sin(1/x)`, by transfer of the
+defining equation on the set of nonzero reals. -/
+theorem starMap_sinInv_of_ne_zero (hx : x ≠ 0) : ⋆sinInv x = hsin (1 / x) := by
+  have h := starMap_congr_of_mem (f := sinInv) (g := fun t => Real.sin (1 / t))
+    (A := {t : ℝ | t ≠ 0}) (fun t ht => ite_eq_right ht) (mem_starSet_ne_zero.2 hx)
+  rw [h]
+  obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
+  rfl
+
+/-- **Exercise 7.4(3), second function.** At a nonzero hyperreal $`x` the extension of
+$`f_2` is given by the same formula as $`f_2`: $`{}^*f_2(x) = x \sin(1/x)`. -/
+theorem starMap_mulSinInv_of_ne_zero (hx : x ≠ 0) : ⋆mulSinInv x = x * hsin (1 / x) := by
+  have h := starMap_congr_of_mem (f := mulSinInv) (g := fun t => t * Real.sin (1 / t))
+    (A := {t : ℝ | t ≠ 0}) (fun t ht => ite_eq_right ht) (mem_starSet_ne_zero.2 hx)
+  rw [h]
+  obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
+  rfl
+
+/-- **Exercise 7.4(3), first and second functions, away from the origin.** If $`c` is a
+nonzero real and $`x \simeq c`, then $`x \ne 0` and $`\sin(1/x) \simeq \sin(1/c)`: the
+reciprocals are infinitely close by Exercise 5.7(1), since $`x` is appreciable, and the sine
+preserves infinite closeness at real points by Section 7.2. -/
+theorem hsin_one_div_infClose (hc : c ≠ 0) (hx : x ≊ c) :
+    x ≠ 0 ∧ hsin (1 / x) ≊ ((Real.sin (1 / c) : ℝ) : ℝ*) := by
+  have hx0 : ¬ x ≊ 0 := fun h => hc (by
+    have := hx.symm.trans h
+    rwa [← Hyperreal.coe_zero, infClose_coe_iff] at this)
+  have h1 : 1 / x ≊ 1 / (c : ℝ*) :=
+    (InfClose.refl 1).div hx limited_one (limited_of_infClose_coe hx) hx0
+  rw [← Hyperreal.coe_one, ← Hyperreal.coe_div] at h1
+  exact ⟨fun h => hx0 (h ▸ InfClose.refl 0), hsin_infClose_of_infClose h1⟩
+
+/-- **Exercise 7.4(3), first function.** $`f_1` is continuous at every nonzero real $`c`:
+for $`x \simeq c` we have $`{}^*f_1(x) = \sin(1/x) \simeq \sin(1/c) = f_1(c)`. -/
+theorem continuousAt_sinInv_of_ne_zero (hc : c ≠ 0) : ContinuousAt sinInv c := by
+  rw [continuousAt_iff_infClose]
+  intro x hx
+  obtain ⟨hx0, h⟩ := hsin_one_div_infClose hc hx
+  rwa [starMap_sinInv_of_ne_zero hx0, sinInv, ite_eq_right hc]
+
+/-- **Exercise 7.4(3), first function, summary.** $`f_1` is continuous at $`c` exactly when
+$`c \ne 0`. -/
+theorem continuousAt_sinInv_iff (c : ℝ) : ContinuousAt sinInv c ↔ c ≠ 0 :=
+  ⟨fun h hc => not_continuousAt_sinInv_zero (hc ▸ h), continuousAt_sinInv_of_ne_zero⟩
+
+/-- **Exercise 7.4(3), second function, summary.** $`f_2` is continuous at every real
+number. At $`0` this is {name}`continuousAt_mulSinInv_zero`; at $`c \ne 0` and
+$`x \simeq c` the product $`x \sin(1/x)` of two limited numbers is infinitely close to
+$`c \sin(1/c)` by Exercise 5.7(1). -/
+theorem continuous_mulSinInv : Continuous mulSinInv := by
+  rw [continuous_iff_continuousAt]
+  intro c
+  rcases eq_or_ne c 0 with rfl | hc
+  · exact continuousAt_mulSinInv_zero
+  · rw [continuousAt_iff_infClose]
+    intro x hx
+    obtain ⟨hx0, h⟩ := hsin_one_div_infClose hc hx
+    rw [starMap_mulSinInv_of_ne_zero hx0, mulSinInv, ite_eq_right hc, Hyperreal.coe_mul]
+    exact hx.mul h (limited_of_infClose_coe hx) (limited_of_infClose_coe h)
 
 /-- **Exercise 7.4(3), third function.** The extension of $`f_3` takes the value $`1` at
 every hyperrational. -/

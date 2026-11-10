@@ -82,7 +82,10 @@ number.
   {name}`ContinuousOn`, uniform continuity on $`A` is {name}`UniformContinuousOn`, and
   uniform convergence on $`A` is {name}`TendstoUniformlyOn`. On the hyperreal side the
   variable ranges over the enlargement of $`A`. Values of the function outside $`A` play no
-  role in any statement.
+  role in any statement: by {name}`Goldblatt.starMapOn_eq_starMap` of Chapter 3 the
+  extension of a total function agrees on the enlargement of $`A` with the extension of its
+  restriction to $`A`, and {name}`Goldblatt.continuousAt_subtype_iff_infClose` states
+  Theorem 7.1.3 for a function of type {lit}`A → ℝ` to show the reduction.
 * Limits are convergence of filters. The filters are named in Section 7.3 of part 1; for
   example the two-sided limit at $`c` along $`A` is taken along {lit}`𝓝[A \ {c}] c`.
 * Theorem 7.1.3 is proved without the book's assumption that $`c` belongs to $`A`, and its
@@ -95,10 +98,14 @@ number.
   hypernaturals is a subset of the hyperreals.
 * In Section 7.12 the book shows that the powers do not converge uniformly on the unit
   interval by a permanence argument that it only justifies in Chapter 15. Here an explicit
-  point and index are exhibited instead.
+  point $`x \simeq 1`, $`x < 1`, is exhibited instead, with an unlimited index at which the
+  power is $`1/2` and another beyond which all powers are infinitesimal.
 * Exercise 7.4(3) asks for a discussion of five functions. It is formalized as five precise
-  statements about where each function is continuous; for the first two functions only the
-  behaviour at the origin, the point of interest, is treated.
+  statements saying exactly where each function is continuous.
+* The Lipschitz condition and contraction mappings of Section 7.9 are stated with the
+  explicit inequality and a real constant. {name}`Goldblatt.lipschitzWith_iff_abs_sub_le`
+  links this to Mathlib's {name}`LipschitzWith`, and the section's results are also given
+  for {name}`LipschitzWith` and {name}`ContractingWith`.
 * Section 7.15 is a historical discussion and has no formal content.
 
 ## Names for later chapters
