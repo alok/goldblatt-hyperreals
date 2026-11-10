@@ -4,11 +4,11 @@ import Goldblatt.Ch10_Topology.Hyperreals
 /-!
 # 10. Topology of the Reals
 
-An open set of real numbers is one that contains, along with each of its points, all points
-that are near enough to it. In the hyperreal line "near enough" has a sharp meaning: infinitely
-close. This chapter rewrites the elementary topology of the real line in those terms. Each
-standard notion, which is defined with a quantifier over positive radii or over open covers,
-becomes a statement about the halo of a real point and the enlargement $`{}^*A` of a set
+Classically, openness of a set of real numbers is a statement with a quantifier over radii.
+Over the hyperreals the radius disappears: the test is whether the enlargement of the set
+swallows the whole halo of each of its points. This chapter rewrites the elementary topology
+of the real line in those terms. Each standard notion, which is defined with a quantifier over
+positive radii or over open covers, becomes a statement about the halo of a real point and the enlargement $`{}^*A` of a set
 $`A \subseteq \mathbb R`.
 
 * A real number $`r` is interior to $`A` exactly when its halo lies inside $`{}^*A`; it is a
@@ -66,16 +66,18 @@ The chapter is split into two parts, each on its own page.
   reasoning about hyperreal points, and then restated for {name}`IsCompact` through the
   criterion {name}`Goldblatt.isCompact_iff_robinsonCompact`. Statements that duplicate a
   Mathlib theorem carry the suffix {lit}`by_halos`.
-* In the proof of Robinson's criterion the reduction to a countable cover uses Mathlib's
-  theorem that the real line is second countable, where the book argues with intervals having
-  rational end points. Where the book says "by transfer", the hyperreal witness is given as
-  the class of a sequence, as in Chapters 6 and 7.
+* The second half of Robinson's criterion ({name}`Goldblatt.RobinsonCompact.isCompact`)
+  follows the book: an open cover is reduced to countably many intervals with rational end
+  points, using only that the rationals are dense and countable. Where the book says "by
+  transfer", the hyperreal witness is given as the class of a sequence, as in Chapters 6
+  and 7.
 * Sequences of sets indexed by positive integers in the book are indexed from zero, with
   $`\frac1{n+1}` in place of $`\frac1n` (Exercises 10.2.3 and 10.5.2).
 * In Exercise 10.5.2 the intervals are taken to be nonempty, as the word interval suggests.
   Part (ii) needs only one nonempty interval and no bound on the lengths
   ({name}`Goldblatt.exists_mem_starSet_infClose_notMem_of_exists_lt`); part (iii) needs
-  infinitely many nonempty intervals. If every interval is empty the enlargement is empty and
+  infinitely many nonempty intervals, since otherwise the enlargement is real-open
+  ({name}`Goldblatt.isRealOpen_starSet_iUnion_Ioo_of_finite`). If every interval is empty the enlargement is empty and
   so both real-open and S-open.
 * Section 10.5 asserts that the intersection of the open sets containing a point is the halo
   of the point both for the real-open and for the S-open sets. This holds for S-open sets
@@ -104,7 +106,11 @@ The chapter is split into two parts, each on its own page.
 * Chapter 11 restates the three notions of Section 10.5 in pointwise form in the namespace
   {lit}`HyperTopology`; those are the right-hand sides of
   {name}`Goldblatt.isRealOpen_iff`, {name}`Goldblatt.isSOpen_iff` and
-  {name}`Goldblatt.isIntervalOpen_iff`.
+  {name}`Goldblatt.isIntervalOpen_iff`. The book defines S-neighbourhoods through the relation
+  "well inside" of Section 8.11; this chapter does not import Chapter 8 and uses the halo form
+  directly ({name}`Goldblatt.mem_sNeighbourhood_iff_hal_subset_Ioo`).
+* The pointwise criterion for real-open sets allows neighbourhoods that are not centred at the
+  point, and this matters ({name}`Goldblatt.exists_isRealOpen_not_forall_centred`).
 
 ## Names for later chapters
 

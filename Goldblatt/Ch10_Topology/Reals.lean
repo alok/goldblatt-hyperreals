@@ -431,9 +431,9 @@ theorem robinsonCompact_iff_starSet_subset_iUnion_hal :
     obtain ⟨r, hr, hxr⟩ := mem_iUnion₂.1 (h hx)
     exact ⟨r, hr, InfClose.symm hxr⟩
 
-/-- **Section 10.3.** Since the only real number a hyperreal can be infinitely close to is its
-shadow, Robinson's condition says: every $`x \in {}^*B` is limited and
-$`\operatorname{sh}(x) \in B`. -/
+/-- **Section 10.3.** Equivalent form in terms of shadows. A real number infinitely close to
+$`x` must equal $`\operatorname{sh}(x)`, so Robinson's condition holds exactly when each
+$`x \in {}^*B` is limited and has its shadow in $`B`. -/
 theorem robinsonCompact_iff_limited_sh_mem :
     RobinsonCompact B ↔ ∀ x ∈ ⋆B, Limited x ∧ sh x ∈ B := by
   constructor
@@ -554,46 +554,56 @@ theorem _root_.IsCompact.robinsonCompact (hB : IsCompact B) : RobinsonCompact B 
   exact absurd hr (not_lt.2 (hle r))
 
 /-- **Robinson's compactness criterion, second half.** A set satisfying Robinson's condition
-is compact. Given an open cover with no finite subcover, pass to a countable subcover
-$`U_0, U_1, \dots` (the book does this with intervals having rational end points; here it is
-the Lindelöf property of the real line from Mathlib). For each $`k` there is $`x_k \in B`
-outside $`U_0 \cup \dots \cup U_k`. The point $`x = [x_k]` of $`{}^*B` is infinitely close to
-some $`r \in B`; this $`r` lies in some $`U_n`, and since $`U_n` is open, $`x \in {}^*U_n`.
-So $`x_k \in U_n` for almost all $`k`, contradicting the choice of $`x_k` for $`k \ge n`. The
-class of the sequence plays the part of the witness that the book obtains by transfer at an
-unlimited index. -/
+is compact. The proof is the book's. Let $`(U_i)` be an open cover of $`B` and call an open
+interval $`(p, q)` with rational end points _good_ if it is included in some $`U_i`. The
+rational intervals can be listed as $`I_0, I_1, \dots`. If the cover had no finite subcover,
+then for each $`k` the good intervals among $`I_0, \dots, I_k` would not cover $`B` (each lies
+in one $`U_i`), so there is $`x_k \in B` outside all of them. The point $`x = [x_k]` of
+$`{}^*B` is infinitely close to some $`r \in B`. This $`r` lies in some $`U_j`, hence in a
+good interval $`I_n = (p, q) \subseteq U_j`, because the rationals are dense. As $`I_n` is
+open, $`x \in {}^*I_n`, so $`x_k \in I_n` for almost all $`k`, contradicting the choice of
+$`x_k` for $`k \ge n`. The class of the sequence plays the part of the witness that the book
+obtains by transfer at an unlimited index. -/
 theorem RobinsonCompact.isCompact (hB : RobinsonCompact B) : IsCompact B := by
   classical
   rw [isCompact_iff_finite_subcover]
   intro ι U hU hcov
-  obtain ⟨T, hT, hTU⟩ := TopologicalSpace.isOpen_iUnion_countable U hU
-  rcases T.eq_empty_or_nonempty with rfl | hne
-  · refine ⟨∅, hcov.trans ?_⟩
-    rw [← hTU]
-    simp
-  obtain ⟨f, rfl⟩ := hT.exists_eq_range hne
   by_contra hno
   push Not at hno
-  have key : ∀ k : ℕ, ∃ x ∈ B, ∀ n ≤ k, x ∉ U (f n) := by
+  obtain ⟨x₀, hx₀, -⟩ := Set.not_subset.1 (hno ∅)
+  obtain ⟨i₀, -⟩ := mem_iUnion.1 (hcov hx₀)
+  have : Nonempty ι := ⟨i₀⟩
+  obtain ⟨g, hg⟩ := exists_surjective_nat (ℚ × ℚ)
+  have hgood : ∀ n : ℕ, (∃ i, Ioo ((g n).1 : ℝ) (g n).2 ⊆ U i) →
+      ∃ i, Ioo ((g n).1 : ℝ) (g n).2 ⊆ U i := fun _ h => h
+  choose! i hi using hgood
+  have key : ∀ k : ℕ, ∃ x ∈ B, ∀ n ≤ k, (∃ j, Ioo ((g n).1 : ℝ) (g n).2 ⊆ U j) →
+      x ∉ Ioo ((g n).1 : ℝ) (g n).2 := by
     intro k
-    obtain ⟨x, hx, hxU⟩ := Set.not_subset.1 (hno ((Finset.range (k + 1)).image f))
-    refine ⟨x, hx, fun n hn hmem => hxU ?_⟩
-    exact mem_iUnion₂.2
-      ⟨f n, Finset.mem_image_of_mem f (Finset.mem_range.2 (Nat.lt_succ_of_le hn)), hmem⟩
+    by_contra h
+    push Not at h
+    refine hno ((Finset.range (k + 1)).image i) fun x hx => ?_
+    obtain ⟨n, hn, hgn, hxn⟩ := h x hx
+    exact mem_iUnion₂.2 ⟨i n,
+      Finset.mem_image_of_mem i (Finset.mem_range.2 (Nat.lt_succ_of_le hn)), hi n hgn hxn⟩
   choose x hxB hx using key
   obtain ⟨r, hrB, hxr⟩ := hB (Hyperreal.ofSeq x)
     (hyperreal_ofSeq_mem_starSet.2 (Eventually.of_forall hxB))
-  have hr : r ∈ ⋃ i ∈ range f, U i := by
-    rw [hTU]
-    exact hcov hrB
-  obtain ⟨_, ⟨n, rfl⟩, hrn⟩ := mem_iUnion₂.1 hr
-  have hmem : Hyperreal.ofSeq x ∈ ⋆(U (f n)) :=
-    isOpen_iff_forall_hal_subset.1 (hU (f n)) r hrn hxr.symm
+  obtain ⟨j, hrj⟩ := mem_iUnion.1 (hcov hrB)
+  obtain ⟨e, he, hsub⟩ := isOpen_iff_forall_isInteriorPoint.1 (hU j) r hrj
+  obtain ⟨p, hp1, hp2⟩ := exists_rat_btwn (sub_lt_self r he)
+  obtain ⟨q, hq1, hq2⟩ := exists_rat_btwn (lt_add_of_pos_right r he)
+  obtain ⟨n, hn⟩ := hg (p, q)
+  have hgn : Ioo ((g n).1 : ℝ) (g n).2 ⊆ U j := by
+    rw [hn]
+    exact fun z hz => hsub ⟨hp1.trans hz.1, hz.2.trans hq2⟩
+  have hmem : Hyperreal.ofSeq x ∈ (⋆(Ioo ((g n).1 : ℝ) (g n).2) : Set ℝ*) :=
+    isOpen_iff_forall_hal_subset.1 isOpen_Ioo r (by rw [hn]; exact ⟨hp2, hq1⟩) hxr.symm
   rw [hyperreal_ofSeq_mem_starSet] at hmem
   have hge : ∀ᶠ k in hyperfilter ℕ, n ≤ k :=
     eventually_hyperfilter_of_eventually_atTop (eventually_ge_atTop n)
   obtain ⟨k, hk1, hk2⟩ := (hmem.and hge).exists
-  exact hx k n hk2 hk1
+  exact hx k n hk2 ⟨j, hgn⟩ hk1
 
 /-- **Robinson's compactness criterion.** A set $`B` of real numbers is compact if and only if
 every member of $`{}^*B` is infinitely close to some member of $`B`. -/

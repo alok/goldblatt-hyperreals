@@ -115,14 +115,76 @@ theorem IsRealOpen.iUnion {ι : Sort*} {A : ι → Set ℝ*} (h : ∀ i, IsRealO
   obtain ⟨r, e, he, hxr, hsub⟩ := isRealOpen_iff.1 (h i) x hi
   exact ⟨r, e, he, hxr, hsub.trans (subset_iUnion A i)⟩
 
+/-- **Section 10.5, remark on the definition.** The neighbourhood in the pointwise criterion
+{name}`Goldblatt.isRealOpen_iff` cannot always be centred at the point: the real-open set
+$`(-1, 1)` contains $`1 - \varepsilon`, but no interval of positive real radius $`e` centred
+there lies inside it, since $`1 - \varepsilon + \frac e2 \ge 1`. So asking for centred
+neighbourhoods is strictly stronger than being real-open. -/
+theorem exists_isRealOpen_not_forall_centred :
+    ∃ A : Set ℝ*, IsRealOpen A ∧ ¬ ∀ x ∈ A, ∃ e : ℝ, 0 < e ∧ realNhd x e ⊆ A := by
+  refine ⟨realNhd 0 1, isRealOpen_realNhd one_pos, fun h => ?_⟩
+  have hε := epsilon_pos_infinitesimal
+  have hmem : (1 - ε : ℝ*) ∈ realNhd 0 1 := by
+    rw [realNhd_one]
+    constructor <;> linarith [hε.1, hε.2 1 one_pos, Hyperreal.coe_one]
+  obtain ⟨e, he, hsub⟩ := h _ hmem
+  have he2 := hε.2 (e / 2) (by positivity)
+  have he' : (0 : ℝ*) < (e : ℝ*) := Hyperreal.coe_pos.2 he
+  have hcast : ((e / 2 : ℝ) : ℝ*) = (e : ℝ*) / 2 := by push_cast; rfl
+  rw [hcast] at he2
+  have hy : (1 - ε + (e : ℝ*) / 2 : ℝ*) ∈ realNhd (1 - ε) e := by
+    unfold realNhd
+    constructor <;> linarith
+  have := hsub hy
+  rw [realNhd_one] at this
+  linarith [this.2]
+
 /-- A set that contains, with each of its points, all points within some positive real distance
-of it, is real-open. The converse fails: $`1 - \varepsilon` belongs to $`(-1, 1)`, but no
-interval of real radius centred there lies inside. -/
+of it, is real-open. The converse fails, see
+{name}`Goldblatt.exists_isRealOpen_not_forall_centred`. -/
 theorem isRealOpen_of_forall_exists_abs
     (h : ∀ x ∈ A, ∃ e : ℝ, 0 < e ∧ ∀ y : ℝ*, |y - x| < (e : ℝ*) → y ∈ A) : IsRealOpen A :=
   isRealOpen_iff.2 fun x hx =>
     let ⟨e, he, h'⟩ := h x hx
     ⟨x, e, he, mem_realNhd_self he, fun _ hy => h' _ (mem_realNhd_iff.1 hy)⟩
+
+/-- The empty set is real-open. -/
+theorem isRealOpen_empty : IsRealOpen (∅ : Set ℝ*) :=
+  isRealOpen_iff.2 fun _ h => absurd h (notMem_empty _)
+
+/-- **Section 10.5, example.** The enlargement of a real open interval $`(a, b)` is the
+hyperreal interval with the same end points, which is the real-radius neighbourhood of the
+midpoint with radius $`\frac{b - a}2`; so it is real-open. -/
+theorem isRealOpen_starSet_Ioo (a b : ℝ) : IsRealOpen (⋆(Ioo a b) : Set ℝ*) := by
+  rw [starSet_Ioo_real]
+  rcases le_or_gt b a with hab | hab
+  · rw [Ioo_eq_empty (not_lt.2 (Hyperreal.coe_le_coe.2 hab))]
+    exact isRealOpen_empty
+  · have h : Ioo (a : ℝ*) b = realNhd (((a + b) / 2 : ℝ) : ℝ*) ((b - a) / 2) := by
+      have h1 : (a + b) / 2 - (b - a) / 2 = a := by ring
+      have h2 : (a + b) / 2 + (b - a) / 2 = b := by ring
+      unfold realNhd
+      rw [← Hyperreal.coe_sub, ← Hyperreal.coe_add, h1, h2]
+    rw [h]
+    exact isRealOpen_realNhd (by linarith)
+
+/-- **Section 10.5, example.** The enlargement of a union of open intervals of which only
+finitely many are nonempty is real-open: enlargement commutes with finite unions, and each
+piece is a real-radius neighbourhood. Compare Exercise 10.5.2(iii), where infinitely many
+nonempty intervals give an enlargement that is not real-open. -/
+theorem isRealOpen_starSet_iUnion_Ioo_of_finite {a b : ℕ → ℝ} (h : {n | a n < b n}.Finite) :
+    IsRealOpen (⋆(⋃ n, Ioo (a n) (b n)) : Set ℝ*) := by
+  have : Finite {n // a n < b n} := h.to_subtype
+  have hU : (⋃ n, Ioo (a n) (b n)) = ⋃ n : {n // a n < b n}, Ioo (a n) (b n) := by
+    ext x
+    simp only [mem_iUnion, mem_Ioo]
+    constructor
+    · rintro ⟨n, h1, h2⟩
+      exact ⟨⟨n, h1.trans h2⟩, h1, h2⟩
+    · rintro ⟨n, hn⟩
+      exact ⟨n, hn⟩
+  rw [hU, starSet_iUnion_of_finite]
+  exact IsRealOpen.iUnion fun n => isRealOpen_starSet_Ioo _ _
 
 /-- **Section 10.5, example.** The set $`\mathbb L` of limited hyperreals is real-open. -/
 theorem isRealOpen_limitedSet : IsRealOpen 𝕃 :=
@@ -283,6 +345,14 @@ theorem exists_realNhd_inter_not_isRealOpen :
 hyperreals that are well inside the interval $`(r - e, r + e)`: those whose whole halo is
 included in it. -/
 def sNeighbourhood (r : ℝ*) (e : ℝ) : Set ℝ* := {x | hal x ⊆ realNhd r e}
+
+/-- **Section 10.5, definition unfolded.** A point belongs to the S-neighbourhood
+$`((r - e, r + e))` exactly when its halo lies inside the hyperreal interval
+$`(r - e, r + e)`. This holds by definition. The right-hand side is the halo form of the
+relation "well inside" of Section 8.11 (in the Chapter 8 module,
+{lit}`Goldblatt.wellInside_iff_hal_subset`), which this chapter does not import. -/
+theorem mem_sNeighbourhood_iff_hal_subset_Ioo :
+    x ∈ sNeighbourhood r e ↔ hal x ⊆ Ioo (r - (e : ℝ*)) (r + e) := Iff.rfl
 
 /-- **Section 10.5.** A point $`x` belongs to $`((r - e, r + e))` if and only if its distance
 from $`r` is appreciably less than $`e`, in the sense that $`r - x` is limited and
@@ -777,21 +847,6 @@ theorem iInter_isIntervalOpen_eq_singleton (r : ℝ*) :
     simp only [mem_iInter]
     exact fun _ _ h => h
 
-/-- **Section 10.5, corrected.** A hyperreal interval $`(a, b)` of length at most $`2e`, for a
-real $`e`, is the intersection of the two real-radius neighbourhoods of radius $`e` that
-start at $`a` and end at $`b`. The book makes this claim for every hyperreal interval, but an
-interval of unlimited length is not such an intersection
-({lit}`Ioo_zero_omega_ne_realNhd_inter_realNhd`). -/
-theorem Ioo_eq_realNhd_inter_realNhd {a b : ℝ*} (h : b - a ≤ 2 * (e : ℝ*)) :
-    Ioo a b = realNhd (a + e) e ∩ realNhd (b - e) e := by
-  ext x
-  simp only [realNhd, mem_inter_iff, mem_Ioo]
-  constructor
-  · rintro ⟨h1, h2⟩
-    exact ⟨⟨by linarith, by linarith⟩, by linarith, by linarith⟩
-  · rintro ⟨⟨h1, -⟩, -, h2⟩
-    exact ⟨by linarith, by linarith⟩
-
 /-- A nonempty hyperreal interval included in a real-radius neighbourhood of radius $`e` has
 length at most $`2e`. -/
 theorem sub_le_of_Ioo_subset_realNhd {a b : ℝ*} (hab : a < b) (h : Ioo a b ⊆ realNhd r e) :
@@ -817,6 +872,21 @@ theorem Ioo_zero_omega_ne_realNhd_inter_realNhd (r s : ℝ*) (e d : ℝ) :
   have h2 := real_lt_omega (2 * e)
   push_cast at h2
   linarith
+
+/-- **Section 10.5, corrected.** A hyperreal interval $`(a, b)` of length at most $`2e`, for a
+real $`e`, is the intersection of the two real-radius neighbourhoods of radius $`e` that
+start at $`a` and end at $`b`. The book makes this claim for every hyperreal interval, but an
+interval of unlimited length is not such an intersection
+({name}`Goldblatt.Ioo_zero_omega_ne_realNhd_inter_realNhd`). -/
+theorem Ioo_eq_realNhd_inter_realNhd {a b : ℝ*} (h : b - a ≤ 2 * (e : ℝ*)) :
+    Ioo a b = realNhd (a + e) e ∩ realNhd (b - e) e := by
+  ext x
+  simp only [realNhd, mem_inter_iff, mem_Ioo]
+  constructor
+  · rintro ⟨h1, h2⟩
+    exact ⟨⟨by linarith, by linarith⟩, by linarith, by linarith⟩
+  · rintro ⟨⟨h1, -⟩, -, h2⟩
+    exact ⟨by linarith, by linarith⟩
 
 /-- **Section 10.5.** Any topology on the hyperreal line in which all real-radius
 neighbourhoods are open contains every interval-open set. Every point of an interval
@@ -982,8 +1052,9 @@ every index, longer than $`A_n`, so it reaches an end point of $`A_n`, and the c
 end points lies in the neighbourhood but not in $`{}^*A`.
 
 Here the nonemptiness of the intervals matters: the conclusion needs infinitely many of them
-to be nonempty, since the enlargement of a finite union of nonempty open intervals is
-real-open. The statement assumes all of them nonempty. -/
+to be nonempty, since the enlargement is real-open when only finitely many are
+({name}`Goldblatt.isRealOpen_starSet_iUnion_Ioo_of_finite`). The statement assumes all of them
+nonempty. -/
 theorem exists_mem_starSet_forall_realNhd_not_subset (hab : ∀ n, a n < b n)
     (hdisj : Pairwise (Function.onFun Disjoint fun n => Ioo (a n) (b n)))
     (hlen : ∀ n, b n - a n < 1 / ((n : ℝ) + 1)) :
