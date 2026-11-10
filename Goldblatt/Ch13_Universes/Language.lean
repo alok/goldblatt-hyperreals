@@ -3,7 +3,7 @@ import Goldblatt.Ch13_Universes.Sets
 /-!
 # 13 (part 2). The Language of a Universe: Section 13.7
 
-This is the second of six parts of Chapter 13 (the overview is on the chapter page
+This is the second of seven parts of Chapter 13 (the overview is on the chapter page
 {lit}`Goldblatt.Ch13_Universes`). It defines the formal language attached to a universe as a
 deep embedding: an inductive type of terms, an inductive type of formulas whose quantifiers
 are all bounded, the satisfaction relation, and the syntactic notion of a sentence over a

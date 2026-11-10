@@ -1,18 +1,18 @@
-import Goldblatt.Ch13_Universes.Hyperfinite
+import Goldblatt.Ch13_Universes.HyperfiniteSets
 
 /-!
-# 13 (part 6). Arithmetic in a Framework and Hyperfinite Sums
+# 13 (part 7). Arithmetic in a Framework and Hyperfinite Sums
 
-This is the last of six parts of Chapter 13 (the overview is on the chapter page
+This is the last of seven parts of Chapter 13 (the overview is on the chapter page
 {lit}`Goldblatt.Ch13_Universes`). It covers the places where the book uses the arithmetic of
 the real numbers inside a framework: the example at the end of Section 13.8 of a function
 whose transform does not extend it, the uniform partitions that illustrate Sections 13.10,
 13.15 and 13.16, hyperfinite summation (Section 13.19) and the exercises on hyperfinite sums
 (Section 13.20).
 
-The sections of this page follow the book's order. The page as a whole comes after part 5
-because every item here needs the real numbers introduced there, and the sums need the
-hyperfinite sets of Section 13.17.
+The sections of this page follow the book's order. The page as a whole comes after parts 5 and 6
+because every item here needs the real numbers introduced in part 5, and the sums need the
+hyperfinite sets of Section 13.17 in part 6.
 -/
 
 noncomputable section
@@ -309,7 +309,10 @@ theorem isFunc_star_partFn :
 /-- **Section 13.10, uniform partitions.** The uniform partition
 $`P_n^{[a, b]} = \{a + k(b - a)/n : 0 \le k \le n\}` determined by hyperreals $`a, b` and a
 hypernatural $`n`: the set of hyperreals $`x` such that $`x` is the partition point of some
-hypernatural $`k \le n`. -/
+hypernatural $`k \le n`. Since the formalization's $`\mathbb N` starts at $`0`, the case
+$`n = 0` is allowed, which the book excludes: then the only index is $`k = 0`, and the point
+$`a + 0 \cdot (b - a)/0` is $`a` under Lean's convention that division by zero gives zero,
+so the partition is $`\{a\}`. -/
 def partition (a b n : ZFSet.{u}) : ZFSet.{u} :=
   (F.star F.R).sep fun x => ∃ k ∈ F.star F.N, pair k n ∈ F.star F.Le ∧
     pair (pair (pair a b) (pair n k)) x ∈ F.star F.partFn

@@ -3,7 +3,7 @@ import Mathlib
 /-!
 # 13 (part 1). Sets, Universes and Superstructures: Sections 13.1 to 13.6
 
-This is the first of six parts of Chapter 13 (the overview and the design notes are on the
+This is the first of seven parts of Chapter 13 (the overview and the design notes are on the
 chapter page {lit}`Goldblatt.Ch13_Universes`). It sets up the set-theoretic world in which
 Part IV of the book takes place: ordered pairs, tuples, relations and functions coded as sets,
 transitive and strongly transitive sets, universes with all their closure properties, and the
@@ -1067,7 +1067,8 @@ theorem superstructure_notMem_self : superstructure X ∉ superstructure X := me
 /-- **Section 13.6, rank of relations.** If $`A, B \in \mathbb U_n(X)` are sets, then every
 subset of $`A \times B`, in particular every function from $`A` to $`B`, is in
 $`\mathbb U_{n+2}(X)`: forming a function between given sets raises the rank by at most
-$`2`. -/
+$`2`. This is an upper bound; {lit}`IsBaseSet.rank_of_subset_prod` gives the exact
+rank of a relation with a member of large enough rank. -/
 theorem mem_cumPow_of_subset_prod {n : ℕ} (hA : A ∈ cumPow X n) (hAX : A ∉ X)
     (hB : B ∈ cumPow X n) (hBX : B ∉ X) (hR : R ⊆ prod A B) : R ∈ cumPow X (n + 2) := by
   cases n with
@@ -1082,7 +1083,8 @@ theorem mem_cumPow_of_subset_prod {n : ℕ} (hA : A ∈ cumPow X n) (hAX : A ∉
     exact pair_mem_cumPow_succ h1 (pair_mem_cumPow_succ ha' hb')
 
 /-- **Section 13.6, low ranks.** A topology on $`X`, or any other collection of subsets of
-$`X`, belongs to $`\mathbb U_2(X)`. -/
+$`X`, belongs to $`\mathbb U_2(X)`. The book says rank $`2`; this is the upper bound, and the exact rank can be smaller for
+degenerate sets (see {lit}`IsBaseSet.rank_of_subset_powerset` for the equality). -/
 theorem mem_cumPow_two_of_subset_powerset {T : ZFSet.{u}} (hT : T ⊆ powerset X) :
     T ∈ cumPow X 2 :=
   mem_cumPow_succ_of_subset fun _ hs => mem_cumPow_succ_of_subset (mem_powerset.1 (hT hs))
@@ -1101,7 +1103,8 @@ theorem mem_cumPow_one_of_subset (hA : A ⊆ X) : A ∈ cumPow X 1 :=
   mem_cumPow_succ_of_subset hA
 
 /-- **Section 13.6, the set of all topologies.** Any set of collections of subsets of $`X`,
-for instance the set of all topologies on $`X`, is a member of $`\mathbb U_3(X)`. -/
+for instance the set of all topologies on $`X`, is a member of $`\mathbb U_3(X)`. The book says rank $`3`; this is the upper bound, and the exact rank can be smaller for
+degenerate sets (see {lit}`IsBaseSet.rank_of_subset_powerset_powerset` for the equality). -/
 theorem mem_cumPow_three_of_subset_powerset_powerset {𝒯 : ZFSet.{u}}
     (h𝒯 : 𝒯 ⊆ powerset (powerset X)) : 𝒯 ∈ cumPow X 3 :=
   mem_cumPow_succ_of_subset fun _ ht =>
@@ -1111,7 +1114,8 @@ theorem mem_cumPow_three_of_subset_powerset_powerset {𝒯 : ZFSet.{u}}
 $`\mathcal A` of subsets of $`X` to a set $`R \subseteq X` of numbers, for instance a
 real-valued measure on $`X`, belongs to $`\mathbb U_4(X)`: the collection has rank at most
 $`2` and forming the function adds at most $`2`. As elsewhere in this section, the statement
-is membership in $`\mathbb U_n(X)`, that is, a bound on the rank. -/
+is membership in $`\mathbb U_n(X)`, that is, a bound on the rank. The book says rank $`4`; this is the upper bound, and the exact rank can be smaller for
+degenerate sets (see {lit}`IsBaseSet.rank_measure` for the equality). -/
 theorem mem_cumPow_four_of_subset_prod_powerset (hX : IsBaseSet X) {𝒜 μ : ZFSet.{u}}
     (h𝒜 : 𝒜 ⊆ powerset X) (hR : R ⊆ X) (hμ : μ ⊆ prod 𝒜 R) : μ ∈ cumPow X 4 :=
   mem_cumPow_of_subset_prod (n := 2) (mem_cumPow_two_of_subset_powerset h𝒜)
@@ -1122,7 +1126,8 @@ theorem mem_cumPow_four_of_subset_prod_powerset (hX : IsBaseSet X) {𝒜 μ : ZF
 
 /-- **Section 13.6, the set of all measures.** A set of functions, each from a collection of
 subsets of $`X` to a subset of $`X`, for instance the set of all real-valued measures on
-$`X`, belongs to $`\mathbb U_5(X)`. -/
+$`X`, belongs to $`\mathbb U_5(X)`. The book says rank $`5`; this is the upper bound, and the exact rank can be smaller for
+degenerate sets (see {lit}`IsBaseSet.rank_measures` for the equality). -/
 theorem mem_cumPow_five_of_measures (hX : IsBaseSet X) {M : ZFSet.{u}}
     (hM : ∀ μ ∈ M, ∃ 𝒜 R, 𝒜 ⊆ powerset X ∧ R ⊆ X ∧ μ ⊆ prod 𝒜 R) : M ∈ cumPow X 5 :=
   mem_cumPow_succ_of_subset fun μ hμ =>
@@ -1130,7 +1135,8 @@ theorem mem_cumPow_five_of_measures (hX : IsBaseSet X) {M : ZFSet.{u}}
     mem_cumPow_four_of_subset_prod_powerset hX h𝒜 hR hsub
 
 /-- **Section 13.6, the square of the base set.** $`X \times X` belongs to
-$`\mathbb U_3(X)`: a pair of individuals has rank $`2`. -/
+$`\mathbb U_3(X)`: a pair of individuals has rank $`2`. The book says rank $`3`; this is the upper bound, and the exact rank can be smaller for
+degenerate sets (see {lit}`IsBaseSet.rank_prod_base` for the equality). -/
 theorem prod_base_mem_cumPow_three : prod X X ∈ cumPow X 3 :=
   mem_cumPow_succ_of_subset fun p hp => by
     obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 hp
@@ -1140,7 +1146,8 @@ theorem prod_base_mem_cumPow_three : prod X X ∈ cumPow X 3 :=
 
 /-- **Section 13.6, metrics.** A function $`d : X \times X \to R` with $`R \subseteq X`, for
 instance a metric on $`X`, belongs to $`\mathbb U_5(X)`, since $`X \times X` has rank
-$`3`. -/
+at most $`3`. The book says rank $`5`; this is the upper bound, and the exact rank can be smaller for
+degenerate sets (see {lit}`IsBaseSet.rank_metric` for the equality). -/
 theorem mem_cumPow_five_of_subset_prod_prod (hX : IsBaseSet X) (hR : R ⊆ X)
     (hd : d ⊆ prod (prod X X) R) : d ∈ cumPow X 5 :=
   mem_cumPow_of_subset_prod (n := 3) prod_base_mem_cumPow_three
@@ -1155,7 +1162,8 @@ theorem mem_cumPow_five_of_subset_prod_prod (hX : IsBaseSet X) (hR : R ⊆ X)
 
 /-- **Section 13.6, the set of all metrics.** A set of functions from $`X \times X` to
 subsets of $`X`, for instance the set of all metrics on $`X`, belongs to
-$`\mathbb U_6(X)`. -/
+$`\mathbb U_6(X)`. The book says rank $`6`; this is the upper bound, and the exact rank can be smaller for
+degenerate sets (see {lit}`IsBaseSet.rank_metrics` for the equality). -/
 theorem mem_cumPow_six_of_metrics (hX : IsBaseSet X) {M : ZFSet.{u}}
     (hM : ∀ d ∈ M, ∃ R, R ⊆ X ∧ d ⊆ prod (prod X X) R) : M ∈ cumPow X 6 :=
   mem_cumPow_succ_of_subset fun d hd =>
@@ -1166,7 +1174,9 @@ theorem mem_cumPow_six_of_metrics (hX : IsBaseSet X) {M : ZFSet.{u}}
 interval and the real numbers) and $`\mathcal R` a set of functions from $`I` to $`R` (the
 integrable ones). Each such function belongs to $`\mathbb U_3(X)`, the set $`\mathcal R` to
 $`\mathbb U_4(X)`, and any function $`J : \mathcal R \to R`, for instance the Riemann
-integral, to $`\mathbb U_6(X)`. -/
+integral, to $`\mathbb U_6(X)`. The book says ranks $`3`, $`4` and $`6`; these are the
+upper bounds, and the exact ranks can be smaller for degenerate sets (see
+{lit}`IsBaseSet.rank_integral` for the equalities). -/
 theorem mem_cumPow_six_of_integral (hX : IsBaseSet X) {I ℛ J : ZFSet.{u}} (hI : I ⊆ X)
     (hR : R ⊆ X) (hℛ : ∀ f ∈ ℛ, f ⊆ prod I R) (hJ : J ⊆ prod ℛ R) :
     (∀ f ∈ ℛ, f ∈ cumPow X 3) ∧ ℛ ∈ cumPow X 4 ∧ J ∈ cumPow X 6 := by
@@ -1179,6 +1189,230 @@ theorem mem_cumPow_six_of_integral (hX : IsBaseSet X) {I ℛ J : ZFSet.{u}} (hI 
   exact ⟨h3, h4, mem_cumPow_of_subset_prod (n := 4) h4
     (hX.notMem_of_subset fun f hf => cumPow_subset_superstructure 3 (h3 f hf))
     (cumPow_mono (by omega) (mem_cumPow_one_of_subset hR)) hRnot hJ⟩
+
+/-!
+### Exact ranks
+
+The theorems above bound ranks from above. The book states the ranks as equalities, and these
+hold as soon as the entities involved are not degenerate (an empty relation, for instance, is
+the empty set and has rank $`1` whatever its intended type). The lower bounds all come from
+one observation: a member of a set has smaller rank than the set.
+-/
+
+/-- **Section 13.6, rank.** An entity of $`\mathbb U_n(X)` has rank at most $`n`. -/
+theorem rank_le_of_mem_cumPow {n : ℕ} (h : a ∈ cumPow X n) : rank X a ≤ n := Nat.sInf_le h
+
+/-- **Section 13.6, rank.** An entity of the superstructure belongs to the cumulative power
+set indexed by its rank. -/
+theorem mem_cumPow_rank (ha : a ∈ superstructure X) : a ∈ cumPow X (rank X a) :=
+  (mem_cumPow_iff_rank_le ha).2 le_rfl
+
+/-- **Section 13.6, rank.** The members of a set of the superstructure have smaller rank than
+the set: if $`a \in A \in \mathbb U(X)` and $`A \notin X`, then the rank of $`a` is less than
+the rank of $`A`. Every lower bound on a rank below comes from this. -/
+theorem rank_lt_of_mem (hA : A ∈ superstructure X) (hAX : A ∉ X) (ha : a ∈ A) :
+    rank X a < rank X A := by
+  have h := mem_cumPow_rank hA
+  cases hr : rank X A with
+  | zero => rw [hr] at h; exact absurd h hAX
+  | succ n =>
+    rw [hr] at h
+    exact Nat.lt_succ_of_le (rank_le_of_mem_cumPow (subset_cumPow_of_mem_succ h hAX ha))
+
+/-- **Section 13.6, rank.** A set $`A \in \mathbb U_{n+1}(X)`, not a member of $`X`, with a
+member of rank at least $`n`, has rank exactly $`n + 1`. -/
+theorem rank_eq_succ {n : ℕ} (hA : A ∈ cumPow X (n + 1)) (hAX : A ∉ X) (ha : a ∈ A)
+    (hn : n ≤ rank X a) : rank X A = n + 1 :=
+  le_antisymm (rank_le_of_mem_cumPow hA)
+    (Nat.succ_le_of_lt (lt_of_le_of_lt hn
+      (rank_lt_of_mem (cumPow_subset_superstructure _ hA) hAX ha)))
+
+/-- **Section 13.6, rank of a set of individuals.** Over a base set, every subset of $`X`
+(the empty set included) has rank exactly $`1`. -/
+theorem IsBaseSet.rank_of_subset (hX : IsBaseSet X) (hA : A ⊆ X) : rank X A = 1 := by
+  have h1 := mem_cumPow_one_of_subset hA
+  have hAX : A ∉ X := hX.notMem_of_subset fun _ h => cumPow_subset_superstructure 0 (hA h)
+  have h0 : rank X A ≠ 0 := fun h =>
+    hAX ((rank_eq_zero_iff (cumPow_subset_superstructure 1 h1)).1 h)
+  have := rank_le_of_mem_cumPow h1
+  omega
+
+/-- **Section 13.6, rank of an ordered pair.** Over a base set, the ordered pair of two
+entities of the superstructure has rank exactly two more than the larger of their ranks. In
+particular a pair of individuals has rank $`2`. -/
+theorem IsBaseSet.rank_pair (hX : IsBaseSet X) (ha : a ∈ superstructure X)
+    (hb : b ∈ superstructure X) : rank X (pair a b) = max (rank X a) (rank X b) + 2 := by
+  have ha' : a ∈ cumPow X (max (rank X a) (rank X b)) :=
+    cumPow_mono (le_max_left _ _) (mem_cumPow_rank ha)
+  have hb' : b ∈ cumPow X (max (rank X a) (rank X b)) :=
+    cumPow_mono (le_max_right _ _) (mem_cumPow_rank hb)
+  have h1 : ({a} : ZFSet.{u}) ∈ cumPow X (max (rank X a) (rank X b) + 1) :=
+    mem_cumPow_succ_of_subset fun x hx => mem_singleton.1 hx ▸ ha'
+  have h2 : ({a, b} : ZFSet.{u}) ∈ cumPow X (max (rank X a) (rank X b) + 1) :=
+    pair_mem_cumPow_succ ha' hb'
+  have h3 : pair a b ∈ cumPow X (max (rank X a) (rank X b) + 2) := pair_mem_cumPow_succ h1 h2
+  have h2X : ({a, b} : ZFSet.{u}) ∉ X := hX.notMem_of_subset fun x hx => by
+    rcases mem_pair.1 hx with rfl | rfl <;> assumption
+  have h3X : pair a b ∉ X := hX.notMem_of_subset fun x hx => by
+    rcases mem_pair.1 hx with rfl | rfl
+    · exact cumPow_subset_superstructure _ h1
+    · exact cumPow_subset_superstructure _ h2
+  refine rank_eq_succ h3 h3X (a := {a, b}) (mem_pair.2 (Or.inr rfl)) ?_
+  have hlt_a := rank_lt_of_mem (cumPow_subset_superstructure _ h2) h2X
+    (show a ∈ ({a, b} : ZFSet.{u}) from mem_pair.2 (Or.inl rfl))
+  have hlt_b := rank_lt_of_mem (cumPow_subset_superstructure _ h2) h2X
+    (show b ∈ ({a, b} : ZFSet.{u}) from mem_pair.2 (Or.inr rfl))
+  omega
+
+/-- **Section 13.6, rank of a pair of individuals.** Over a base set, an ordered pair of
+members of $`X` has rank exactly $`2`. -/
+theorem IsBaseSet.rank_pair_base (hX : IsBaseSet X) (ha : a ∈ X) (hb : b ∈ X) :
+    rank X (pair a b) = 2 := by
+  have ha' : a ∈ superstructure X := cumPow_subset_superstructure 0 ha
+  have hb' : b ∈ superstructure X := cumPow_subset_superstructure 0 hb
+  rw [hX.rank_pair ha' hb', (rank_eq_zero_iff ha').2 ha, (rank_eq_zero_iff hb').2 hb, Nat.max_self]
+
+/-- **Section 13.6, rank of the square of the base set.** Over a nonempty base set,
+$`X \times X` has rank exactly $`3`, as the book says. (For empty $`X` the product is empty
+and has rank $`1`.) -/
+theorem IsBaseSet.rank_prod_base (hX : IsBaseSet X) (hne : X ≠ ∅) : rank X (prod X X) = 3 := by
+  obtain ⟨a, ha⟩ := (eq_empty_or_nonempty X).resolve_left hne
+  refine rank_eq_succ prod_base_mem_cumPow_three (hX.notMem_of_subset fun p hp => ?_)
+    (a := pair a a) (mem_prod.2 ⟨a, ha, a, ha, rfl⟩) (hX.rank_pair_base ha ha).ge
+  obtain ⟨x, hx, y, hy, rfl⟩ := mem_prod.1 hp
+  exact (isUniverseOver_superstructure hX).1.isSetOf_opair (cumPow_subset_superstructure 0 hx)
+    (cumPow_subset_superstructure 0 hy) |>.1
+
+/-- **Section 13.6, rank of a topology.** Over a base set, a nonempty collection of subsets
+of $`X`, for instance a topology on $`X`, has rank exactly $`2`. -/
+theorem IsBaseSet.rank_of_subset_powerset (hX : IsBaseSet X) {T : ZFSet.{u}}
+    (hT : T ⊆ powerset X) (hne : T ≠ ∅) : rank X T = 2 := by
+  obtain ⟨s, hs⟩ := (eq_empty_or_nonempty T).resolve_left hne
+  have hsX := mem_powerset.1 (hT hs)
+  exact rank_eq_succ (mem_cumPow_two_of_subset_powerset hT)
+    (hX.notMem_of_subset fun _ ht => cumPow_subset_superstructure 1
+      (mem_cumPow_one_of_subset (mem_powerset.1 (hT ht)))) hs (hX.rank_of_subset hsX).ge
+
+/-- **Section 13.6, rank of the set of all topologies.** Over a base set, a set of
+collections of subsets of $`X` at least one of which is nonempty, for instance the set of all
+topologies on $`X`, has rank exactly $`3`. -/
+theorem IsBaseSet.rank_of_subset_powerset_powerset (hX : IsBaseSet X) {𝒯 T : ZFSet.{u}}
+    (h𝒯 : 𝒯 ⊆ powerset (powerset X)) (hT : T ∈ 𝒯) (hne : T ≠ ∅) : rank X 𝒯 = 3 :=
+  rank_eq_succ (mem_cumPow_three_of_subset_powerset_powerset h𝒯)
+    (hX.notMem_of_subset fun _ ht => cumPow_subset_superstructure 2
+      (mem_cumPow_two_of_subset_powerset (mem_powerset.1 (h𝒯 ht)))) hT
+    (hX.rank_of_subset_powerset (mem_powerset.1 (h𝒯 hT)) hne).ge
+
+/-- **Section 13.6, rank of a function between sets of known rank.** Over a base set, let
+$`R \subseteq A \times B` be a relation between sets of the superstructure, and suppose it
+has a member $`(a, b)` in which $`a` or $`b` has rank at least $`n`, while
+$`A, B \in \mathbb U_{n+1}(X)`. Then $`R` has rank exactly $`n + 3`. -/
+theorem IsBaseSet.rank_of_subset_prod (hX : IsBaseSet X) {n : ℕ} (hA : A ∈ cumPow X (n + 1))
+    (hAX : A ∉ X) (hB : B ∈ cumPow X (n + 1)) (hBX : B ∉ X) (hR : R ⊆ prod A B)
+    (hab : pair a b ∈ R) (hn : n ≤ max (rank X a) (rank X b)) : rank X R = n + 3 := by
+  have hmem : ∀ p ∈ R, ∃ x ∈ A, ∃ y ∈ B, p = pair x y := fun p hp => mem_prod.1 (hR hp)
+  have hAs : A ⊆ superstructure X := fun x hx =>
+    cumPow_subset_superstructure n (subset_cumPow_of_mem_succ hA hAX hx)
+  have hBs : B ⊆ superstructure X := fun x hx =>
+    cumPow_subset_superstructure n (subset_cumPow_of_mem_succ hB hBX hx)
+  have hRX : R ∉ X := hX.notMem_of_subset fun p hp => by
+    obtain ⟨x, hx, y, hy, rfl⟩ := hmem p hp
+    exact ((isUniverseOver_superstructure hX).1.isSetOf_opair (hAs hx) (hBs hy)).1
+  obtain ⟨x, hx, y, hy, hxy⟩ := hmem _ hab
+  obtain ⟨rfl, rfl⟩ := pair_inj.1 hxy
+  refine rank_eq_succ (mem_cumPow_of_subset_prod hA hAX hB hBX hR) hRX hab ?_
+  rw [hX.rank_pair (hAs hx) (hBs hy)]
+  omega
+
+/-- **Section 13.6, rank of a measure.** Over a base set, a nonempty function
+$`\mu : \mathcal A \to R` from a collection of subsets of $`X` to a set $`R \subseteq X`, for
+instance a real-valued measure on a nonempty algebra, has rank exactly $`4`. -/
+theorem IsBaseSet.rank_measure (hX : IsBaseSet X) {𝒜 μ : ZFSet.{u}} (h𝒜 : 𝒜 ⊆ powerset X)
+    (hR : R ⊆ X) (hμ : μ ⊆ prod 𝒜 R) (hne : μ ≠ ∅) : rank X μ = 4 := by
+  obtain ⟨p, hp⟩ := (eq_empty_or_nonempty μ).resolve_left hne
+  obtain ⟨s, hs, r, hr, rfl⟩ := mem_prod.1 (hμ hp)
+  refine hX.rank_of_subset_prod (n := 1) (mem_cumPow_two_of_subset_powerset h𝒜)
+    (hX.notMem_of_subset fun _ hs => cumPow_subset_superstructure 1
+      (mem_cumPow_one_of_subset (mem_powerset.1 (h𝒜 hs))))
+    (cumPow_mono (Nat.le_succ 1) (mem_cumPow_one_of_subset hR))
+    (hX.notMem_of_subset fun _ hr => cumPow_subset_superstructure 0 (hR hr)) hμ hp ?_
+  exact le_max_of_le_left (hX.rank_of_subset (mem_powerset.1 (h𝒜 hs))).ge
+
+/-- **Section 13.6, rank of the set of all measures.** Over a base set, a set of functions
+from collections of subsets of $`X` to subsets of $`X`, at least one of them nonempty, has
+rank exactly $`5`. -/
+theorem IsBaseSet.rank_measures (hX : IsBaseSet X) {M μ : ZFSet.{u}}
+    (hM : ∀ μ ∈ M, ∃ 𝒜 R, 𝒜 ⊆ powerset X ∧ R ⊆ X ∧ μ ⊆ prod 𝒜 R) (hμ : μ ∈ M) (hne : μ ≠ ∅) :
+    rank X M = 5 := by
+  have h4 : ∀ ν ∈ M, ν ∈ cumPow X 4 := fun ν hν =>
+    let ⟨_, _, h𝒜, hR, hsub⟩ := hM ν hν
+    mem_cumPow_four_of_subset_prod_powerset hX h𝒜 hR hsub
+  obtain ⟨𝒜, R, h𝒜, hR, hsub⟩ := hM μ hμ
+  exact rank_eq_succ (mem_cumPow_five_of_measures hX hM)
+    (hX.notMem_of_subset fun ν hν => cumPow_subset_superstructure 4 (h4 ν hν)) hμ
+    (hX.rank_measure h𝒜 hR hsub hne).ge
+
+/-- **Section 13.6, rank of a metric.** Over a base set, a nonempty function
+$`d : X \times X \to R` with $`R \subseteq X`, for instance a metric on a nonempty $`X`, has
+rank exactly $`5`. -/
+theorem IsBaseSet.rank_metric (hX : IsBaseSet X) (hR : R ⊆ X) (hd : d ⊆ prod (prod X X) R)
+    (hne : d ≠ ∅) : rank X d = 5 := by
+  obtain ⟨p, hp⟩ := (eq_empty_or_nonempty d).resolve_left hne
+  obtain ⟨q, hq, r, hr, rfl⟩ := mem_prod.1 (hd hp)
+  obtain ⟨x, hx, y, hy, rfl⟩ := mem_prod.1 hq
+  have hpair : ∀ p ∈ prod X X, p ∈ cumPow X 2 := fun p hp => by
+    obtain ⟨a, ha, b, hb, rfl⟩ := mem_prod.1 hp
+    have h1 : ({a} : ZFSet.{u}) ∈ cumPow X 1 :=
+      mem_cumPow_succ_of_subset fun x hx => mem_singleton.1 hx ▸ ha
+    exact pair_mem_cumPow_succ h1 (pair_mem_cumPow_succ (n := 0) ha hb)
+  refine hX.rank_of_subset_prod (n := 2) prod_base_mem_cumPow_three
+    (hX.notMem_of_subset fun p hp => cumPow_subset_superstructure 2 (hpair p hp))
+    (cumPow_mono (by omega) (mem_cumPow_one_of_subset hR))
+    (hX.notMem_of_subset fun _ hr => cumPow_subset_superstructure 0 (hR hr)) hd hp ?_
+  exact le_max_of_le_left (hX.rank_pair_base hx hy).ge
+
+/-- **Section 13.6, rank of the set of all metrics.** Over a base set, a set of functions
+from $`X \times X` to subsets of $`X`, at least one of them nonempty, for instance the set of
+all metrics on a nonempty $`X`, has rank exactly $`6`. -/
+theorem IsBaseSet.rank_metrics (hX : IsBaseSet X) {M : ZFSet.{u}}
+    (hM : ∀ d ∈ M, ∃ R, R ⊆ X ∧ d ⊆ prod (prod X X) R) (hd : d ∈ M) (hne : d ≠ ∅) :
+    rank X M = 6 := by
+  have h5 : ∀ e ∈ M, e ∈ cumPow X 5 := fun e he =>
+    let ⟨_, hR, hsub⟩ := hM e he
+    mem_cumPow_five_of_subset_prod_prod hX hR hsub
+  obtain ⟨R, hR, hsub⟩ := hM d hd
+  exact rank_eq_succ (mem_cumPow_six_of_metrics hX hM)
+    (hX.notMem_of_subset fun e he => cumPow_subset_superstructure 5 (h5 e he)) hd
+    (hX.rank_metric hR hsub hne).ge
+
+/-- **Section 13.6, exact ranks for the Riemann integral.** Over a base set, let
+$`I, R \subseteq X`, let $`\mathcal R` be a set of functions from $`I` to $`R`, and let
+$`J \subseteq \mathcal R \times R`. Every nonempty $`f \in \mathcal R` has rank exactly
+$`3`; if $`\mathcal R` has a nonempty member it has rank exactly $`4`; and if $`J` has a
+member $`(f, r)` with $`f` nonempty, then $`J` has rank exactly $`6`. These are the book's
+values for an integrable function on a closed interval, the set of all of them, and the
+Riemann integral. -/
+theorem IsBaseSet.rank_integral (hX : IsBaseSet X) {I ℛ J r : ZFSet.{u}} (hI : I ⊆ X)
+    (hR : R ⊆ X) (hℛ : ∀ f ∈ ℛ, f ⊆ prod I R) (hJ : J ⊆ prod ℛ R) :
+    (∀ f ∈ ℛ, f ≠ ∅ → rank X f = 3) ∧ (∀ f ∈ ℛ, f ≠ ∅ → rank X ℛ = 4) ∧
+      (∀ f, pair f r ∈ J → f ≠ ∅ → rank X J = 6) := by
+  have hInot : I ∉ X := hX.notMem_of_subset fun _ hi => cumPow_subset_superstructure 0 (hI hi)
+  have hRnot : R ∉ X := hX.notMem_of_subset fun _ hr => cumPow_subset_superstructure 0 (hR hr)
+  obtain ⟨h3, h4, -⟩ := mem_cumPow_six_of_integral hX hI hR hℛ (J := ∅)
+    (fun _ h => absurd h (notMem_empty _))
+  have hℛnot : ℛ ∉ X :=
+    hX.notMem_of_subset fun f hf => cumPow_subset_superstructure 3 (h3 f hf)
+  have e3 : ∀ f ∈ ℛ, f ≠ ∅ → rank X f = 3 := fun f hf hne => by
+    obtain ⟨p, hp⟩ := (eq_empty_or_nonempty f).resolve_left hne
+    obtain ⟨i, hi, s, hs, rfl⟩ := mem_prod.1 (hℛ f hf hp)
+    exact hX.rank_of_subset_prod (n := 0) (mem_cumPow_one_of_subset hI) hInot
+      (mem_cumPow_one_of_subset hR) hRnot (hℛ f hf) hp (Nat.zero_le _)
+  refine ⟨e3, fun f hf hne => rank_eq_succ h4 hℛnot hf (e3 f hf hne).ge, fun f hfJ hne => ?_⟩
+  obtain ⟨f', hf', s, hs, hfs⟩ := mem_prod.1 (hJ hfJ)
+  obtain ⟨rfl, rfl⟩ := pair_inj.1 hfs
+  exact hX.rank_of_subset_prod (n := 3) h4 hℛnot
+    (cumPow_mono (by omega) (mem_cumPow_one_of_subset hR)) hRnot hJ hfJ
+    (le_max_of_le_left (e3 f hf' hne).ge)
 
 /-- **Section 13.6, existence of superstructures.** Every type $`\alpha` (for instance the
 real numbers) has a copy inside {name}`ZFSet` that is a base set: there is an injection of

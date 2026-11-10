@@ -3,7 +3,7 @@ import Goldblatt.Ch13_Universes.Language
 /-!
 # 13 (part 3). Nonstandard Frameworks and Standard Entities: Sections 13.8 and 13.9
 
-This is the third of six parts of Chapter 13 (the overview is on the chapter page
+This is the third of seven parts of Chapter 13 (the overview is on the chapter page
 {lit}`Goldblatt.Ch13_Universes`). It defines nonstandard frameworks, a universe together with
 a transfer map into a second universe, as a structure whose fields are the book's axioms, and
 derives from the transfer principle the list of set-theoretic operations that the transfer
@@ -70,7 +70,13 @@ structure NonstandardFramework where
   /-- $`{}^*\emptyset = \emptyset`. -/
   star_empty : star ∅ = ∅
   /-- **Transfer.** A sentence $`\varphi` of the language of $`\mathbb U` is true if and only
-  if $`{}^*\varphi` is true. -/
+  if $`{}^*\varphi` is true. The quantification is over all sentences of the deep embedding,
+  not only the book's defined ones, so this field includes preservation of definedness of
+  terms. No lemma of this chapter reduces the field to transfer for defined sentences: a
+  construction of a framework (Chapter 14) has to prove the field as stated, that is, a
+  theorem of Łoś type for {name}`Goldblatt.Sat` whose induction covers the clauses of
+  {name}`Goldblatt.Term.Defined` (being a function, being a relation of the universe, and the
+  argument lying in the domain). -/
   transfer : ∀ φ : Formula.{u}, φ.IsSentence U → (φ.Holds U ↔ (φ.star star).Holds U')
 
 namespace NonstandardFramework

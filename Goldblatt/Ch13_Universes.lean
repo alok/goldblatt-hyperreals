@@ -3,6 +3,7 @@ import Goldblatt.Ch13_Universes.Language
 import Goldblatt.Ch13_Universes.Framework
 import Goldblatt.Ch13_Universes.Internal
 import Goldblatt.Ch13_Universes.Hyperfinite
+import Goldblatt.Ch13_Universes.HyperfiniteSets
 import Goldblatt.Ch13_Universes.Sums
 
 /-!
@@ -24,15 +25,17 @@ This chapter is the foundation for Chapters 14 to 19, so the notions are set up 
 generality and independently of the ultrapower of Parts I to III. Existence of frameworks is
 not proved here; that is Chapter 14.
 
-The formalization is long and is split over six pages; this page is the overview, the
+The formalization is long and is split over seven pages; this page is the overview, the
 record of the design decisions, and the index.
 
-## The six parts
+## The seven parts
 
 * {lit}`Goldblatt.Ch13_Universes.Sets` covers Sections 13.1 to 13.6: pairs, tuples, relations
   and functions as sets, strong transitivity, universes and every closure property in the
   book's list, superstructures, the proof that a superstructure is a universe and is the
-  smallest one, and the existence of a superstructure over (a copy of) any set.
+  smallest one, the existence of a superstructure over (a copy of) any set, and the ranks of
+  the entities of analysis (as upper bounds in general, and as the book's exact values for
+  nondegenerate entities).
 * {lit}`Goldblatt.Ch13_Universes.Language` covers Section 13.7: terms, formulas with bounded
   quantifiers, satisfaction, sentences, and the transform of a formula.
 * {lit}`Goldblatt.Ch13_Universes.Framework` covers Sections 13.8 and 13.9: the structure
@@ -42,10 +45,11 @@ record of the design decisions, and the index.
   internal entities and Theorem 13.10.1, the internal set definition principle, every closure
   property of internal sets, Theorem 13.12.1 and the internal function definition principle.
 * {lit}`Goldblatt.Ch13_Universes.Hyperfinite` covers what needs the real numbers among the
-  individuals: the examples of Section 13.9 (initial segments, intervals, Exercise 13.9.1),
-  the internal least number principle, internal induction and order-completeness, the
-  exercises of Section 13.13, Theorem 13.14.1 on external images, hyperfinite sets with
-  Theorem 13.17.1, internal cardinality, and the exercises of Section 13.18.
+  individuals, up to Section 13.14: the examples of Section 13.9 (initial segments, intervals,
+  Exercise 13.9.1), the internal least number principle, internal induction and
+  order-completeness, the exercises of Section 13.13, and Theorem 13.14.1 on external images.
+* {lit}`Goldblatt.Ch13_Universes.HyperfiniteSets` covers Sections 13.17 and 13.18: hyperfinite
+  sets with Theorem 13.17.1, internal cardinality, and the exercises of Section 13.18.
 * {lit}`Goldblatt.Ch13_Universes.Sums` covers what needs the arithmetic of the real numbers:
   the transforms of the operations on the reals and the example of Section 13.8 of a function
   whose transform does not extend it, the uniform partitions that illustrate Sections 13.10,
@@ -62,19 +66,19 @@ record of the design decisions, and the index.
 * 13.6 Superstructures (part 1).
 * 13.7 The Language of a Universe (part 2).
 * 13.8 Nonstandard Frameworks (part 3; the operations on the reals and the last example in
-  part 6).
+  part 7).
 * 13.9 Standard Entities (part 3; the examples with numbers in part 5).
-* 13.10 Internal Entities (part 4; the examples in parts 5 and 6).
+* 13.10 Internal Entities (part 4; the examples in parts 5 and 7).
 * 13.11 Closure Properties of Internal Sets (part 4).
 * 13.12 Transformed Power Sets (part 4; the applications to the natural numbers in part 5).
 * 13.13 Exercises on Internal Sets and Functions (part 5).
 * 13.14 External Images Are External (part 5).
-* 13.15 Internal Set Definition Principle (part 4; the illustration in part 6).
-* 13.16 Internal Function Definition Principle (part 4; the illustration in part 6).
-* 13.17 Hyperfiniteness (part 5).
-* 13.18 Exercises on Hyperfinite Sets and Sizes (part 5).
-* 13.19 Hyperfinite Summation (part 6).
-* 13.20 Exercises on Hyperfinite Sums (part 6).
+* 13.15 Internal Set Definition Principle (part 4; the illustration in part 7).
+* 13.16 Internal Function Definition Principle (part 4; the illustration in part 7).
+* 13.17 Hyperfiniteness (part 6).
+* 13.18 Exercises on Hyperfinite Sets and Sizes (part 6).
+* 13.19 Hyperfinite Summation (part 7).
+* 13.20 Exercises on Hyperfinite Sums (part 7).
 
 ## Design of the formalization
 

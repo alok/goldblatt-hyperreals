@@ -3,7 +3,7 @@ import Goldblatt.Ch13_Universes.Framework
 /-!
 # 13 (part 4). Internal Entities: Sections 13.10 to 13.12, 13.15 and 13.16
 
-This is the fourth of six parts of Chapter 13 (the overview is on the chapter page
+This is the fourth of seven parts of Chapter 13 (the overview is on the chapter page
 {lit}`Goldblatt.Ch13_Universes`). It defines internal entities, proves that they form a
 strongly transitive collection, establishes the internal set definition principle and the
 internal function definition principle, derives the closure properties of internal sets, and
