@@ -43,8 +43,8 @@ $`\varepsilon\,\Delta x + \delta\,\Delta y` with $`\varepsilon, \delta` infinite
 
 The proof splits the increment into a change in $`x` at height $`b` followed by a change in
 $`y` at abscissa $`a + \Delta x`. The first is handled by the one-variable incremental
-equation. The second is an increment of the function $`y \mapsto f(a + \Delta x, y)`, which
-is not a real function, so that equation does not apply. Instead the mean value theorem for
+equation. The second involves the slice of $`f` through the nonreal abscissa $`a + \Delta x`;
+Theorem 8.2.2 is about real functions and cannot be invoked for it. Instead the mean value theorem for
 the real functions $`y \mapsto f(a + x_0, y)` is transferred: it yields a hyperreal $`c`
 between $`b` and $`b + \Delta y` at which the second change equals
 $`f_y(a + \Delta x, c)\,\Delta y`, and continuity of $`f_y` at $`(a, b)` finishes the proof.

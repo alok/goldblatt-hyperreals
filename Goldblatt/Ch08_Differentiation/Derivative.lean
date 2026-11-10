@@ -411,6 +411,19 @@ theorem increment_sub_differential_div_infClose (h : DifferentiableAt ℝ f x)
   · rw [heq, add_sub_cancel_left, mul_div_assoc, div_self h0, mul_one]
     exact hη
 
+/-- **Section 8.2, the reciprocal form.** The book adds that the preceding relation can be
+read as saying that $`\Delta x / (\Delta f - df)` is unlimited. That reading requires
+$`\Delta f \ne df`: for a linear function $`\Delta f - df = 0` for every increment, and the
+quotient is then $`0` in Lean (and undefined in the book). With that hypothesis, and
+$`\Delta x \ne 0`, the quotient is the reciprocal of a nonzero infinitesimal. -/
+theorem unlimited_div_increment_sub_differential (h : DifferentiableAt ℝ f x)
+    (he : Infinitesimal Δ) (h0 : Δ ≠ 0) (hne : increment f x Δ ≠ differential f x Δ) :
+    Unlimited (Δ / (increment f x Δ - differential f x Δ)) := by
+  have hinf : Infinitesimal ((increment f x Δ - differential f x Δ) / Δ) :=
+    infinitesimal_iff_infClose_zero.2 (increment_sub_differential_div_infClose h he)
+  have := hinf.inv_unlimited (div_ne_zero (sub_ne_zero.2 hne) h0)
+  rwa [inv_div] at this
+
 /-- **Theorem 8.2.2, converse.** The incremental equation characterises the derivative: if
 for every infinitesimal $`\Delta x` there is an infinitesimal $`\varepsilon` with
 $`{}^*f(x + \Delta x) = f(x) + L\,\Delta x + \varepsilon\,\Delta x`, then $`L` is the
@@ -527,6 +540,19 @@ theorem hasDerivAt_div_of_hasDerivAt (hf : HasDerivAt f L x) (hg : HasDerivAt g 
   push_cast
   ring
 
+/-- **Section 8.3, tool.** The derivative of $`-f` is $`-f'`, by Theorem 8.1.1: the Newton
+quotients of $`-f` are the negatives of those of $`f`. The book does not list this rule; it
+is used for minima in Section 8.5, for decreasing functions in Section 8.6 and for the
+derivatives of the cosine in Section 8.9. -/
+theorem hasDerivAt_neg_of_hasDerivAt (h : HasDerivAt f L x) :
+    HasDerivAt (fun t => -f t) (-L) x := by
+  rw [hasDerivAt_iff_infClose]
+  intro e he h0
+  have := (h.newtonQuotient_infClose he h0).neg
+  rw [starMap_neg_apply, Hyperreal.coe_neg, Hyperreal.coe_neg]
+  convert this using 1
+  ring
+
 /-- **Section 8.3, non-vacuity.** The rules compute the derivative of $`t \mapsto t^2` at
 $`x` from that of the identity: the identity has derivative $`1`, since its Newton quotient
 is $`\varepsilon/\varepsilon = 1`, and Leibniz's rule gives $`1 \cdot x + x \cdot 1`. -/
@@ -641,15 +667,8 @@ $`L = 0`. The case of a minimum is the case of a maximum for $`-f`, whose Newton
 are the negatives of those of $`f`. -/
 theorem eq_zero_of_hasDerivAt_of_forall_ge (hx : x ∈ Ioo a b)
     (hmin : ∀ t ∈ Ioo a b, f x ≤ f t) (h : HasDerivAt f L x) : L = 0 := by
-  have hneg : HasDerivAt (fun t => -f t) (-L) x := by
-    rw [hasDerivAt_iff_infClose]
-    intro e he h0
-    have := (h.newtonQuotient_infClose he h0).neg
-    rw [starMap_neg_apply, Hyperreal.coe_neg, Hyperreal.coe_neg]
-    convert this using 1
-    ring
   have := eq_zero_of_hasDerivAt_of_forall_le (f := fun t => -f t) hx
-    (fun t ht => neg_le_neg (hmin t ht)) hneg
+    (fun t ht => neg_le_neg (hmin t ht)) (hasDerivAt_neg_of_hasDerivAt h)
   linarith
 
 /-- **Section 8.5 (Critical Point Theorem)**, for Mathlib's notion of a local extremum: if
@@ -940,13 +959,7 @@ with the chain rule of Section 8.4. -/
 theorem hasDerivAt_inverse_of_strictAntiOn (hf : ContinuousOn f (Ioo a b))
     (hanti : StrictAntiOn f (Ioo a b)) (hg : ∀ t ∈ Ioo a b, g (f t) = t) (hx : x ∈ Ioo a b)
     (hL : HasDerivAt f L x) (hL0 : L ≠ 0) : HasDerivAt g (1 / L) (f x) := by
-  have hnegL : HasDerivAt (fun t => -f t) (-L) x := by
-    rw [hasDerivAt_iff_infClose]
-    intro e he h0
-    have := (hL.newtonQuotient_infClose he h0).neg
-    rw [starMap_neg_apply, Hyperreal.coe_neg, Hyperreal.coe_neg]
-    convert this using 1
-    ring
+  have hnegL := hasDerivAt_neg_of_hasDerivAt hL
   have h1 := hasDerivAt_inverse_of_strictMonoOn (f := fun t => -f t) (g := fun s => g (-s))
     hf.neg (fun s hs t ht hst => neg_lt_neg (hanti hs ht hst))
     (fun t ht => by simpa using hg t ht) hx hnegL (neg_ne_zero.2 hL0)

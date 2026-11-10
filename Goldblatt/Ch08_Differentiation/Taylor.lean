@@ -159,8 +159,8 @@ end Between
 Let $`f` be a real function and $`a` a real number at which $`f` has derivatives of all
 orders. The _Taylor series_ of $`f` at $`x`, centred on $`a`, is the series with terms
 $`f^{(k)}(a)\,(x - a)^k / k!`. Its partial sums are the _Taylor polynomials_
-$`P_n(x)`, and $`R_n(x) = f(x) - P_n(x)` is the $`n`-th _remainder_. The series need not
-converge, and if it converges its sum need not be $`f(x)`. By Chapter 6, applied to the
+$`P_n(x)`, and $`R_n(x) = f(x) - P_n(x)` is the $`n`-th _remainder_. Convergence is not
+automatic, and a convergent Taylor series may have a sum other than $`f(x)`. By Chapter 6, applied to the
 sequence of partial sums:
 
 * the Taylor series at $`x` converges to $`L` if and only if $`P_N(x) \simeq L` for all
@@ -265,8 +265,8 @@ theorem seriesSum_taylorTerm_self_iff :
 /-- **Section 8.9, the identity for consecutive polynomials at hypernatural orders.** For
 every hypernatural $`N` and every hyperreal $`y`, the extended polynomials satisfy
 $`P_{N+1}(y) - P_N(y) = T_{N+1}(y)`, where $`T_n(t)` is the $`n`-th term of the Taylor
-series at $`t`. This is the book's example of a result that continues to hold for unlimited
-$`n` by transfer. -/
+series at $`t`. The book cites this identity as one that transfer extends from standard to
+unlimited orders. -/
 theorem hyperFunSeq_taylorPoly_add_one (f : ℝ → ℝ) (a : ℝ) (hN : N ∈ ℕ*) (y : ℝ*) :
     hyperFunSeq (fun n t => taylorPoly f a n t) (N + 1) y -
         hyperFunSeq (fun n t => taylorPoly f a n t) N y =
@@ -627,17 +627,6 @@ theorem seriesSum_taylorTerm_of_bounded (hJ : J.OrdConnected) (ha : a ∈ J) (hx
     SeriesSum (taylorTerm f a x) (f x) :=
   seriesSum_taylorTerm_self_iff.2 fun _ hN =>
     infinitesimal_taylorRem_of_bounded hJ ha hx hD hM hN
-
-/-- **Section 8.9, tool.** The derivative of $`-f` is $`-f'`, by Theorem 8.1.1: the Newton
-quotients of $`-f` are the negatives of those of $`f`. -/
-theorem hasDerivAt_neg_of_hasDerivAt (h : HasDerivAt f L x) :
-    HasDerivAt (fun t => -f t) (-L) x := by
-  rw [hasDerivAt_iff_infClose]
-  intro e he h0
-  have := (h.newtonQuotient_infClose he h0).neg
-  rw [starMap_neg_apply, Hyperreal.coe_neg, Hyperreal.coe_neg]
-  convert this using 1
-  ring
 
 /-- **Section 8.9, the derivatives of the cosine.** Every derivative of the cosine function
 is one of $`\cos`, $`-\sin`, $`-\cos`, $`\sin`. This follows by induction from the
