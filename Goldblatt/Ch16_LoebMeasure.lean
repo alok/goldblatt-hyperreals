@@ -58,12 +58,14 @@ The consequences are these.
   is built from such a sequence; {name}`Goldblatt.exists_grid_representation` restates the
   final theorem for an arbitrary unlimited hypernatural.
 
-Three statements of the book are corrected, each with a note in the docstring: the covering
-property of the outer measure needs a set of finite outer measure
-({name}`Goldblatt.exists_monotone_cover`), the squeezing property of complete measures needs
-finite measure ({name}`Goldblatt.isCaratheodory_of_between`), and Lemma 16.5.1 holds for every
-set, measurable or not ({name}`Goldblatt.LoebPremeasure.outer_eq_iInf`). The book has no
-exercises in this chapter.
+Two statements of the book are corrected, each with a note in the docstring: the covering
+property of the outer measure holds exactly for the sets that are covered by some sequence of
+members of the ring ({name}`Goldblatt.exists_monotone_cover_of_cover`,
+{name}`Goldblatt.exists_monotone_cover_iff`), and the squeezing property of complete measures
+needs finite measure ({name}`Goldblatt.isCaratheodory_of_between`). Lemma 16.5.1, which the
+book states for Loeb measurable sets, is proved in greater generality: for every set,
+measurable or not ({name}`Goldblatt.LoebPremeasure.outer_eq_iInf`). The book has no exercises
+in this chapter.
 
 ## The five parts
 
@@ -82,12 +84,21 @@ Part 1 defines rings, algebras, sigma-rings and sigma-algebras of sets
 {name}`Goldblatt.IsSigmaRing`, {name}`Goldblatt.IsSigmaAlgebra`), the generated sigma-algebra
 ({name}`Goldblatt.sigmaGenerated`), and proves the first four examples: finite, cofinite and
 countable sets, the ring of finite unions of left-open intervals
-({name}`Goldblatt.leftOpenRing`) and the Borel sets. Part 4 has the two examples about
+({name}`Goldblatt.leftOpenRing`), each member of which is a disjoint union of such intervals
+({name}`Goldblatt.exists_pairwiseDisjoint_of_mem_leftOpenRing`), and the Borel sets. Part 4 has the two examples about
 internal sets. The internal subsets of the hyperfinite set of hypernaturals from $`1` to
 $`N` form an algebra of subsets of it
 ({name}`Goldblatt.isRingOfSets_internal_subsets`,
 {name}`Goldblatt.setOf_hyperNat_one_le_le_mem_internal_subsets`) that is not a sigma-algebra
-({name}`Goldblatt.not_isSigmaRing_internal_subsets`). If the union of a sequence of members of
+({name}`Goldblatt.not_isSigmaRing_internal_subsets`). The same analysis is carried out for
+the internal subsets of an arbitrary hyperfinite set $`S = [S_n]`: they form an algebra that
+is closed under hyperfinite unions
+({name}`Goldblatt.InternalMeasure.internalSet_biUnion_le_mem_sets`,
+{name}`Goldblatt.internalSet_biUnion_le_eq_iUnion`), is itself internal and hyperfinite
+({name}`Goldblatt.InternalMeasure.sets_weighted_eq_image`,
+{name}`Goldblatt.InternalMeasure.isHyperfiniteSet_internalSet_powerset`), and is not a
+sigma-ring when $`S` is infinite
+({name}`Goldblatt.InternalMeasure.not_isSigmaRing_sets_weighted`). If the union of a sequence of members of
 an internal ring is in the ring, then finitely many terms already have that union
 ({name}`Goldblatt.InternalMeasure.exists_iUnion_eq_biUnion_le_of_mem_sets`), so the union of
 a strictly increasing sequence, or of a pairwise disjoint sequence with infinitely many
@@ -96,16 +107,21 @@ nonempty terms, is not in the ring
 {name}`Goldblatt.InternalMeasure.iUnion_notMem_sets_of_pairwise_disjoint`). The enlargement of
 an algebra is an algebra ({name}`Goldblatt.InternalMeasure.isAlgebraOfSets_sets`), and the
 star-Borel sets are an algebra that is not a sigma-algebra
-({name}`Goldblatt.InternalMeasure.not_isSigmaRing_sets_starBorel`). The closure of the
-enlargement of a sigma-algebra under unions of internal sequences is not formalized.
+({name}`Goldblatt.InternalMeasure.not_isSigmaRing_sets_starBorel`). What the enlargement of
+a sigma-algebra does have is closure under unions of internal sequences indexed by the
+hypernaturals ({name}`Goldblatt.InternalMeasure.internalSet_iUnion_mem_sets`,
+{name}`Goldblatt.internalSet_iUnion_eq_iUnion`,
+{name}`Goldblatt.InternalMeasure.internalSet_iUnion_mem_sets_starBorel`).
 
 ## 16.2 Measures
 
 Part 1 defines finitely additive functions and measures on a ring
 ({name}`Goldblatt.IsFinitelyAdditive`, {name}`Goldblatt.IsMeasureOnRing`) and proves the
 listed consequences: finite additivity, monotonicity, subtractivity, continuity along
-increasing sequences, and the examples of the counting measure and of Lebesgue measure on
-intervals. Parts 3 and 4 have the nonstandard examples: the shadow of an internal finitely
+increasing sequences, and the examples of the counting measure, which is Mathlib's
+({name}`Goldblatt.countingMeasure_eq_count`), and of Lebesgue measure on the ring of intervals,
+which is the unique additive extension of the length of intervals
+({name}`Goldblatt.eq_volume_of_isFinitelyAdditive_leftOpenRing`). Parts 3 and 4 have the nonstandard examples: the shadow of an internal finitely
 additive function is a measure on its internal ring
 ({name}`Goldblatt.LoebPremeasure.isMeasureOnRing`,
 {name}`Goldblatt.InternalMeasure.isMeasureOnRing_μL`), the weighted counting functions on a
@@ -176,7 +192,13 @@ weight $`1/N` ({name}`Goldblatt.gridMeasure`, {name}`Goldblatt.gridLoeb`), prove
 ({name}`Goldblatt.lebesgueMeasurable_iff_loebMeasurable_shInv`,
 {name}`Goldblatt.volume_eq_loebMeasure_shInv`), together with the remarks of the section,
 among them that every real number lies between two adjacent grid points in its halo
-({name}`Goldblatt.exists_mem_hyperGrid_le_lt`). Theorem 16.8.1 is proved by counting grid
-points index by index, not with the internal least and greatest grid points of the book's
-argument.
+({name}`Goldblatt.exists_mem_hyperGrid_le_lt`) and that the algebra of internal subsets of the
+grid is internal and hyperfinite with hyperfinite members
+({name}`Goldblatt.gridLoeb_ring_eq_image_and_isHyperfiniteSet`,
+{name}`Goldblatt.isHyperfinite_of_mem_gridLoeb_ring`). Theorem 16.8.1 is proved by the book's
+argument: the grid points in a real interval have a least and a greatest element, infinitely
+close to the end points, and their internal cardinality is determined by these
+({name}`Goldblatt.exists_isLeast_isGreatest_hyperGrid_inter_Ioo`,
+{name}`Goldblatt.gridLoeb_μL_Ioo_of_lt`); the least and greatest elements are produced as
+classes of the least and greatest points of the finite grids.
 -/

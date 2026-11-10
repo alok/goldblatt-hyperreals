@@ -23,9 +23,9 @@ open scoped ENNReal Topology Hyperreal
 /-!
 ## 16.8 Lebesgue Measure via Loeb Measure
 
-The first step counts the grid points in a real interval: for the standard grid of mesh
-$`1/N` the number of points in $`(a, b)` differs from $`(b - a)N` by at most one, so the
-normalised count tends to $`b - a` along the index ultrafilter when $`N` is unlimited
+The first step counts the grid points in a real interval $`(a, b)`: they run from a least
+one $`s \simeq a` to a greatest one $`t \simeq b` in steps of $`1/N`, so there are
+$`(t - s)N + 1` of them and their weighted number is infinitely close to $`b - a`
 (Theorem 16.8.1). The inverse shadow then transports the Loeb measure to a measure on the
 Borel sets of the real line which gives intervals their length and is therefore Lebesgue
 measure (Lemma 16.8.3), and approximation of Loeb measurable sets by internal sets, whose
@@ -100,6 +100,62 @@ theorem abs_ncard_gridFinset_inter_Ioo_sub_le {N : ℕ} (hN : 0 < N) {a b : ℝ}
     have hnn : 0 ≤ (b - a) * N := mul_nonneg (sub_nonneg.2 hab) hN'
     rw [hz, Nat.cast_zero, zero_sub, abs_neg, abs_of_nonneg hnn, e]
     linarith
+
+/-- **Theorem 16.8.1, at one index.** When the mesh is fine enough that $`(b - a)N > 1`, the
+least grid point in $`(a, b)` is $`(\lfloor aN \rfloor + 1)/N`. -/
+theorem isLeast_gridFinset_inter_Ioo {N : ℕ} (hN : 0 < N) {a b : ℝ} (ha : |a| < N)
+    (hb : |b| < N) (hab : 1 < (b - a) * N) :
+    IsLeast (↑(gridFinset N) ∩ Ioo a b : Set ℝ) (((⌊a * N⌋ + 1 : ℤ) : ℝ) / N) := by
+  have hN' : (0 : ℝ) < N := by exact_mod_cast hN
+  rw [coe_gridFinset_inter_Ioo hN ha hb]
+  have h3 := Int.floor_le (a * N)
+  have h1 := Int.le_ceil (b * N)
+  constructor
+  · refine ⟨⌊a * N⌋ + 1, Finset.mem_coe.2 (Finset.mem_Ioo.2 ⟨by omega, ?_⟩), rfl⟩
+    have : ((⌊a * N⌋ + 1 : ℤ) : ℝ) < (⌈b * N⌉ : ℝ) := by push_cast; nlinarith
+    exact_mod_cast this
+  · rintro _ ⟨k, hk, rfl⟩
+    have hk' := (Finset.mem_Ioo.1 (Finset.mem_coe.1 hk)).1
+    have : ((⌊a * N⌋ + 1 : ℤ) : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk'
+    exact div_le_div_of_nonneg_right this hN'.le
+
+/-- **Theorem 16.8.1, at one index.** When $`(b - a)N > 1`, the greatest grid point in
+$`(a, b)` is $`(\lceil bN \rceil - 1)/N`. -/
+theorem isGreatest_gridFinset_inter_Ioo {N : ℕ} (hN : 0 < N) {a b : ℝ} (ha : |a| < N)
+    (hb : |b| < N) (hab : 1 < (b - a) * N) :
+    IsGreatest (↑(gridFinset N) ∩ Ioo a b : Set ℝ) (((⌈b * N⌉ - 1 : ℤ) : ℝ) / N) := by
+  have hN' : (0 : ℝ) < N := by exact_mod_cast hN
+  rw [coe_gridFinset_inter_Ioo hN ha hb]
+  have h3 := Int.floor_le (a * N)
+  have h1 := Int.le_ceil (b * N)
+  constructor
+  · refine ⟨⌈b * N⌉ - 1, Finset.mem_coe.2 (Finset.mem_Ioo.2 ⟨?_, by omega⟩), rfl⟩
+    have : (⌊a * N⌋ : ℝ) < ((⌈b * N⌉ - 1 : ℤ) : ℝ) := by push_cast; nlinarith
+    exact_mod_cast this
+  · rintro _ ⟨k, hk, rfl⟩
+    have hk' := (Finset.mem_Ioo.1 (Finset.mem_coe.1 hk)).2
+    have : (k : ℝ) ≤ ((⌈b * N⌉ - 1 : ℤ) : ℝ) := by exact_mod_cast Int.le_sub_one_of_lt hk'
+    exact div_le_div_of_nonneg_right this hN'.le
+
+/-- **Theorem 16.8.1, at one index.** The grid points in $`(a, b)` are the points
+$`s, s + \tfrac1N, \dots, t` between the least one $`s` and the greatest one $`t`, so their
+number is $`(t - s)N + 1`. -/
+theorem ncard_gridFinset_inter_Ioo_eq {N : ℕ} (hN : 0 < N) {a b : ℝ} (ha : |a| < N)
+    (hb : |b| < N) (hab : 1 < (b - a) * N) :
+    ((↑(gridFinset N) ∩ Ioo a b : Set ℝ).ncard : ℝ) =
+      (((⌈b * N⌉ - 1 : ℤ) : ℝ) / N - ((⌊a * N⌋ + 1 : ℤ) : ℝ) / N) * N + 1 := by
+  have hN' : (N : ℝ) ≠ 0 := by exact_mod_cast hN.ne'
+  rw [ncard_gridFinset_inter_Ioo hN ha hb]
+  have h3 := Int.floor_le (a * N)
+  have h1 := Int.le_ceil (b * N)
+  have h : 0 ≤ ⌈b * N⌉ - ⌊a * N⌋ - 1 := by
+    have : (0 : ℝ) < ((⌈b * N⌉ - ⌊a * N⌋ - 1 + 1 : ℤ) : ℝ) := by push_cast; nlinarith
+    have : (0 : ℤ) < ⌈b * N⌉ - ⌊a * N⌋ - 1 + 1 := by exact_mod_cast this
+    omega
+  rw [← Int.cast_natCast, Int.toNat_of_nonneg h]
+  push_cast
+  field_simp
+  ring
 
 end FiniteGrid
 
@@ -235,10 +291,135 @@ theorem hyperGrid_inter_Ioo_mem_ring (ν : ℕ → ℕ) (a b : ℝ) :
   rw [hyperGrid_inter_Ioo]
   exact ⟨_, rfl, Eventually.of_forall fun n => inter_subset_left⟩
 
-/-- **Theorem 16.8.1, the limit.** The normalised number of points of the $`n`-th grid in
-$`(a, b)` tends to $`b - a` along the index ultrafilter. The count is made index by index, in each finite grid
-({name}`Goldblatt.abs_ncard_gridFinset_inter_Ioo_sub_le`), and not with the least and greatest
-grid points of the internal set, which is how the book argues. -/
+/-- **Theorem 16.8.1, first step of the proof.** The set $`A = S \cap {}^*(a, b)` of grid
+points between $`a` and $`b` is hyperfinite. -/
+theorem isHyperfinite_hyperGrid_inter_Ioo (ν : ℕ → ℕ) (a b : ℝ) :
+    IsHyperfinite (hyperGrid ν ∩ Ioo (a : ℝ*) b) :=
+  isHyperfinite_of_mem_gridLoeb_ring (hyperGrid_inter_Ioo_mem_ring ν a b)
+
+/-- **Theorem 16.8.1, the body of the proof.** For real numbers $`a < b`, the hyperfinite set
+$`A` of grid points between $`a` and $`b` has a least element $`s` and a greatest element
+$`t`; they are infinitely close to $`a` and $`b`; and the internal cardinality of $`A` is
+$`(t - s)N + 1`, because $`A = \{s, s + \tfrac1N, \dots, t\}`.
+
+The book obtains $`s` and $`t` from hyperfiniteness of $`A`, gets $`s \simeq a` and
+$`t \simeq b` from the fact that reals are approximated by grid points, and counts $`A` by an
+internal bijection with an initial segment of the hypernaturals. In the ultrapower each step
+is the corresponding statement about the finite grids at almost all indices
+({name}`Goldblatt.isLeast_gridFinset_inter_Ioo`,
+{name}`Goldblatt.isGreatest_gridFinset_inter_Ioo`,
+{name}`Goldblatt.ncard_gridFinset_inter_Ioo_eq`): $`s` and $`t` are the classes of the least
+and greatest grid points of the finite grids, which lie within $`1/\nu_n` of $`a` and
+$`b`. -/
+theorem exists_isLeast_isGreatest_hyperGrid_inter_Ioo (hν : Unlimited (hnat ν)) {a b : ℝ}
+    (hab : a < b) :
+    ∃ s t : ℝ*, IsLeast (hyperGrid ν ∩ Ioo (a : ℝ*) b) s ∧
+      IsGreatest (hyperGrid ν ∩ Ioo (a : ℝ*) b) t ∧ s ≊ (a : ℝ*) ∧ t ≊ (b : ℝ*) ∧
+      hcard (hyperGrid ν ∩ Ioo (a : ℝ*) b) = (t - s) * hnat ν + 1 := by
+  obtain ⟨M, hM⟩ := exists_nat_gt (max (max |a| |b|) (1 / (b - a)))
+  have hev : ∀ᶠ n in hyperfilter ℕ,
+      0 < ν n ∧ |a| < ν n ∧ |b| < ν n ∧ 1 < (b - a) * ν n := by
+    filter_upwards [eventually_lt_of_unlimited_hnat hν M] with n hn
+    have hMn : (M : ℝ) < ν n := by exact_mod_cast hn
+    have ha : |a| < ν n :=
+      lt_of_le_of_lt ((le_max_left _ _).trans (le_max_left _ _)) (hM.trans hMn)
+    have hb : |b| < ν n :=
+      lt_of_le_of_lt ((le_max_right _ _).trans (le_max_left _ _)) (hM.trans hMn)
+    have he : 1 / (b - a) < ν n := lt_of_le_of_lt (le_max_right _ _) (hM.trans hMn)
+    have hpos : (0 : ℝ) < ν n := lt_of_le_of_lt (abs_nonneg a) ha
+    exact ⟨by exact_mod_cast hpos, ha, hb, (div_lt_iff₀' (sub_pos.2 hab)).1 he⟩
+  let σ : ℕ → ℝ := fun n => ((⌊a * ν n⌋ + 1 : ℤ) : ℝ) / ν n
+  let τ : ℕ → ℝ := fun n => ((⌈b * ν n⌉ - 1 : ℤ) : ℝ) / ν n
+  have hinf : Infinitesimal (hnat ν)⁻¹ := hν.inv_infinitesimal
+  have hinv0 : 0 ≤ (hnat ν)⁻¹ := inv_nonneg.2 (hyperNat_nonneg (hnat_mem_hyperNat ν))
+  refine ⟨Hyperreal.ofSeq σ, Hyperreal.ofSeq τ, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [hyperGrid_inter_Ioo]
+    constructor
+    · exact hyperreal_ofSeq_mem_internalSet.2 (hev.mono fun n hn =>
+        (isLeast_gridFinset_inter_Ioo hn.1 hn.2.1 hn.2.2.1 hn.2.2.2).1)
+    · intro x hx
+      obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
+      rw [ofSeq_le_ofSeq_iff]
+      filter_upwards [hev, hyperreal_ofSeq_mem_internalSet.1 hx] with n hn hr
+      exact (isLeast_gridFinset_inter_Ioo hn.1 hn.2.1 hn.2.2.1 hn.2.2.2).2 hr
+  · rw [hyperGrid_inter_Ioo]
+    constructor
+    · exact hyperreal_ofSeq_mem_internalSet.2 (hev.mono fun n hn =>
+        (isGreatest_gridFinset_inter_Ioo hn.1 hn.2.1 hn.2.2.1 hn.2.2.2).1)
+    · intro x hx
+      obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
+      rw [ofSeq_le_ofSeq_iff]
+      filter_upwards [hev, hyperreal_ofSeq_mem_internalSet.1 hx] with n hn hr
+      exact (isGreatest_gridFinset_inter_Ioo hn.1 hn.2.1 hn.2.2.1 hn.2.2.2).2 hr
+  · have h1 : (a : ℝ*) ≤ Hyperreal.ofSeq σ := by
+      change Hyperreal.ofSeq (fun _ => a) ≤ Hyperreal.ofSeq σ
+      rw [ofSeq_le_ofSeq_iff]
+      filter_upwards [hev] with n hn
+      have hpos : (0 : ℝ) < ν n := by exact_mod_cast hn.1
+      rw [le_div_iff₀ hpos]
+      push_cast
+      linarith [Int.lt_floor_add_one (a * ν n)]
+    have h2 : Hyperreal.ofSeq σ ≤ (a : ℝ*) + (hnat ν)⁻¹ := by
+      change Hyperreal.ofSeq σ ≤ Hyperreal.ofSeq fun n => a + (ν n : ℝ)⁻¹
+      rw [ofSeq_le_ofSeq_iff]
+      filter_upwards [hev] with n hn
+      have hpos : (0 : ℝ) < ν n := by exact_mod_cast hn.1
+      rw [div_le_iff₀ hpos, add_mul, inv_mul_cancel₀ hpos.ne']
+      push_cast
+      linarith [Int.floor_le (a * ν n)]
+    refine hinf.of_abs_le ?_
+    rw [abs_of_nonneg (sub_nonneg.2 h1), abs_of_nonneg hinv0]
+    linarith
+  · have h1 : Hyperreal.ofSeq τ ≤ (b : ℝ*) := by
+      change Hyperreal.ofSeq τ ≤ Hyperreal.ofSeq fun _ => b
+      rw [ofSeq_le_ofSeq_iff]
+      filter_upwards [hev] with n hn
+      have hpos : (0 : ℝ) < ν n := by exact_mod_cast hn.1
+      rw [div_le_iff₀ hpos]
+      push_cast
+      linarith [Int.ceil_lt_add_one (b * ν n)]
+    have h2 : (b : ℝ*) - (hnat ν)⁻¹ ≤ Hyperreal.ofSeq τ := by
+      change Hyperreal.ofSeq (fun n => b - (ν n : ℝ)⁻¹) ≤ Hyperreal.ofSeq τ
+      rw [ofSeq_le_ofSeq_iff]
+      filter_upwards [hev] with n hn
+      have hpos : (0 : ℝ) < ν n := by exact_mod_cast hn.1
+      rw [le_div_iff₀ hpos, sub_mul, inv_mul_cancel₀ hpos.ne']
+      push_cast
+      linarith [Int.le_ceil (b * ν n)]
+    refine hinf.of_abs_le ?_
+    rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.2 h1), abs_of_nonneg hinv0]
+    linarith
+  · rw [hyperGrid_inter_Ioo, hcard, internalCard_internalSet]
+    change Hyperreal.ofSeq (fun n => ((↑(gridFinset (ν n)) ∩ Ioo a b : Set ℝ).ncard : ℝ)) =
+      Hyperreal.ofSeq fun n => (τ n - σ n) * (ν n : ℝ) + 1
+    rw [ofSeq_eq_ofSeq_iff]
+    filter_upwards [hev] with n hn
+    exact ncard_gridFinset_inter_Ioo_eq hn.1 hn.2.1 hn.2.2.1 hn.2.2.2
+
+/-- **Theorem 16.8.1**, for $`a < b`, by the book's argument: with $`s, t` the least and
+greatest grid points in $`(a, b)`,
+$`\mu(A) = |A|/N = (t - s) + \tfrac1N \simeq b - a`, so $`\mu_L(A) = b - a`. -/
+theorem gridLoeb_μL_Ioo_of_lt (hν : Unlimited (hnat ν)) {a b : ℝ} (hab : a < b) :
+    (gridLoeb ν).μL (hyperGrid ν ∩ Ioo (a : ℝ*) b) = ENNReal.ofReal (b - a) := by
+  obtain ⟨s, t, -, -, hs, ht, hc⟩ := exists_isLeast_isGreatest_hyperGrid_inter_Ioo hν hab
+  have hμ := gridMeasure_μ_eq hν (hyperGrid_inter_Ioo_mem_ring ν a b)
+  have hN0 : hnat ν ≠ 0 := hν.ne_zero
+  have hq : hcard (hyperGrid ν ∩ Ioo (a : ℝ*) b) / hnat ν = (t - s) + (hnat ν)⁻¹ := by
+    rw [hc]; field_simp
+  have hinf : Infinitesimal (hnat ν)⁻¹ := hν.inv_infinitesimal
+  have hlt : Limited t := limited_of_infClose_coe ht
+  have hls : Limited s := limited_of_infClose_coe hs
+  change loebSh ((gridMeasure ν).μ _) = _
+  rw [hμ, hq, loebSh_of_limited ((hlt.sub hls).add hinf.limited),
+    sh_add_infinitesimal (hlt.sub hls) hinf, sh_sub hlt hls, sh_eq_of_infClose ht,
+    sh_eq_of_infClose hs]
+
+/-- **Theorem 16.8.1, a second proof of the count.** The normalised number of points of the
+$`n`-th grid in $`(a, b)` tends to $`b - a` along the index ultrafilter, because the number
+of grid points differs from $`(b - a)\nu_n` by at most one
+({name}`Goldblatt.abs_ncard_gridFinset_inter_Ioo_sub_le`). This standard estimate gives
+$`\mu_L(A) = b - a` without the least and greatest elements of the book's proof; it is kept as
+an alternative to {name}`Goldblatt.gridLoeb_μL_Ioo_of_lt`. -/
 theorem tendsto_gridMeasure_Ioo (hν : Unlimited (hnat ν)) {a b : ℝ} (hab : a ≤ b) :
     Tendsto (fun n => (gridMeasure ν).m n (↑(gridFinset (ν n)) ∩ Ioo a b)) (hyperfilter ℕ)
       (𝓝 (ENNReal.ofReal (b - a))) := by
@@ -275,22 +456,25 @@ theorem tendsto_gridMeasure_Ioo (hν : Unlimited (hnat ν)) {a b : ℝ} (hab : a
 
 /-- **Theorem 16.8.1.** For real numbers $`a` and $`b`,
 $`\mu_L(\{s \in S : a < s < b\}) = b - a`: the weighted number of grid points between $`a`
-and $`b` is the length of the interval. (For $`b \le a` both sides are zero.)
-
-The proof departs from the book's. The book takes the least and greatest elements $`s, t` of
-the hyperfinite set of grid points in the interval, shows $`s \simeq a` and $`t \simeq b`,
-and counts the points between them inside the nonstandard universe. Here the grid points of
-each finite grid in $`(a, b)` are counted, their number divided by $`\nu_n` is within
-$`1/\nu_n` of $`b - a`, and the limit is taken along the index ultrafilter
-({name}`Goldblatt.tendsto_gridMeasure_Ioo`). -/
+and $`b` is the length of the interval. The book assumes $`a < b`; that case is
+{name}`Goldblatt.gridLoeb_μL_Ioo_of_lt`, proved by the book's argument with the least and
+greatest grid points of the interval
+({name}`Goldblatt.exists_isLeast_isGreatest_hyperGrid_inter_Ioo`). For $`b \le a` both sides
+are zero. -/
 theorem gridLoeb_μL_Ioo (hν : Unlimited (hnat ν)) (a b : ℝ) :
     (gridLoeb ν).μL (hyperGrid ν ∩ Ioo (a : ℝ*) b) = ENNReal.ofReal (b - a) := by
-  rcases le_or_gt a b with hab | hab
-  · rw [hyperGrid_inter_Ioo]
-    exact tendsto_nhds_unique ((gridMeasure ν).tendsto_μL _) (tendsto_gridMeasure_Ioo hν hab)
-  · have h0 : Ioo (a : ℝ*) b = ∅ := Ioo_eq_empty (not_lt.2 (Hyperreal.coe_le_coe.2 hab.le))
+  rcases lt_or_ge a b with hab | hab
+  · exact gridLoeb_μL_Ioo_of_lt hν hab
+  · have h0 : Ioo (a : ℝ*) b = ∅ := Ioo_eq_empty (not_lt.2 (Hyperreal.coe_le_coe.2 hab))
     rw [h0, inter_empty, ENNReal.ofReal_of_nonpos (by linarith)]
     exact (gridLoeb ν).isFinitelyAdditive.empty
+
+/-- **Theorem 16.8.1**, by the standard count: the same value obtained from
+{name}`Goldblatt.tendsto_gridMeasure_Ioo` as a limit along the index ultrafilter. -/
+theorem gridLoeb_μL_Ioo_of_le (hν : Unlimited (hnat ν)) {a b : ℝ} (hab : a ≤ b) :
+    (gridLoeb ν).μL (hyperGrid ν ∩ Ioo (a : ℝ*) b) = ENNReal.ofReal (b - a) := by
+  rw [hyperGrid_inter_Ioo]
+  exact tendsto_nhds_unique ((gridMeasure ν).tendsto_μL _) (tendsto_gridMeasure_Ioo hν hab)
 
 /-- **Theorem 16.8.1**, for the Loeb measure: the set of grid points between $`a` and $`b`
 is Loeb measurable and has Loeb measure $`b - a`. -/
