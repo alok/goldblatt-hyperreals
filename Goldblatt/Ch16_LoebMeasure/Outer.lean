@@ -227,25 +227,36 @@ theorem isComplete_caratheodoryMeasure (m : OuterMeasure S) :
   @Measure.IsComplete.mk S m.caratheodory (caratheodoryMeasure m) fun B hB =>
     isCaratheodory_of_null (le_antisymm ((le_caratheodoryMeasure_apply m B).trans_eq hB) zero_le)
 
+/-- **Section 16.3.** If $`A \subseteq B` with $`A` measurable and
+$`\mu^+(A) = \mu^+(B) < \infty`, then every subset of $`B - A` is measurable and null.
+
+The book omits the finiteness hypothesis, but without it the statement fails: for Lebesgue
+measure take $`A = [0, \infty)` and $`B = \mathbb R`. -/
+theorem isCaratheodory_of_subset_diff {m : OuterMeasure S} {A B E : Set S}
+    (hA : m.IsCaratheodory A) (hAB : A ⊆ B) (h : m A = m B) (hfin : m A ≠ ∞)
+    (hE : E ⊆ B \ A) : m.IsCaratheodory E ∧ m E = 0 := by
+  have h1 := hA B
+  rw [inter_eq_right.2 hAB, ← h] at h1
+  have h0 : m (B \ A) = 0 := by
+    have : m A + 0 = m A + m (B \ A) := by rw [add_zero]; exact h1
+    exact ((ENNReal.add_right_inj hfin).1 this).symm
+  exact ⟨isCaratheodory_of_subset_null hE h0, le_antisymm ((measure_mono hE).trans_eq h0) zero_le⟩
+
 /-- **Section 16.3.** If $`A \subseteq C \subseteq B` with $`A` and $`B` measurable and
 $`\mu^+(A) = \mu^+(B) < \infty`, then $`C` is measurable and
-$`\mu^+(C) = \mu^+(A) = \mu^+(B)`.
+$`\mu^+(C) = \mu^+(A) = \mu^+(B)`, because $`C - A` is a subset of $`B - A`
+({name}`Goldblatt.isCaratheodory_of_subset_diff`).
 
 The book omits the finiteness hypothesis, but without it the statement fails: for Lebesgue
 measure take $`A = [0, \infty)` and $`B = \mathbb R`. -/
 theorem isCaratheodory_of_between {m : OuterMeasure S} {A B C : Set S}
     (hA : m.IsCaratheodory A) (hAC : A ⊆ C) (hCB : C ⊆ B) (hAB : m A = m B)
     (hfin : m A ≠ ∞) : m.IsCaratheodory C ∧ m C = m A := by
-  have h1 := hA B
-  rw [inter_eq_right.2 (hAC.trans hCB), ← hAB] at h1
-  have h0 : m (B \ A) = 0 := by
-    have : m A + 0 = m A + m (B \ A) := by rw [add_zero]; exact h1
-    exact ((ENNReal.add_right_inj hfin).1 this).symm
   have hC : C = A ∪ (C \ A) := by rw [union_sdiff_cancel hAC]
   refine ⟨?_, le_antisymm ?_ (measure_mono hAC)⟩
   · rw [hC]
     exact m.isCaratheodory_union hA
-      (isCaratheodory_of_subset_null (sdiff_subset_sdiff_left hCB) h0)
+      (isCaratheodory_of_subset_diff hA (hAC.trans hCB) hAB hfin (sdiff_subset_sdiff_left hCB)).1
   · rw [hAB]; exact measure_mono hCB
 
 /-- **Section 16.3, uniqueness of the extension.** Let $`\mu` be a sigma-finite measure on a

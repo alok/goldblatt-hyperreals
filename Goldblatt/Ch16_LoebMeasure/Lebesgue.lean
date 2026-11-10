@@ -217,7 +217,9 @@ theorem hyperGrid_inter_Ioo_mem_ring (ν : ℕ → ℕ) (a b : ℝ) :
   exact ⟨_, rfl, Eventually.of_forall fun n => inter_subset_left⟩
 
 /-- **Theorem 16.8.1, the limit.** The normalised number of points of the $`n`-th grid in
-$`(a, b)` tends to $`b - a` along the index ultrafilter. -/
+$`(a, b)` tends to $`b - a` along the index ultrafilter. The count is made index by index, in each finite grid
+({name}`Goldblatt.abs_ncard_gridFinset_inter_Ioo_sub_le`), and not with the least and greatest
+grid points of the internal set, which is how the book argues. -/
 theorem tendsto_gridMeasure_Ioo (hν : Unlimited (hnat ν)) {a b : ℝ} (hab : a ≤ b) :
     Tendsto (fun n => (gridMeasure ν).m n (↑(gridFinset (ν n)) ∩ Ioo a b)) (hyperfilter ℕ)
       (𝓝 (ENNReal.ofReal (b - a))) := by
@@ -254,7 +256,14 @@ theorem tendsto_gridMeasure_Ioo (hν : Unlimited (hnat ν)) {a b : ℝ} (hab : a
 
 /-- **Theorem 16.8.1.** For real numbers $`a` and $`b`,
 $`\mu_L(\{s \in S : a < s < b\}) = b - a`: the weighted number of grid points between $`a`
-and $`b` is the length of the interval. (For $`b \le a` both sides are zero.) -/
+and $`b` is the length of the interval. (For $`b \le a` both sides are zero.)
+
+The proof departs from the book's. The book takes the least and greatest elements $`s, t` of
+the hyperfinite set of grid points in the interval, shows $`s \simeq a` and $`t \simeq b`,
+and counts the points between them inside the nonstandard universe. Here the grid points of
+each finite grid in $`(a, b)` are counted, their number divided by $`\nu_n` is within
+$`1/\nu_n` of $`b - a`, and the limit is taken along the index ultrafilter
+({name}`Goldblatt.tendsto_gridMeasure_Ioo`). -/
 theorem gridLoeb_μL_Ioo (hν : Unlimited (hnat ν)) (a b : ℝ) :
     (gridLoeb ν).μL (hyperGrid ν ∩ Ioo (a : ℝ*) b) = ENNReal.ofReal (b - a) := by
   rcases le_or_gt a b with hab | hab
@@ -609,43 +618,86 @@ theorem hcard_hyperGrid (hν : Unlimited (hnat ν)) :
   push_cast
   ring
 
-/-- **Section 16.8.** Each real number is approximated infinitely closely by grid points. The
-book derives this by transfer; here it follows from Theorem 16.8.1 and countable saturation:
-the internal sets of grid points within $`\tfrac1{n+1}` of $`r` have positive Loeb measure, so
-they are nonempty, and they decrease. -/
+/-- **Section 16.8.** For a real number $`r` there is a hyperinteger $`k` with $`|k| < N^2`
+and $`k/N \le r < (k+1)/N`. This is the transfer of the standard fact that for a positive
+integer $`n > |r| + 1` the integer $`k = \lfloor rn \rfloor` has $`|k| < n^2` and
+$`k/n \le r < (k+1)/n`; in the ultrapower $`k` is the class of
+$`(\lfloor r\nu_n \rfloor)`. -/
+theorem exists_hyperInt_div_le_lt (hν : Unlimited (hnat ν)) (r : ℝ) :
+    ∃ k ∈ ℤ*, |k| < hnat ν ^ 2 ∧ k / hnat ν ≤ (r : ℝ*) ∧ (r : ℝ*) < (k + 1) / hnat ν := by
+  obtain ⟨M, hM⟩ := exists_nat_gt (|r| + 1)
+  have hev : ∀ᶠ n in hyperfilter ℕ, |r| + 1 < ν n :=
+    (eventually_lt_of_unlimited_hnat hν M).mono fun n hn => hM.trans (by exact_mod_cast hn)
+  refine ⟨hint fun n => ⌊r * ν n⌋, hint_mem_hyperInt _, ?_, ?_, ?_⟩
+  · change Hyperreal.ofSeq (fun n => |((⌊r * ν n⌋ : ℤ) : ℝ)|) <
+      Hyperreal.ofSeq fun n => (ν n : ℝ) ^ 2
+    rw [ofSeq_lt_ofSeq_iff]
+    filter_upwards [hev] with n hn
+    have h1 := Int.floor_le (r * ν n)
+    have h2 := Int.lt_floor_add_one (r * ν n)
+    have ha := neg_abs_le r
+    have hb := le_abs_self r
+    have hpos : (0 : ℝ) < ν n := by linarith [abs_nonneg r]
+    rw [abs_lt]
+    constructor <;> nlinarith [mul_le_mul_of_nonneg_right ha hpos.le,
+      mul_le_mul_of_nonneg_right hb hpos.le, mul_pos (sub_pos.2 hn) hpos]
+  · change Hyperreal.ofSeq (fun n => ((⌊r * ν n⌋ : ℤ) : ℝ) / (ν n : ℝ)) ≤
+      Hyperreal.ofSeq fun _ => r
+    rw [ofSeq_le_ofSeq_iff]
+    filter_upwards [hev] with n hn
+    have hpos : (0 : ℝ) < ν n := by linarith [abs_nonneg r]
+    rw [div_le_iff₀ hpos]
+    exact Int.floor_le _
+  · change Hyperreal.ofSeq (fun _ => r) <
+      Hyperreal.ofSeq fun n => (((⌊r * ν n⌋ : ℤ) : ℝ) + 1) / (ν n : ℝ)
+    rw [ofSeq_lt_ofSeq_iff]
+    filter_upwards [hev] with n hn
+    have hpos : (0 : ℝ) < ν n := by linarith [abs_nonneg r]
+    rw [lt_div_iff₀ hpos]
+    exact Int.lt_floor_add_one _
+
+/-- **Section 16.8.** Every real number $`r` lies between two adjacent grid points, both in
+its halo: there are $`s, t \in S` with $`s \le r < t`, $`t - s = 1/N`, $`s \simeq r` and
+$`t \simeq r`. So $`r` is approximated by grid points from the left and from the right. -/
+theorem exists_mem_hyperGrid_le_lt (hν : Unlimited (hnat ν)) (r : ℝ) :
+    ∃ s ∈ hyperGrid ν, ∃ t ∈ hyperGrid ν, s ≤ (r : ℝ*) ∧ (r : ℝ*) < t ∧
+      t - s = (hnat ν)⁻¹ ∧ s ≊ (r : ℝ*) ∧ t ≊ (r : ℝ*) := by
+  obtain ⟨k, hk, hlt, h1, h2⟩ := exists_hyperInt_div_le_lt hν r
+  have hk1 : k + 1 ∈ ℤ* := by
+    obtain ⟨κ, rfl⟩ := exists_hint_eq hk
+    have : hint κ + 1 = hint fun n => κ n + 1 := by
+      change Hyperreal.ofSeq (fun n => (κ n : ℝ) + 1) =
+        Hyperreal.ofSeq fun n => ((κ n + 1 : ℤ) : ℝ)
+      exact ofSeq_eq_ofSeq_iff.2 (Eventually.of_forall fun n => by push_cast; rfl)
+    rw [this]
+    exact hint_mem_hyperInt _
+  have hN2 : hnat ν ^ 2 ∈ ℤ* := by
+    have : hnat ν ^ 2 = hint fun n => (ν n : ℤ) ^ 2 := by
+      change Hyperreal.ofSeq (fun n => (ν n : ℝ) ^ 2) =
+        Hyperreal.ofSeq fun n => (((ν n : ℤ) ^ 2 : ℤ) : ℝ)
+      exact ofSeq_eq_ofSeq_iff.2 (Eventually.of_forall fun n => by push_cast; rfl)
+    rw [this]
+    exact hint_mem_hyperInt _
+  have hts : (k + 1) / hnat ν - k / hnat ν = (hnat ν)⁻¹ := by ring
+  have hinf : Infinitesimal (hnat ν)⁻¹ := hν.inv_infinitesimal
+  refine ⟨k / hnat ν, (mem_hyperGrid_iff ν).2 ⟨k, hk, hlt.le, rfl⟩, (k + 1) / hnat ν,
+    (mem_hyperGrid_iff ν).2 ⟨k + 1, hk1, ?_, rfl⟩, h1, h2, hts, ?_, ?_⟩
+  · have h3 := abs_lt.1 hlt
+    exact abs_le.2 ⟨by linarith, add_one_le_of_lt_of_mem_hyperInt hk hN2 h3.2⟩
+  · refine hinf.of_abs_le ?_
+    rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.2 h1), abs_of_nonneg (by rw [← hts]; linarith)]
+    linarith
+  · refine hinf.of_abs_le ?_
+    rw [abs_of_nonneg (sub_nonneg.2 h2.le), abs_of_nonneg (by rw [← hts]; linarith)]
+    linarith
+
+/-- **Section 16.8.** Every real number has a grid point in its halo. This is the one-point
+form of {name}`Goldblatt.exists_mem_hyperGrid_le_lt`, which gives grid points on both
+sides. -/
 theorem exists_mem_hyperGrid_infClose (hν : Unlimited (hnat ν)) (r : ℝ) :
     ∃ s ∈ hyperGrid ν, s ≊ (r : ℝ*) := by
-  have hint : ∀ n : ℕ, IsInternal (hyperGrid ν ∩
-      Ioo ((r - 1 / ((n : ℝ) + 1) : ℝ) : ℝ*) ((r + 1 / ((n : ℝ) + 1) : ℝ) : ℝ*)) := fun n => by
-    rw [hyperGrid_inter_Ioo]; exact isInternalSet_internalSet _
-  have hne : ∀ n : ℕ, (hyperGrid ν ∩
-      Ioo ((r - 1 / ((n : ℝ) + 1) : ℝ) : ℝ*) ((r + 1 / ((n : ℝ) + 1) : ℝ) : ℝ*)).Nonempty := by
-    intro n
-    by_contra hempty
-    have h := gridLoeb_μL_Ioo hν (r - 1 / ((n : ℝ) + 1)) (r + 1 / ((n : ℝ) + 1))
-    rw [not_nonempty_iff_eq_empty.1 hempty, (gridLoeb ν).isFinitelyAdditive.empty] at h
-    have hpos : (0 : ℝ) < 1 / ((n : ℝ) + 1) := by positivity
-    have h' := ENNReal.ofReal_eq_zero.1 h.symm
-    linarith
-  have hdec : ∀ n : ℕ, (hyperGrid ν ∩ Ioo ((r - 1 / (((n + 1 : ℕ) : ℝ) + 1) : ℝ) : ℝ*)
-      ((r + 1 / (((n + 1 : ℕ) : ℝ) + 1) : ℝ) : ℝ*)) ⊆ hyperGrid ν ∩
-      Ioo ((r - 1 / ((n : ℝ) + 1) : ℝ) : ℝ*) ((r + 1 / ((n : ℝ) + 1) : ℝ) : ℝ*) := by
-    intro n
-    have h : 1 / (((n + 1 : ℕ) : ℝ) + 1) ≤ 1 / ((n : ℝ) + 1) :=
-      one_div_le_one_div_of_le (by positivity) (by push_cast; linarith)
-    exact inter_subset_inter_right _ (Ioo_subset_Ioo (Hyperreal.coe_le_coe.2 (by linarith))
-      (Hyperreal.coe_le_coe.2 (by linarith)))
-  obtain ⟨s, hs⟩ := iInter_nonempty_of_isInternal hint hne hdec
-  have hs' := mem_iInter.1 hs
-  refine ⟨s, (hs' 0).1, ?_⟩
-  change Infinitesimal (s - (r : ℝ*))
-  refine infinitesimal_of_forall_abs_lt_one_div fun n => ?_
-  obtain ⟨-, h1, h2⟩ := hs' n
-  have h1' : (r : ℝ*) - ((1 / ((n : ℝ) + 1) : ℝ) : ℝ*) < s := h1
-  have h2' : s < (r : ℝ*) + ((1 / ((n : ℝ) + 1) : ℝ) : ℝ*) := h2
-  rw [coe_one_div_natCast_add_one] at h1' h2'
-  rw [abs_lt]
-  constructor <;> linarith
+  obtain ⟨s, hs, -, -, -, -, -, hsr, -⟩ := exists_mem_hyperGrid_le_lt hν r
+  exact ⟨s, hs, hsr⟩
 
 /-- **Section 16.8.** The set of limited grid points is not internal, although it is Loeb
 measurable. If it were internal it would be the union of finitely many of the sets

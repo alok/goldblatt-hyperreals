@@ -83,10 +83,21 @@ Part 1 defines rings, algebras, sigma-rings and sigma-algebras of sets
 ({name}`Goldblatt.sigmaGenerated`), and proves the first four examples: finite, cofinite and
 countable sets, the ring of finite unions of left-open intervals
 ({name}`Goldblatt.leftOpenRing`) and the Borel sets. Part 4 has the two examples about
-internal sets: the internal subsets of a hyperfinite set form an algebra that is not a
-sigma-algebra ({name}`Goldblatt.not_isSigmaRing_internal_subsets`), and in an internal ring a
-countable union of members lies in the ring only if it is a finite union
-({name}`Goldblatt.InternalMeasure.exists_iUnion_eq_biUnion_le_of_mem_sets`).
+internal sets. The internal subsets of the hyperfinite set of hypernaturals from $`1` to
+$`N` form an algebra of subsets of it
+({name}`Goldblatt.isRingOfSets_internal_subsets`,
+{name}`Goldblatt.setOf_hyperNat_one_le_le_mem_internal_subsets`) that is not a sigma-algebra
+({name}`Goldblatt.not_isSigmaRing_internal_subsets`). If the union of a sequence of members of
+an internal ring is in the ring, then finitely many terms already have that union
+({name}`Goldblatt.InternalMeasure.exists_iUnion_eq_biUnion_le_of_mem_sets`), so the union of
+a strictly increasing sequence, or of a pairwise disjoint sequence with infinitely many
+nonempty terms, is not in the ring
+({name}`Goldblatt.InternalMeasure.iUnion_notMem_sets_of_ssubset`,
+{name}`Goldblatt.InternalMeasure.iUnion_notMem_sets_of_pairwise_disjoint`). The enlargement of
+an algebra is an algebra ({name}`Goldblatt.InternalMeasure.isAlgebraOfSets_sets`), and the
+star-Borel sets are an algebra that is not a sigma-algebra
+({name}`Goldblatt.InternalMeasure.not_isSigmaRing_sets_starBorel`). The closure of the
+enlargement of a sigma-algebra under unions of internal sequences is not formalized.
 
 ## 16.2 Measures
 
@@ -98,10 +109,15 @@ intervals. Parts 3 and 4 have the nonstandard examples: the shadow of an interna
 additive function is a measure on its internal ring
 ({name}`Goldblatt.LoebPremeasure.isMeasureOnRing`,
 {name}`Goldblatt.InternalMeasure.isMeasureOnRing_μL`), the weighted counting functions on a
-hyperfinite set ({name}`Goldblatt.InternalMeasure.weighted`), the fact that every internal
+hyperfinite set ({name}`Goldblatt.InternalMeasure.weighted`) and their expression as
+hyperfinite sums in the sense of Section 12.7
+({name}`Goldblatt.InternalMeasure.μ_weighted_eq_internalSum`), the fact that every internal
 finitely additive function on the internal subsets of a hyperfinite set is one of them
-({name}`Goldblatt.InternalMeasure.m_eq_sum_singleton`), and the normalised counting measure
-({name}`Goldblatt.InternalMeasure.counting`).
+({name}`Goldblatt.InternalMeasure.μ_eq_μ_weighted_singleton`), and the normalised counting
+measure ({name}`Goldblatt.InternalMeasure.counting`) with its formula in terms of internal
+cardinalities ({name}`Goldblatt.InternalMeasure.μ_counting_eq_internalCard`). That the extended
+shadow is the function the book defines by cases on the whole enlargement of
+$`[0, \infty]` is {name}`Goldblatt.loebSh_eq_top_or_exists`.
 
 ## 16.3 Outer Measures
 
@@ -110,8 +126,10 @@ the book's formula ({name}`Goldblatt.ringOuter_apply`) and proves the listed pro
 agreement with the measure on the ring, monotonicity, countable subadditivity, increasing
 covers, the reduction of measurability to sets of finite outer measure, measurability of the
 members of the ring and of null sets, countable additivity and completeness on the measurable
-sets ({name}`Goldblatt.caratheodoryMeasure`), and uniqueness of the extension of a
-sigma-finite measure ({name}`Goldblatt.measure_eq_ringOuter`).
+sets ({name}`Goldblatt.caratheodoryMeasure`), uniqueness of the extension of a
+sigma-finite measure ({name}`Goldblatt.measure_eq_ringOuter`), and the two consequences of
+completeness for sets squeezed between measurable sets of equal finite measure
+({name}`Goldblatt.isCaratheodory_of_subset_diff`, {name}`Goldblatt.isCaratheodory_of_between`).
 
 ## 16.4 Lebesgue Measure
 
@@ -129,7 +147,12 @@ Part 3 defines the outer measure, the Loeb measurable sets and the Loeb measure 
 ({name}`Goldblatt.LoebPremeasure.outer_eq_iInf`) and Lemma 16.5.2
 ({name}`Goldblatt.LoebPremeasure.outer_eq_iSup`). Part 4 proves the saturation steps
 ({name}`Goldblatt.InternalMeasure.exists_upper`,
-{name}`Goldblatt.InternalMeasure.exists_between`).
+{name}`Goldblatt.InternalMeasure.exists_between`), and shows that the presentation of an
+internal measure by a sequence of rings with finitely additive functions covers every internal
+finitely additive function on an internal ring
+({name}`Goldblatt.eventually_isRingOfSets_of_internalCollection`,
+{name}`Goldblatt.eventually_isFinitelyAdditive_of_internalCollection`,
+{name}`Goldblatt.InternalMeasure.ofEventually`).
 
 ## 16.6 Approximability
 
@@ -151,5 +174,9 @@ weight $`1/N` ({name}`Goldblatt.gridMeasure`, {name}`Goldblatt.gridLoeb`), prove
 ({name}`Goldblatt.loebMeasurable_shInv_of_measurableSet`,
 {name}`Goldblatt.outer_shInv_eq_volume`) and Theorem 16.8.2
 ({name}`Goldblatt.lebesgueMeasurable_iff_loebMeasurable_shInv`,
-{name}`Goldblatt.volume_eq_loebMeasure_shInv`), together with the remarks of the section.
+{name}`Goldblatt.volume_eq_loebMeasure_shInv`), together with the remarks of the section,
+among them that every real number lies between two adjacent grid points in its halo
+({name}`Goldblatt.exists_mem_hyperGrid_le_lt`). Theorem 16.8.1 is proved by counting grid
+points index by index, not with the internal least and greatest grid points of the book's
+argument.
 -/
