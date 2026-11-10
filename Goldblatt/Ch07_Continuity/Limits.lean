@@ -37,8 +37,9 @@ the extension {name}`starMapOn` of a function whose domain is literally $`A`, an
 {name}`starMapOn_eq_starMap` shows that it agrees on the enlargement of $`A` with the
 extension of any total function that restricts to it. The corollary
 {lit}`continuousAt_subtype_iff_infClose` in Section 7.1 restates Theorem 7.1.3 in that
-form, for a function of type {lit}`A → ℝ`. For an open interval the enlargement is the hyperreal interval with
-the same end points ({name}`starSet_Ioo_real`), which is the remark that opens the chapter.
+form, for a function of type {lit}`A → ℝ`. For an open interval the enlargement is the
+hyperreal interval with the same end points ({name}`starSet_Ioo_real`), which is the remark
+that opens the chapter.
 
 This preliminary section is not a numbered section of the book. It collects, once and for all,
 the two transfer arguments that the book repeats for each kind of limit.

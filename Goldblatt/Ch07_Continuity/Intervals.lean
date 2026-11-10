@@ -37,7 +37,12 @@ them, $`d \simeq f(c)`, and two real numbers that are infinitely close are equal
 
 In the ultrapower an unlimited $`N` is the class of a sequence of natural numbers $`k_n` that
 tends to infinity along the index ultrafilter, $`s_N` is the class of $`n \mapsto s_{k_n}`,
-and "by transfer" means that the displayed facts hold at almost all indices.
+and "by transfer" means that the displayed facts hold at almost all indices. The points
+$`a + K(b - a)/N` of the partition with hypernatural indices are
+{lit}`hyperPartitionPoint`; the transferred facts about them are stated as separate lemmas
+({lit}`exists_hyperPartitionPoint_crossing` here, and
+{lit}`exists_hyperPartitionPoint_max` and {lit}`exists_hyperPartitionPoint_infClose` in
+Section 7.6), so that later chapters can use the same infinitesimal partitions.
 -/
 
 section Partition
@@ -112,8 +117,8 @@ theorem limited_of_mem_Icc (h : x ∈ Icc (a : ℝ*) b) : Limited x := by
   · exact Hyperreal.coe_lt_coe.2 (by linarith)
 
 /-- **Section 7.5, tool.** The shadow of a hyperreal between the reals $`a` and $`b` lies in
-$`[a, b]`. This is the
-property of closed bounded intervals on which the theorems of this part rest. -/
+$`[a, b]`. This is the property of closed bounded intervals on which the theorems of this
+part rest. -/
 theorem sh_mem_Icc (h : x ∈ Icc (a : ℝ*) b) : sh x ∈ Icc a b :=
   ⟨(limited_of_mem_Icc h).le_sh h.1, (limited_of_mem_Icc h).sh_le h.2⟩
 
@@ -129,59 +134,113 @@ theorem infinitesimal_width {N : ℝ*} (hN : N ∈ unlimitedHyperNat) (a b : ℝ
     Infinitesimal (((b - a : ℝ) : ℝ*) / N) :=
   (limited_coe _).div_unlimited (mem_unlimitedHyperNat.1 hN).2
 
+/-- **Sections 7.5 and 7.6, the infinitesimal partition.** The partition point
+$`a + K(b - a)/N` of the division of $`[a, b]` into $`N` equal parts, for hyperreal $`N` and
+$`K`. It is used with $`N` a hypernatural and $`K \le N` a hypernatural; when $`N` is
+unlimited these points form the book's partition of infinitesimal width. -/
+def hyperPartitionPoint (a b : ℝ) (N K : ℝ*) : ℝ* := (a : ℝ*) + K * (((b - a : ℝ) : ℝ*) / N)
+
+/-- **Sections 7.5 and 7.6, the infinitesimal partition.** At the hypernaturals $`N = [k_n]`
+and $`K = [j_n]` the partition point is the class of the sequence of standard partition
+points $`a + j_n(b - a)/k_n`. This is what makes transfer from the finite partitions
+possible. -/
+theorem hyperPartitionPoint_hnat (a b : ℝ) (k j : ℕ → ℕ) :
+    hyperPartitionPoint a b (hnat k) (hnat j) =
+      Hyperreal.ofSeq fun n => partitionPoint a b (k n) (j n) := rfl
+
+/-- **Sections 7.5 and 7.6, the infinitesimal partition.** At standard indices the hyperreal
+partition point is the standard one. -/
+theorem hyperPartitionPoint_natCast (a b : ℝ) (n k : ℕ) :
+    hyperPartitionPoint a b (n : ℝ*) (k : ℝ*) = (partitionPoint a b n k : ℝ) := rfl
+
+/-- **Sections 7.5 and 7.6, the infinitesimal partition.** The first partition point is
+$`a`. -/
+theorem hyperPartitionPoint_zero (a b : ℝ) (N : ℝ*) : hyperPartitionPoint a b N 0 = a := by
+  simp [hyperPartitionPoint]
+
+/-- **Sections 7.5 and 7.6, the infinitesimal partition.** The last partition point is
+$`b`. -/
+theorem hyperPartitionPoint_self (a b : ℝ) {N : ℝ*} (hN : N ≠ 0) :
+    hyperPartitionPoint a b N N = b := by
+  simp only [hyperPartitionPoint]
+  rw [mul_div_cancel₀ _ hN, Hyperreal.coe_sub]
+  ring
+
+/-- **Sections 7.5 and 7.6, the infinitesimal partition.** Consecutive partition points
+differ by the width $`(b - a)/N`. -/
+theorem hyperPartitionPoint_add_one (a b : ℝ) (N K : ℝ*) :
+    hyperPartitionPoint a b N (K + 1) =
+      hyperPartitionPoint a b N K + ((b - a : ℝ) : ℝ*) / N := by
+  simp only [hyperPartitionPoint]
+  ring
+
+/-- **Sections 7.5 and 7.6, the infinitesimal partition.** For hypernaturals $`K \le N` the
+partition point $`a + K(b - a)/N` lies in the enlargement of $`[a, b]`, by transfer of
+{name}`partitionPoint_mem_Icc`. -/
+theorem hyperPartitionPoint_mem_starSet_Icc (hab : a ≤ b) {N K : ℝ*} (hN : N ∈ ℕ*)
+    (hK : K ∈ ℕ*) (h : K ≤ N) : hyperPartitionPoint a b N K ∈ ⋆(Icc a b) := by
+  obtain ⟨k, rfl⟩ := exists_hnat_eq hN
+  obtain ⟨j, rfl⟩ := exists_hnat_eq hK
+  rw [hyperPartitionPoint_hnat]
+  exact hyperreal_ofSeq_mem_starSet.2 ((hnat_le_hnat_iff.1 h).mono fun n hn =>
+    partitionPoint_mem_Icc hab hn)
+
+/-- **Section 7.5, the point $`s_N`.** Transfer of {name}`exists_partitionPoint_crossing`:
+if $`f(a) < d \le f(b)` and $`N` is a nonzero hypernatural, there is a hypernatural
+$`K < N` such that the partition point $`s_N = a + K(b - a)/N` has
+$`{}^*f(s_N) < d \le {}^*f(s_N + (b - a)/N)`. This is the book's remark that $`s_N` has the
+form $`a + K(b - a)/N` for some hypernatural $`K`. -/
+theorem exists_hyperPartitionPoint_crossing (ha : f a < d) (hb : d ≤ f b) {N : ℝ*}
+    (hN : N ∈ ℕ*) (hN0 : N ≠ 0) :
+    ∃ K ∈ ℕ*, K < N ∧ ⋆f (hyperPartitionPoint a b N K) < d ∧
+      (d : ℝ*) ≤ ⋆f (hyperPartitionPoint a b N (K + 1)) := by
+  obtain ⟨k, rfl⟩ := exists_hnat_eq hN
+  have hk0 : ∀ᶠ n in hyperfilter ℕ, k n ≠ 0 := by
+    rw [← hnat_const_zero, Ne, hnat_eq_hnat_iff] at hN0
+    exact (hyperfilter ℕ).eventually_not.2 hN0
+  have hex : ∀ n : ℕ, ∃ j : ℕ, n ≠ 0 →
+      j < n ∧ f (partitionPoint a b n j) < d ∧ d ≤ f (partitionPoint a b n (j + 1)) :=
+    fun n => by
+      by_cases hn : n = 0
+      · exact ⟨0, fun h => absurd hn h⟩
+      · obtain ⟨j, hj⟩ := exists_partitionPoint_crossing ha hb hn
+        exact ⟨j, fun _ => hj⟩
+  choose J hJ using hex
+  refine ⟨hnat fun n => J (k n), hnat_mem_hyperNat _, ?_, ?_, ?_⟩
+  · exact hnat_lt_hnat_iff.2 (hk0.mono fun n hn => (hJ _ hn).1)
+  · rw [hyperPartitionPoint_hnat, starMap_hyperreal_ofSeq, coe_eq_ofSeq_const,
+      ofSeq_lt_ofSeq_iff]
+    exact hk0.mono fun n hn => (hJ _ hn).2.1
+  · rw [← hnat_const_one, hnat_add, hyperPartitionPoint_hnat, starMap_hyperreal_ofSeq,
+      coe_eq_ofSeq_const, ofSeq_le_ofSeq_iff]
+    exact hk0.mono fun n hn => (hJ _ hn).2.2
+
 /-- **Section 7.5 (Intermediate Value Theorem), increasing case.** If $`f` is continuous on
 $`[a, b]` and $`f(a) < d < f(b)`, then $`f(c) = d` for some $`c \in (a, b)`. The proof is the
 book's: $`c` is the shadow of the last point, in a partition of $`[a, b]` into unlimitedly
 many equal parts, at which $`f` is still below $`d`. -/
 theorem intermediate_value_Icc_of_lt (hab : a ≤ b) (hf : ContinuousOn f (Icc a b))
     (ha : f a < d) (hb : d < f b) : ∃ c ∈ Ioo a b, f c = d := by
-  -- the finite approximations
-  have hex : ∀ n : ℕ, ∃ k : ℕ, n ≠ 0 →
-      k < n ∧ f (partitionPoint a b n k) < d ∧ d ≤ f (partitionPoint a b n (k + 1)) :=
-    fun n => by
-      by_cases hn : n = 0
-      · exact ⟨0, fun h => absurd hn h⟩
-      · obtain ⟨k, hk⟩ := exists_partitionPoint_crossing ha hb.le hn
-        exact ⟨k, fun _ => hk⟩
-  choose K hK using hex
-  -- an unlimited hypernatural N, as the class of a sequence k
-  obtain ⟨k, hk, hNk⟩ := exists_hnat_of_mem_unlimitedHyperNat omega_mem_unlimitedHyperNat
-  have hk0 : ∀ᶠ n in hyperfilter ℕ, k n ≠ 0 :=
-    (hk.eventually_ge_atTop 1).mono fun n hn => by omega
-  -- the point s_N and the width (b - a) / N
-  let s : ℕ → ℝ := fun n => partitionPoint a b (k n) (K (k n))
-  let w : ℕ → ℝ := fun n => (b - a) / k n
-  have hw : Infinitesimal (Hyperreal.ofSeq w) := by
-    have := infinitesimal_width (hnat_mem_unlimitedHyperNat_iff.2 hk) a b
-    exact this
-  have hsw : Hyperreal.ofSeq s + Hyperreal.ofSeq w = Hyperreal.ofSeq fun n => s n + w n := rfl
-  -- transfer of the properties of the finite approximations
-  have h1 : Hyperreal.ofSeq s ∈ ⋆(Icc a b) :=
-    hyperreal_ofSeq_mem_starSet.2 (hk0.mono fun n hn =>
-      partitionPoint_mem_Icc hab (hK _ hn).1.le)
-  have h2 : Hyperreal.ofSeq s + Hyperreal.ofSeq w ∈ ⋆(Icc a b) := by
-    rw [hsw]
-    refine hyperreal_ofSeq_mem_starSet.2 (hk0.mono fun n hn => ?_)
-    have := partitionPoint_mem_Icc hab (Nat.succ_le_of_lt (hK _ hn).1)
-    rwa [partitionPoint_succ] at this
-  have h3 : ⋆f (Hyperreal.ofSeq s) < d := by
-    rw [starMap_hyperreal_ofSeq, coe_eq_ofSeq_const, ofSeq_lt_ofSeq_iff]
-    exact hk0.mono fun n hn => (hK _ hn).2.1
-  have h4 : (d : ℝ*) ≤ ⋆f (Hyperreal.ofSeq s + Hyperreal.ofSeq w) := by
-    rw [hsw, starMap_hyperreal_ofSeq, coe_eq_ofSeq_const, ofSeq_le_ofSeq_iff]
-    refine hk0.mono fun n hn => ?_
-    have := (hK _ hn).2.2
-    rwa [partitionPoint_succ] at this
+  have hω := omega_mem_unlimitedHyperNat
+  -- the point s_N = a + K (b - a) / N, by transfer of the finite approximations
+  obtain ⟨K, hK, hKN, h3, h4⟩ := exists_hyperPartitionPoint_crossing (a := a) (b := b) ha hb.le
+    hω.1 (mem_unlimitedHyperNat.1 hω).2.ne_zero
+  have hK1 : K + 1 ∈ ℕ* := add_mem_hyperNat hK (by simpa using natCast_mem_hyperNat 1)
+  have hK1N : K + 1 ≤ ω := add_one_le_of_lt_of_mem_hyperInt
+    (mem_hyperNat_iff_hyperInt_nonneg.1 hK).1 (mem_hyperNat_iff_hyperInt_nonneg.1 hω.1).1 hKN
+  have h1 := hyperPartitionPoint_mem_starSet_Icc hab hω.1 hK hKN.le
+  have h2 := hyperPartitionPoint_mem_starSet_Icc hab hω.1 hK1 hK1N
   -- the shadow c of s_N
   obtain ⟨hsc, hc⟩ := infClose_sh_of_mem_starSet_Icc h1
-  have hsc' : Hyperreal.ofSeq s + Hyperreal.ofSeq w ≊ sh (Hyperreal.ofSeq s) :=
-    (hw.add_infClose _).trans hsc
+  have hsc' : hyperPartitionPoint a b ω (K + 1) ≊ sh (hyperPartitionPoint a b ω K) := by
+    rw [hyperPartitionPoint_add_one]
+    exact ((infinitesimal_width hω a b).add_infClose _).trans hsc
   have e1 := (hf _ hc).starMap_infClose h1 hsc
   have e2 := (hf _ hc).starMap_infClose h2 hsc'
-  have hd : (d : ℝ*) ≊ (f (sh (Hyperreal.ofSeq s)) : ℝ) :=
+  have hd : (d : ℝ*) ≊ (f (sh (hyperPartitionPoint a b ω K)) : ℝ) :=
     infClose_of_le_of_le h3.le h4 e1 e2
-  have hfc : f (sh (Hyperreal.ofSeq s)) = d := (infClose_coe_iff.1 hd).symm
-  refine ⟨sh (Hyperreal.ofSeq s), ⟨lt_of_le_of_ne hc.1 ?_, lt_of_le_of_ne hc.2 ?_⟩, hfc⟩
+  have hfc : f (sh (hyperPartitionPoint a b ω K)) = d := (infClose_coe_iff.1 hd).symm
+  refine ⟨_, ⟨lt_of_le_of_ne hc.1 ?_, lt_of_le_of_ne hc.2 ?_⟩, hfc⟩
   · intro h
     rw [← h] at hfc
     linarith
@@ -191,8 +250,8 @@ theorem intermediate_value_Icc_of_lt (hab : a ≤ b) (hf : ContinuousOn f (Icc a
 
 /-- **Section 7.5 (Intermediate Value Theorem).** Let $`f` be continuous on $`[a, b]` and let
 $`d` lie strictly between the end values $`f(a)` and $`f(b)`. Then $`d` is attained:
-$`f(c) = d` for some $`c` with $`a < c < b`. The case $`f(b) < d < f(a)` is
-reduced to the increasing case by passing to $`-f`. -/
+$`f(c) = d` for some $`c` with $`a < c < b`. The case $`f(b) < d < f(a)` is reduced to the
+increasing case by passing to $`-f`. -/
 theorem intermediate_value_Icc (hab : a ≤ b) (hf : ContinuousOn f (Icc a b))
     (hd : (f a < d ∧ d < f b) ∨ (f b < d ∧ d < f a)) : ∃ c ∈ Ioo a b, f c = d := by
   rcases hd with ⟨h1, h2⟩ | ⟨h1, h2⟩
@@ -253,6 +312,58 @@ theorem exists_partitionPoint_near (hab : a < b) {t : ℝ} (ht : t ∈ Icc a b) 
     simp only [partitionPoint]
     linarith
 
+/-- **Section 7.6, the point $`s_N`.** Transfer of {name}`exists_partitionPoint_max`: for a
+hypernatural $`N` there is a hypernatural $`K \le N` such that $`{}^*f` at the partition
+point $`a + K(b - a)/N` dominates $`{}^*f` at every partition point $`a + J(b - a)/N` with
+$`J \le N` a hypernatural. -/
+theorem exists_hyperPartitionPoint_max (f : ℝ → ℝ) (a b : ℝ) {N : ℝ*} (hN : N ∈ ℕ*) :
+    ∃ K ∈ ℕ*, K ≤ N ∧ ∀ J ∈ ℕ*, J ≤ N →
+      ⋆f (hyperPartitionPoint a b N J) ≤ ⋆f (hyperPartitionPoint a b N K) := by
+  obtain ⟨k, rfl⟩ := exists_hnat_eq hN
+  choose M hMn hM using exists_partitionPoint_max f a b
+  refine ⟨hnat fun n => M (k n), hnat_mem_hyperNat _,
+    hnat_le_hnat_iff.2 (Eventually.of_forall fun n => hMn _), fun J hJ hJN => ?_⟩
+  obtain ⟨j, rfl⟩ := exists_hnat_eq hJ
+  rw [hyperPartitionPoint_hnat, hyperPartitionPoint_hnat, starMap_hyperreal_ofSeq,
+    starMap_hyperreal_ofSeq, ofSeq_le_ofSeq_iff]
+  exact (hnat_le_hnat_iff.1 hJN).mono fun n hn => hM _ _ hn
+
+/-- **Section 7.6, the infinitesimal partition.** When $`N` is an unlimited hypernatural, the
+halo of every real $`t \in [a, b]` contains a point of the partition
+$`\{a + K(b - a)/N : K \le N\}`: there is a hypernatural $`K \le N` with
+$`a + K(b - a)/N \simeq t`, and the point can be taken at or below $`t`. This is the
+property of the partition of infinitesimal width that the book singles out; it is the
+transfer of {name}`exists_partitionPoint_near`. -/
+theorem exists_hyperPartitionPoint_infClose (hab : a < b) {t : ℝ} (ht : t ∈ Icc a b)
+    {N : ℝ*} (hN : N ∈ unlimitedHyperNat) :
+    ∃ K ∈ ℕ*, K ≤ N ∧ hyperPartitionPoint a b N K ≤ t ∧ hyperPartitionPoint a b N K ≊ t := by
+  have hw := infinitesimal_width hN a b
+  obtain ⟨k, hk, rfl⟩ := exists_hnat_of_mem_unlimitedHyperNat hN
+  have hk0 : ∀ᶠ n in hyperfilter ℕ, k n ≠ 0 :=
+    (hk.eventually_ge_atTop 1).mono fun n hn => by omega
+  have hex : ∀ n : ℕ, ∃ j : ℕ, n ≠ 0 → j ≤ n ∧ partitionPoint a b n j ≤ t ∧
+      t ≤ partitionPoint a b n j + (b - a) / n := fun n => by
+    by_cases hn : n = 0
+    · exact ⟨0, fun h => absurd hn h⟩
+    · obtain ⟨j, hj⟩ := exists_partitionPoint_near hab ht hn
+      exact ⟨j, fun _ => hj⟩
+  choose J hJ using hex
+  have hy2 : hyperPartitionPoint a b (hnat k) (hnat fun n => J (k n)) ≤ t := by
+    rw [hyperPartitionPoint_hnat, coe_eq_ofSeq_const, ofSeq_le_ofSeq_iff]
+    exact hk0.mono fun n hn => (hJ _ hn).2.1
+  have hy3 : (t : ℝ*) - ((b - a : ℝ) : ℝ*) / hnat k ≤
+      hyperPartitionPoint a b (hnat k) (hnat fun n => J (k n)) := by
+    have e : (t : ℝ*) - ((b - a : ℝ) : ℝ*) / hnat k =
+        Hyperreal.ofSeq fun n => t - (b - a) / k n := rfl
+    rw [e, hyperPartitionPoint_hnat, ofSeq_le_ofSeq_iff]
+    refine hk0.mono fun n hn => ?_
+    have := (hJ _ hn).2.2
+    linarith
+  refine ⟨hnat fun n => J (k n), hnat_mem_hyperNat _,
+    hnat_le_hnat_iff.2 (hk0.mono fun n hn => (hJ _ hn).1), hy2, ?_⟩
+  refine infClose_of_le_of_le hy3 hy2 ?_ (InfClose.refl _)
+  simpa [sub_eq_add_neg] using hw.neg.add_infClose (t : ℝ*)
+
 /-- **Section 7.6 (Extreme Value Theorem), maximum.** If $`f` is continuous on $`[a, b]`,
 there is $`d \in [a, b]` with $`f(x) \le f(d)` for all $`x \in [a, b]`. The proof is the
 book's: $`d` is the shadow of a point of an infinitesimal partition at which $`f` dominates
@@ -261,54 +372,18 @@ theorem exists_forall_le_Icc (hab : a ≤ b) (hf : ContinuousOn f (Icc a b)) :
     ∃ d ∈ Icc a b, ∀ t ∈ Icc a b, f t ≤ f d := by
   rcases hab.eq_or_lt with rfl | hlt
   · exact ⟨a, ⟨le_rfl, le_rfl⟩, fun t ht => by rw [le_antisymm ht.2 ht.1]⟩
-  -- the finite approximations
-  choose K hKn hK using exists_partitionPoint_max f a b
-  -- an unlimited hypernatural N, as the class of a sequence k
-  obtain ⟨k, hk, -⟩ := exists_hnat_of_mem_unlimitedHyperNat omega_mem_unlimitedHyperNat
-  have hk0 : ∀ᶠ n in hyperfilter ℕ, k n ≠ 0 :=
-    (hk.eventually_ge_atTop 1).mono fun n hn => by omega
-  let s : ℕ → ℝ := fun n => partitionPoint a b (k n) (K (k n))
-  let w : ℕ → ℝ := fun n => (b - a) / k n
-  have hw : Infinitesimal (Hyperreal.ofSeq w) := by
-    have := infinitesimal_width (hnat_mem_unlimitedHyperNat_iff.2 hk) a b
-    exact this
-  have h1 : Hyperreal.ofSeq s ∈ ⋆(Icc a b) :=
-    hyperreal_ofSeq_mem_starSet.2 (Eventually.of_forall fun n =>
-      partitionPoint_mem_Icc hab (hKn _))
+  have hω := omega_mem_unlimitedHyperNat
+  -- the point s_N of the infinitesimal partition where *f is greatest
+  obtain ⟨K, hK, hKN, hmax⟩ := exists_hyperPartitionPoint_max f a b hω.1
+  have h1 := hyperPartitionPoint_mem_starSet_Icc hab hω.1 hK hKN
   obtain ⟨hsd, hd⟩ := infClose_sh_of_mem_starSet_Icc h1
   have e1 := (hf _ hd).starMap_infClose h1 hsd
-  refine ⟨sh (Hyperreal.ofSeq s), hd, fun t ht => ?_⟩
+  refine ⟨_, hd, fun t ht => ?_⟩
   -- a point of the infinitesimal partition infinitely close to t
-  have hex : ∀ n : ℕ, ∃ j : ℕ, n ≠ 0 → j ≤ n ∧ partitionPoint a b n j ≤ t ∧
-      t ≤ partitionPoint a b n j + (b - a) / n := fun n => by
-    by_cases hn : n = 0
-    · exact ⟨0, fun h => absurd hn h⟩
-    · obtain ⟨j, hj⟩ := exists_partitionPoint_near hlt ht hn
-      exact ⟨j, fun _ => hj⟩
-  choose J hJ using hex
-  let y : ℕ → ℝ := fun n => partitionPoint a b (k n) (J (k n))
-  have hy1 : Hyperreal.ofSeq y ∈ ⋆(Icc a b) :=
-    hyperreal_ofSeq_mem_starSet.2 (hk0.mono fun n hn =>
-      partitionPoint_mem_Icc hab (hJ _ hn).1)
-  have hy2 : Hyperreal.ofSeq y ≤ t := by
-    rw [coe_eq_ofSeq_const, ofSeq_le_ofSeq_iff]
-    exact hk0.mono fun n hn => (hJ _ hn).2.1
-  have hy3 : (t : ℝ*) - Hyperreal.ofSeq w ≤ Hyperreal.ofSeq y := by
-    have e : (t : ℝ*) - Hyperreal.ofSeq w = Hyperreal.ofSeq fun n => t - w n := rfl
-    rw [e, ofSeq_le_ofSeq_iff]
-    refine hk0.mono fun n hn => ?_
-    have := (hJ _ hn).2.2
-    simp only [w, y]
-    linarith
-  have hyt : Hyperreal.ofSeq y ≊ t := by
-    refine infClose_of_le_of_le hy3 hy2 ?_ (InfClose.refl _)
-    simpa [sub_eq_add_neg] using hw.neg.add_infClose (t : ℝ*)
-  have e2 := (hf _ ht).starMap_infClose hy1 hyt
-  -- the value at s_N dominates the values on the partition
-  have h3 : ⋆f (Hyperreal.ofSeq y) ≤ ⋆f (Hyperreal.ofSeq s) := by
-    rw [starMap_hyperreal_ofSeq, starMap_hyperreal_ofSeq, ofSeq_le_ofSeq_iff]
-    exact hk0.mono fun n hn => hK _ _ (hJ _ hn).1
-  exact coe_le_coe_of_infClose_le_infClose e2.symm h3 e1
+  obtain ⟨J, hJ, hJN, -, hyt⟩ := exists_hyperPartitionPoint_infClose hlt ht hω
+  have e2 := (hf _ ht).starMap_infClose
+    (hyperPartitionPoint_mem_starSet_Icc hab hω.1 hJ hJN) hyt
+  exact coe_le_coe_of_infClose_le_infClose e2.symm (hmax J hJ hJN) e1
 
 /-- **Section 7.6 (Extreme Value Theorem), minimum.** If $`f` is continuous on $`[a, b]`,
 there is $`c \in [a, b]` with $`f(c) \le f(x)` for all $`x \in [a, b]`; apply the maximum
@@ -413,10 +488,9 @@ theorem _root_.UniformContinuousOn.starMap_infClose (h : UniformContinuousOn f A
   uniformContinuousOn_iff_infClose.1 h x hx y hy hxy
 
 /-- **Theorem 7.7.2.** On a closed bounded interval $`[a, b]`, continuity is automatically
-uniform. Given $`x \simeq y` in the
-enlargement of $`[a, b]`, let $`c` be the shadow of $`x`. Then $`c \in [a, b]`, so $`f` is
-continuous at $`c`, and both $`{}^*f(x)` and $`{}^*f(y)` are infinitely close to
-$`f(c)`. -/
+uniform. Given $`x \simeq y` in the enlargement of $`[a, b]`, let $`c` be the shadow of
+$`x`. Then $`c \in [a, b]`, so $`f` is continuous at $`c`, and both $`{}^*f(x)` and
+$`{}^*f(y)` are infinitely close to $`f(c)`. -/
 theorem uniformContinuousOn_Icc_of_continuousOn (hf : ContinuousOn f (Icc a b)) :
     UniformContinuousOn f (Icc a b) := by
   rw [uniformContinuousOn_iff_infClose]
@@ -673,8 +747,8 @@ theorem continuousOn_Icc_of_monotoneOn_of_forall_exists (hf : MonotoneOn f (Icc 
 /-- **Exercise 7.8(4).** A function that is monotone on $`[a, b]`, in either direction, and
 whose values on $`[a, b]` fill the whole range from $`f(a)` to $`f(b)`, has no jumps: it is
 continuous on $`[a, b]`. The range between the end values is the unordered interval
-{name}`Set.uIcc`. The decreasing case
-follows from the increasing case applied to $`-f`. -/
+{name}`Set.uIcc`. The decreasing case follows from the increasing case applied to
+$`-f`. -/
 theorem continuousOn_Icc_of_monotone_or_antitone
     (hf : MonotoneOn f (Icc a b) ∨ AntitoneOn f (Icc a b))
     (hiv : ∀ r ∈ uIcc (f a) (f b), ∃ c ∈ Icc a b, f c = r) : ContinuousOn f (Icc a b) := by
@@ -1023,9 +1097,13 @@ defined on a real open interval around $`c`.
 real open interval around $`c`.
 
 (3) A function that is continuous on an interval and whose extension takes only real values
-on the enlargement of the interval is constant: at each point of the interval the extension
-is constant on the halo, so the function is locally constant by (2), and a locally constant
-function on an interval is constant.
+on the enlargement of the interval is constant. At each point $`c` of the interval $`A` the
+extension takes the value $`f(c)` at every point of the enlargement of $`A` in the halo of
+$`c`. The argument of (2) is then applied relative to $`A`, that is, Cauchy's principle is
+applied to the property "if $`t \in A` then $`f(t) = f(c)`"; Exercise (2) as stated needs
+$`f` to be defined on a neighbourhood of $`c` and so does not cover an end point of $`A`.
+Thus $`f` is locally constant on $`A`, and a locally constant function on an interval is
+constant.
 -/
 
 /-- **Exercise 7.11(1).** Let $`D` be the domain of a real function and $`c` a real number.

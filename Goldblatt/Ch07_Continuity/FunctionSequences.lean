@@ -37,11 +37,21 @@ As in Chapter 6 the hypernaturals are a set of hyperreals, and the extended sequ
 a hyperreal index and uses its integer part; only its values at hypernatural indices matter.
 The standard notions are pointwise convergence along {name}`Filter.atTop` and Mathlib's
 {name}`TendstoUniformlyOn`.
+
+The section ends with the example of the powers $`f_n(x) = x^n` on $`[0, 1]`, whose
+pointwise limit is discontinuous at $`1`. For an arbitrary $`x < 1` in the enlargement of
+$`[0, 1]` with $`x \simeq 1`, the book makes three claims about the hypersequence
+$`K \mapsto x^K`: beyond some hypernatural $`M` all its terms are infinitesimal; any such
+$`M` is unlimited; and there is an unlimited $`N` up to which all its terms are infinitely
+close to $`1`. The three claims are {lit}`exists_hyperNat_forall_pow_infClose_zero`,
+{lit}`mem_unlimitedHyperNat_of_hyperFunSeq_pow_infClose_zero` and
+{lit}`exists_unlimited_forall_pow_infClose_one`. The last one contradicts the condition of
+Theorem 7.12.2, so the convergence is not uniform.
 -/
 
 section FunctionSequences
 
-variable {F : ℕ → ℝ → ℝ} {f : ℝ → ℝ} {A : Set ℝ} {N x y : ℝ*}
+variable {F : ℕ → ℝ → ℝ} {f : ℝ → ℝ} {A : Set ℝ} {M N x y : ℝ*}
 
 /-- **Section 7.12.** The hypersequence of functions associated with a sequence
 $`(f_n)` of real functions: the extension of the function of two arguments
@@ -173,20 +183,138 @@ theorem hyperFunSeq_pow_infClose_one (n : ℕ) (hx : x ≊ ((1 : ℝ) : ℝ*)) :
   rw [hyperFunSeq_natCast, starMap_pow_apply]
   exact pow_infClose_one n hx
 
-/-- **Section 7.12, example, the point at which uniformity fails.** There is a point $`x` of
-the enlargement of $`[0, 1]` with $`x < 1` and $`x \simeq 1`, so that $`{}^*f(x) = 0`, for
-which
+/-- **Section 7.12, example.** By transfer, the extension of the limit function vanishes at
+every hyperreal $`x < 1`. -/
+theorem starMap_powLimit_of_lt_one (hx : x < 1) : ⋆powLimit x = 0 := by
+  obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
+  rw [← Hyperreal.coe_one, coe_eq_ofSeq_const, ofSeq_lt_ofSeq_iff] at hx
+  rw [starMap_hyperreal_ofSeq, ← Hyperreal.coe_zero, coe_eq_ofSeq_const, ofSeq_eq_ofSeq_iff]
+  exact hx.mono fun n hn => ite_eq_right hn.ne
+
+/-- **Section 7.12, example, the index $`M`.** Let $`x` be any point of the enlargement of
+$`[0, 1]` with $`x < 1`. Then there is a hypernatural $`M` such that $`x^K \simeq 0` for
+every hypernatural $`K \ge M`.
+
+The book transfers the statement of pointwise convergence and applies it with an
+infinitesimal tolerance. In the ultrapower: $`x` is the class of $`(r_n)` with
+$`0 \le r_n < 1` for almost all $`n`; for such $`n` choose $`m_n` with
+$`r_n^k < 1/(n+1)` for all $`k \ge m_n`; then $`M` is the class of $`(m_n)`. The book writes
+the condition as $`K > M`; the two forms differ only by replacing $`M` with $`M + 1`. -/
+theorem exists_hyperNat_forall_pow_infClose_zero (hx : x ∈ ⋆(Icc (0 : ℝ) 1)) (hx1 : x < 1) :
+    ∃ M ∈ ℕ*, ∀ K ∈ ℕ*, M ≤ K → hyperFunSeq (fun n t => t ^ n) K x ≊ 0 := by
+  obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
+  have hr := hyperreal_ofSeq_mem_starSet.1 hx
+  rw [← Hyperreal.coe_one, coe_eq_ofSeq_const, ofSeq_lt_ofSeq_iff] at hx1
+  have hpos : ∀ n : ℕ, (0 : ℝ) < 1 / ((n : ℝ) + 1) := fun n => by positivity
+  have hex : ∀ n : ℕ, ∃ m : ℕ, r n ∈ Icc (0 : ℝ) 1 → r n < 1 →
+      ∀ k, m ≤ k → r n ^ k < 1 / ((n : ℝ) + 1) := fun n => by
+    by_cases h : r n ∈ Icc (0 : ℝ) 1 ∧ r n < 1
+    · have ht : Tendsto (fun k : ℕ => r n ^ k) atTop (𝓝 0) :=
+        tendsto_pow_atTop_nhds_zero_of_lt_one h.1.1 h.2
+      obtain ⟨m, hm⟩ := eventually_atTop.1 (ht.eventually_lt_const (hpos n))
+      exact ⟨m, fun _ _ => hm⟩
+    · exact ⟨0, fun h1 h2 => absurd ⟨h1, h2⟩ h⟩
+  choose m hm using hex
+  refine ⟨hnat m, hnat_mem_hyperNat m, fun K hK hMK => ?_⟩
+  obtain ⟨k, rfl⟩ := exists_hnat_eq hK
+  rw [hnat_le_hnat_iff] at hMK
+  rw [hyperFunSeq_hnat, ← Hyperreal.coe_zero, ofSeq_infClose_coe_iff]
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (tendsto_one_div_add_atTop_nhds_zero_nat.mono_left Nat.hyperfilter_le_atTop)
+    (hr.mono fun n hn => pow_nonneg hn.1 _) ?_
+  filter_upwards [hr, hx1, hMK] with n h1 h2 h3
+  exact (hm n h1 h2 _ h3).le
+
+/-- **Section 7.12, example, the index $`M` is unlimited.** If $`x \simeq 1` and $`x^M` is
+infinitesimal for a hypernatural $`M`, then $`M` is unlimited, because the powers of $`x`
+with standard exponent are infinitely close to $`1`
+({name}`hyperFunSeq_pow_infClose_one`). In particular the index $`M` of
+{name}`exists_hyperNat_forall_pow_infClose_zero` is unlimited when $`x \simeq 1`: it takes
+infinitely long for the powers of $`x` to become infinitesimal. -/
+theorem mem_unlimitedHyperNat_of_hyperFunSeq_pow_infClose_zero (hx : x ≊ ((1 : ℝ) : ℝ*))
+    (hM : M ∈ ℕ*) (h : hyperFunSeq (fun n t => t ^ n) M x ≊ 0) : M ∈ unlimitedHyperNat := by
+  refine ⟨hM, ?_⟩
+  rintro ⟨n, rfl⟩
+  have := (hyperFunSeq_pow_infClose_one n hx).symm.trans h
+  rw [← Hyperreal.coe_zero, infClose_coe_iff] at this
+  norm_num at this
+
+/-- **Section 7.12, example, permanence.** Let $`x` be any point of the enlargement of
+$`[0, 1]` with $`x \simeq 1`. Then there is an unlimited hypernatural $`N` such that the
+whole initial segment $`\{x^K : K \le N\}` of the hypersequence of powers lies in the halo
+of $`1`. In particular $`x^N \not\simeq 0`.
+
+The book obtains $`N` from the fact that all powers with standard exponent lie in the halo
+of $`1`, by a permanence principle (Robinson's sequential lemma) that it only proves in
+Chapter 15. Here $`N` is constructed directly. Write $`x = [r_n]` and let $`d_n` be the
+larger of $`1 - r_n` and $`1/(n+1)`, a positive sequence that tends to $`0` along the index
+ultrafilter. Put $`N = [k_n]` with $`k_n = \lfloor 1/\sqrt{d_n} \rfloor`, which is
+unlimited. For $`j \le k_n`, Bernoulli's inequality gives
+$`1 \ge r_n^j \ge 1 - j(1 - r_n) \ge 1 - \sqrt{d_n}`, and $`\sqrt{d_n}` tends to $`0`. -/
+theorem exists_unlimited_forall_pow_infClose_one (hx : x ∈ ⋆(Icc (0 : ℝ) 1))
+    (hx1 : x ≊ ((1 : ℝ) : ℝ*)) :
+    ∃ N ∈ unlimitedHyperNat, ∀ K ∈ ℕ*, K ≤ N →
+      hyperFunSeq (fun n t => t ^ n) K x ≊ ((1 : ℝ) : ℝ*) := by
+  obtain ⟨r, rfl⟩ := hyperreal_exists_rep x
+  have hr := hyperreal_ofSeq_mem_starSet.1 hx
+  have hr1 : Tendsto r (hyperfilter ℕ) (𝓝 1) := ofSeq_infClose_coe_iff.1 hx1
+  -- a positive sequence d tending to 0 with 1 - r n ≤ d n
+  let d : ℕ → ℝ := fun n => max (1 - r n) (1 / ((n : ℝ) + 1))
+  have hd0 : ∀ n, 0 < d n := fun n => lt_max_of_lt_right (by positivity)
+  have hd : Tendsto d (hyperfilter ℕ) (𝓝 0) := by
+    have h1 : Tendsto (fun n => 1 - r n) (hyperfilter ℕ) (𝓝 0) := by
+      simpa using (tendsto_const_nhds (x := (1 : ℝ))).sub hr1
+    have h2 : Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1)) (hyperfilter ℕ) (𝓝 0) :=
+      tendsto_one_div_add_atTop_nhds_zero_nat.mono_left Nat.hyperfilter_le_atTop
+    have := h1.max h2
+    rw [max_self] at this
+    exact this
+  have hsd : Tendsto (fun n => √(d n)) (hyperfilter ℕ) (𝓝 0) := by
+    have := (Real.continuous_sqrt.tendsto 0).comp hd
+    rw [Real.sqrt_zero] at this
+    exact this
+  have hsd0 : ∀ n, 0 < √(d n) := fun n => Real.sqrt_pos.2 (hd0 n)
+  let k : ℕ → ℕ := fun n => ⌊1 / √(d n)⌋₊
+  have hk : Tendsto k (hyperfilter ℕ) atTop := by
+    have : Tendsto (fun n => √(d n)) (hyperfilter ℕ) (𝓝[>] 0) :=
+      tendsto_nhdsWithin_iff.2 ⟨hsd, Eventually.of_forall hsd0⟩
+    exact tendsto_nat_floor_atTop.comp
+      (this.inv_tendsto_nhdsGT_zero.congr fun n => by simp)
+  refine ⟨hnat k, hnat_mem_unlimitedHyperNat_iff.2 hk, fun K hK hKN => ?_⟩
+  obtain ⟨j, rfl⟩ := exists_hnat_eq hK
+  rw [hnat_le_hnat_iff] at hKN
+  rw [hyperFunSeq_hnat, ofSeq_infClose_coe_iff]
+  have hlow : Tendsto (fun n => 1 - √(d n)) (hyperfilter ℕ) (𝓝 1) := by
+    simpa using (tendsto_const_nhds (x := (1 : ℝ))).sub hsd
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hlow tendsto_const_nhds ?_
+    (hr.mono fun n hn => pow_le_one₀ hn.1 hn.2)
+  filter_upwards [hr, hKN] with n h1 h2
+  -- Bernoulli's inequality
+  have hb : 1 + (j n : ℝ) * (r n - 1) ≤ r n ^ j n := by
+    have := one_add_mul_le_pow (a := r n - 1) (by linarith [h1.1]) (j n)
+    simpa using this
+  have hjk : (j n : ℝ) ≤ 1 / √(d n) :=
+    (Nat.cast_le.2 h2).trans (Nat.floor_le (by positivity))
+  have hle : 1 - r n ≤ d n := le_max_left _ _
+  have h3 : (j n : ℝ) * (1 - r n) ≤ 1 / √(d n) * d n :=
+    mul_le_mul hjk hle (by linarith [h1.2]) (by positivity)
+  have h4 : 1 / √(d n) * d n = √(d n) := by
+    rw [one_div, inv_mul_eq_div, Real.div_sqrt]
+  nlinarith
+
+/-- **Section 7.12, example, an explicit instance.** There is a point $`x` of the
+enlargement of $`[0, 1]` with $`x < 1` and $`x \simeq 1`, so that $`{}^*f(x) = 0`, for which
 
 * some unlimited $`N` has $`x^N = 1/2`, which is not infinitely close to $`0`, and
 * some unlimited $`M` has $`x^K \simeq 0` for every hypernatural $`K \ge M`.
 
-Together with {name}`hyperFunSeq_pow_infClose_one`, which says that $`x^n \simeq 1` for
-standard $`n`, this is the picture described in the book: it takes infinitely long for the
-powers of $`x` to become infinitesimal. Here $`x` is the class of the sequence of
-$`(n+1)`-st roots of $`1/2`, $`N` is the class of $`n + 1`, and $`M` is the class of
-$`(n+1)^2`. The book obtains $`M` by transfer of pointwise convergence for an arbitrary such
-$`x`, and $`N` from a permanence principle that only becomes available in Chapter 15; the
-explicit choice replaces both. -/
+Here $`x` is the class of the sequence of $`(n+1)`-st roots of $`1/2`, $`N` is the class of
+$`n + 1`, and $`M` is the class of $`(n+1)^2`. This shows that points of the kind the book
+discusses exist, and gives a concrete picture of the transition: between the unlimited
+indices where the powers are still infinitely close to $`1`
+({name}`exists_unlimited_forall_pow_infClose_one`) and those where they are infinitesimal
+({name}`exists_hyperNat_forall_pow_infClose_zero`) there is an index where the power is
+exactly $`1/2`. -/
 theorem exists_hyperFunSeq_pow_eq_half :
     ∃ x ∈ ⋆(Icc (0 : ℝ) 1), x < 1 ∧ x ≊ ((1 : ℝ) : ℝ*) ∧ ⋆powLimit x = 0 ∧
       (∃ N ∈ unlimitedHyperNat, hyperFunSeq (fun n t => t ^ n) N x = ((1 / 2 : ℝ) : ℝ*)) ∧
@@ -234,15 +362,18 @@ theorem exists_hyperFunSeq_pow_eq_half :
       _ = (r n ^ (n + 1)) ^ (n + 1) := by rw [← pow_mul, sq]
       _ = (1 / 2 : ℝ) ^ (n + 1) := by rw [hrp]
 
-/-- **Section 7.12, example.** The convergence of $`x^n` on $`[0, 1]` is not uniform, by
-Theorem 7.12.2: there are $`x` in the enlargement of $`[0, 1]` and an unlimited $`N` with
-$`f_N(x) = 1/2` and $`{}^*f(x) = 0`, and these are not infinitely close. -/
+/-- **Section 7.12, example.** The convergence of $`x^n` on $`[0, 1]` is not uniform. This
+is the book's argument: take $`x < 1` in the enlargement of $`[0, 1]` with $`x \simeq 1`,
+and an unlimited $`N` with $`x^N \simeq 1`
+({name}`exists_unlimited_forall_pow_infClose_one`). Then $`f_N(x) \simeq 1` while
+$`{}^*f(x) = 0`, so the condition of Theorem 7.12.2 fails. -/
 theorem not_tendstoUniformlyOn_pow :
     ¬ TendstoUniformlyOn (fun n t => t ^ n) powLimit atTop (Icc (0 : ℝ) 1) := by
   intro h
-  obtain ⟨x, hx, -, -, h2, ⟨N, hN, h1⟩, -⟩ := exists_hyperFunSeq_pow_eq_half
-  have := h.hyperFunSeq_infClose hx hN
-  rw [h1, h2, ← Hyperreal.coe_zero, infClose_coe_iff] at this
+  obtain ⟨x, hx, hlt, hx1, -⟩ := exists_hyperFunSeq_pow_eq_half
+  obtain ⟨N, hN, hN'⟩ := exists_unlimited_forall_pow_infClose_one hx hx1
+  have := (hN' N hN.1 le_rfl).symm.trans (h.hyperFunSeq_infClose hx hN)
+  rw [starMap_powLimit_of_lt_one hlt, ← Hyperreal.coe_zero, infClose_coe_iff] at this
   norm_num at this
 
 end FunctionSequences
@@ -270,8 +401,7 @@ variable {F : ℕ → ℝ → ℝ} {f : ℝ → ℝ} {A : Set ℝ} {N x y : ℝ*
 
 /-- **Theorem 7.13.1.** Uniform convergence preserves continuity: the limit $`f` of a
 sequence of functions $`f_n` that converges uniformly on $`A` is continuous on $`A` as soon
-as every $`f_n` is. This is the book's
-first proof, with the $`\varepsilon/4` estimate. -/
+as every $`f_n` is. This is the book's first proof, with the $`\varepsilon/4` estimate. -/
 theorem continuousOn_of_tendstoUniformlyOn (hF : ∀ n, ContinuousOn (F n) A)
     (hu : TendstoUniformlyOn F f atTop A) : ContinuousOn f A := by
   intro c hc

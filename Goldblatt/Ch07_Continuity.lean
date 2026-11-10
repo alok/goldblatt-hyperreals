@@ -97,9 +97,12 @@ number.
   integer part, in the same way as the hypersequences of Chapter 6; the book's index set of
   hypernaturals is a subset of the hyperreals.
 * In Section 7.12 the book shows that the powers do not converge uniformly on the unit
-  interval by a permanence argument that it only justifies in Chapter 15. Here an explicit
-  point $`x \simeq 1`, $`x < 1`, is exhibited instead, with an unlimited index at which the
-  power is $`1/2` and another beyond which all powers are infinitesimal.
+  interval by a permanence argument that it only justifies in Chapter 15: for $`x \simeq 1`
+  there is an unlimited index up to which all powers of $`x` are infinitely close to $`1`.
+  Here that index is constructed directly from Bernoulli's inequality
+  ({name}`Goldblatt.exists_unlimited_forall_pow_infClose_one`), for every such $`x` as in
+  the book. In addition an explicit point $`x \simeq 1`, $`x < 1`, is exhibited with an
+  unlimited index at which the power is exactly $`1/2`.
 * Exercise 7.4(3) asks for a discussion of five functions. It is formalized as five precise
   statements saying exactly where each function is continuous.
 * The Lipschitz condition and contraction mappings of Section 7.9 are stated with the
@@ -131,8 +134,13 @@ convergence by {name}`Goldblatt.tendstoUniformlyOn_iff_infClose` (Theorem 7.12.2
 hypersequence of functions is {name}`Goldblatt.hyperFunSeq`.
 
 For work on a closed bounded interval, the partition points are
-{name}`Goldblatt.partitionPoint`, and the fact that members of the enlargement of the
-interval have shadows in the interval is {name}`Goldblatt.infClose_sh_of_mem_starSet_Icc`.
+{name}`Goldblatt.partitionPoint`, and their hyperreal counterparts, the points of a partition
+into a hypernatural number of parts, are {name}`Goldblatt.hyperPartitionPoint`. For an
+unlimited number of parts the partition has infinitesimal width
+({name}`Goldblatt.infinitesimal_width`) and meets the halo of every real point of the
+interval ({name}`Goldblatt.exists_hyperPartitionPoint_infClose`). The fact that members of
+the enlargement of the interval have shadows in the interval is
+{name}`Goldblatt.infClose_sh_of_mem_starSet_Icc`.
 The classical theorems are {name}`Goldblatt.intermediate_value_Icc`,
 {name}`Goldblatt.extreme_value_Icc` and
 {name}`Goldblatt.uniformContinuousOn_Icc_of_continuousOn`. Cauchy's permanence principle is
