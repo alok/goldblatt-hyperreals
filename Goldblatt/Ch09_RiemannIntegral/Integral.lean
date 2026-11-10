@@ -235,12 +235,6 @@ theorem sub_mul_le_hyperLowerSum (P : IntervalPartition a b) {B : ℝ}
   exact ofSeq_le_ofSeq_iff.2 ((zero_lt_ofSeq_iff.1 hΔ).mono fun n hn =>
     sub_mul_le_lowerSum P hB hn)
 
-/-- A real multiple of a positive infinitesimal is less than every positive real. -/
-theorem coe_mul_posInfinitesimal_lt (c : ℝ) (hΔ : PosInfinitesimal Δ) {δ : ℝ} (hδ : 0 < δ) :
-    (c : ℝ*) * Δ < δ := by
-  have : Infinitesimal ((c : ℝ*) * Δ) := (limited_coe c).mul_infinitesimal (Or.inl hΔ)
-  exact (le_abs_self _).trans_lt (infinitesimal_iff_abs_lt.1 this δ hδ)
-
 /-- **Section 9.2.** If $`f` is Riemann integrable on $`[a, b]` with integral $`I`, then the
 upper sum of every positive infinitesimal width is infinitely close to $`I`. Given a real
 $`\varepsilon > 0`, choose standard partitions $`P_1`, $`P_2` with
@@ -414,6 +408,39 @@ theorem RiemannIntegrableOn.tendsto_ordSum (h : RiemannIntegrableOn f a b) :
         (by simpa using hpos) hx0)
   rwa [univ_inter] at key
 
+/-- **Section 9.2, the standard approximation property.** For a Riemann integrable function
+the difference $`U_a^b(f, \Delta x) - L_a^b(f, \Delta x)` tends to $`0` as $`\Delta x` tends
+to $`0` through positive values. The book quotes this from the standard theory and transfers
+it; here it is read off from the infinitesimal statement
+{name}`HasRiemannIntegral.hyperLowerSum_infClose_hyperUpperSum`, which was proved from the
+standard estimate {name}`upperSum_le_add_mul`. -/
+theorem RiemannIntegrableOn.tendsto_upperSum_sub_lowerSum (h : RiemannIntegrableOn f a b) :
+    Tendsto (fun t => upperSum f a b t - lowerSum f a b t) (𝓝[>] 0) (𝓝 0) := by
+  have key := (tendsto_nhdsWithin_Ioi_iff_infClose
+    (f := fun t => upperSum f a b t - lowerSum f a b t) (A := univ) (c := 0) (L := 0)).2
+    fun x _ hx0 hpos => by
+      have hx : PosInfinitesimal x :=
+        posInfinitesimal_of_pos_of_infClose_zero (by simpa using hpos) hx0
+      have hi : Infinitesimal (hyperUpperSum f a b x - hyperLowerSum f a b x) :=
+        (h.hasRiemannIntegral.hyperLowerSum_infClose_hyperUpperSum hx).symm
+      rw [starMap_sub_apply, infClose_iff, Hyperreal.coe_zero, sub_zero]
+      exact hi
+  rwa [univ_inter] at key
+
+/-- **Section 9.2, the standard approximation property, with $`\varepsilon` and
+$`\delta`.** If $`f` is Riemann integrable on $`[a, b]`, then for every real
+$`\varepsilon > 0` there is a real $`\delta > 0` such that
+$`U_a^b(f, \Delta x) - L_a^b(f, \Delta x) < \varepsilon` for all real $`\Delta x` with
+$`0 < \Delta x < \delta`. -/
+theorem RiemannIntegrableOn.exists_pos_forall_upperSum_sub_lowerSum_lt
+    (h : RiemannIntegrableOn f a b) {η : ℝ} (hη : 0 < η) :
+    ∃ δ : ℝ, 0 < δ ∧ ∀ t : ℝ, 0 < t → t < δ → upperSum f a b t - lowerSum f a b t < η := by
+  obtain ⟨δ, hδ, hδ'⟩ := (Metric.tendsto_nhdsWithin_nhds.1 h.tendsto_upperSum_sub_lowerSum) η hη
+  refine ⟨δ, hδ, fun t ht htδ => ?_⟩
+  have := hδ' (mem_Ioi.2 ht) (by rw [Real.dist_eq, sub_zero, abs_of_pos ht]; exact htδ)
+  rw [Real.dist_eq, sub_zero] at this
+  exact (le_abs_self _).trans_lt this
+
 /-- **Section 9.2.** The integral over a degenerate interval is zero: every function is
 integrable on $`[a, a]`, with integral $`0`. -/
 theorem hasRiemannIntegral_self (f : ℝ → ℝ) (a : ℝ) : HasRiemannIntegral f a a 0 := by
@@ -444,6 +471,79 @@ theorem riemannIntegral_self (f : ℝ → ℝ) (a : ℝ) : riemannIntegral f a a
   (hasRiemannIntegral_self f a).riemannIntegral_eq
 
 end Integrability
+
+/-!
+### A bounded function that is not integrable
+
+The definition of integrability is not vacuous in either direction: continuous and monotonic
+functions satisfy it, and the function that is $`1` at rational points and $`0` at irrational
+points (the third test function of Exercise 7.4(3)) does not. Every subinterval of every
+partition contains rational and irrational points, so every upper sum is $`b - a` and every
+lower sum is $`0`.
+-/
+
+section Dirichlet
+
+variable {a b : ℝ}
+
+/-- The values of the indicator function of the rationals lie between $`0` and $`1`. -/
+theorem ratIndicator_mem_Icc (t : ℝ) : ratIndicator t ∈ Icc (0 : ℝ) 1 := by
+  unfold ratIndicator
+  split_ifs <;> constructor <;> norm_num
+
+/-- The indicator function of the rationals is bounded on every set. -/
+theorem boundedOn_ratIndicator (A : Set ℝ) : BoundedOn ratIndicator A :=
+  ⟨1, fun t _ => abs_le.2 ⟨by linarith [(ratIndicator_mem_Icc t).1], (ratIndicator_mem_Icc t).2⟩⟩
+
+/-- **Section 9.1, example.** Every upper sum of the indicator function of the rationals on
+$`[a, b]` is $`b - a`. -/
+theorem IntervalPartition.upperSum_ratIndicator (P : IntervalPartition a b) :
+    P.upperSum ratIndicator = b - a := by
+  have h : ∀ i < P.n, supOn ratIndicator (P.pt i) (P.pt (i + 1)) = 1 := fun i hi => by
+    have hlt := P.lt_succ i hi
+    refine le_antisymm (supOn_le hlt.le fun t _ => (ratIndicator_mem_Icc t).2) ?_
+    obtain ⟨q, hq1, hq2⟩ := exists_rat_btwn hlt
+    have hq : ratIndicator q = 1 := by simp [ratIndicator]
+    rw [← hq]
+    exact le_supOn (boundedOn_ratIndicator _) ⟨hq1.le, hq2.le⟩
+  rw [← one_mul (b - a), ← P.sum_const_mul 1, IntervalPartition.upperSum, IntervalPartition.sum,
+    IntervalPartition.sum]
+  exact Finset.sum_congr rfl fun i hi => by rw [h i (Finset.mem_range.1 hi)]
+
+/-- **Section 9.1, example.** Every lower sum of the indicator function of the rationals is
+$`0`. -/
+theorem IntervalPartition.lowerSum_ratIndicator (P : IntervalPartition a b) :
+    P.lowerSum ratIndicator = 0 := by
+  have h : ∀ i < P.n, infOn ratIndicator (P.pt i) (P.pt (i + 1)) = 0 := fun i hi => by
+    have hlt := P.lt_succ i hi
+    refine le_antisymm ?_ (le_infOn hlt.le fun t _ => (ratIndicator_mem_Icc t).1)
+    obtain ⟨r, hr, hr1, hr2⟩ := exists_irrational_btwn hlt
+    have hq : ratIndicator r = 0 := by simp [ratIndicator, hr]
+    rw [← hq]
+    exact infOn_le (boundedOn_ratIndicator _) ⟨hr1.le, hr2.le⟩
+  rw [IntervalPartition.lowerSum, IntervalPartition.sum]
+  exact Finset.sum_eq_zero fun i hi => by rw [h i (Finset.mem_range.1 hi), zero_mul]
+
+/-- **Section 9.1, example.** The indicator function of the rationals is bounded but not
+Riemann integrable on any interval $`[a, b]` with $`a < b`: condition (2) fails, since
+$`U_a^b(f, P) - L_a^b(f, P) = b - a` for every partition. -/
+theorem not_riemannIntegrableOn_ratIndicator (hab : a < b) :
+    ¬ RiemannIntegrableOn ratIndicator a b := by
+  rintro ⟨I, hI⟩
+  obtain ⟨-, -, h2⟩ := hasRiemannIntegral_iff_conditions.1 hI
+  obtain ⟨P, hP⟩ := h2 (b - a) (sub_pos.2 hab)
+  rw [P.upperSum_ratIndicator, P.lowerSum_ratIndicator] at hP
+  linarith
+
+/-- **Section 9.2, example.** For the indicator function of the rationals on $`[a, b]`,
+$`a < b`, the lower and upper sums of an infinitesimal width are _not_ infinitely close. -/
+theorem not_infClose_hyperLowerSum_hyperUpperSum_ratIndicator (hab : a < b) {Δ : ℝ*}
+    (hΔ : PosInfinitesimal Δ) :
+    ¬ hyperLowerSum ratIndicator a b Δ ≊ hyperUpperSum ratIndicator a b Δ := fun h =>
+  not_riemannIntegrableOn_ratIndicator hab
+    ((riemannIntegrableOn_iff_exists_infClose hab.le).2 ⟨boundedOn_ratIndicator _, Δ, hΔ, h⟩)
+
+end Dirichlet
 
 /-!
 ### Exercise 9.2.1: Riemann sums indexed by the number of subintervals

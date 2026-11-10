@@ -522,6 +522,13 @@ theorem meshPoint_succ_sub_le (hΔ : 0 < Δ) (k : ℕ) :
   push_cast
   split_ifs <;> linarith
 
+/-- **Section 9.1.** If $`\Delta x \ge b - a > 0`, the partition of width $`\Delta x` has a
+single subinterval: it is the partition with the two points $`a` and $`b`. -/
+theorem meshCard_eq_one (hab : a < b) (h : b - a ≤ Δ) : meshCard a b Δ = 1 := by
+  have hΔ : 0 < Δ := (sub_pos.2 hab).trans_le h
+  rw [meshCard, Nat.ceil_eq_iff one_ne_zero]
+  exact ⟨by simpa using div_pos (sub_pos.2 hab) hΔ, by simpa using (div_le_one hΔ).2 h⟩
+
 /-- **Section 9.1.** The partition $`P_{\Delta x}` of $`[a, b]` into subintervals of equal
 width $`\Delta x`, with a possibly smaller last subinterval. If $`\Delta x \ge b - a > 0` it
 is the partition with the two points $`a` and $`b`. -/
@@ -976,6 +983,38 @@ theorem limited_hyperOrdSum (hf : BoundedOn f (Icc a b)) (hab : a ≤ b) (hΔ : 
     Limited (hyperOrdSum f a b Δ) :=
   limited_of_mem_Icc ⟨(le_hyperLowerSum hf hab hΔ).trans (hyperLowerSum_le_hyperOrdSum hf hab hΔ),
     (hyperOrdSum_le_hyperUpperSum hf hab hΔ).trans (hyperUpperSum_le hf hab hΔ)⟩
+
+/-- A real multiple of a positive infinitesimal is less than every positive real. -/
+theorem coe_mul_posInfinitesimal_lt (c : ℝ) (hΔ : PosInfinitesimal Δ) {δ : ℝ} (hδ : 0 < δ) :
+    (c : ℝ*) * Δ < δ := by
+  have : Infinitesimal ((c : ℝ*) * Δ) := (limited_coe c).mul_infinitesimal (Or.inl hΔ)
+  exact (le_abs_self _).trans_lt (infinitesimal_iff_abs_lt.1 this δ hδ)
+
+/-- **Section 9.1.** The number $`n` of subintervals of the partition of $`[a, b]` of width
+$`\Delta x`, extended to hyperreal widths: the least hyperinteger $`n` with
+$`a + n\,\Delta x \ge b`. -/
+def hyperMeshCard (a b : ℝ) : ℝ* → ℝ* := ⋆(fun t : ℝ => (meshCard a b t : ℝ))
+
+/-- The number of subintervals of a partition of hyperreal width is a hypernatural. -/
+theorem hyperMeshCard_mem_hyperNat (a b : ℝ) (Δ : ℝ*) : hyperMeshCard a b Δ ∈ ℕ* := by
+  obtain ⟨r, rfl⟩ := hyperreal_exists_rep Δ
+  exact mem_hyperNat_iff.2 ⟨fun n => meshCard a b (r n), rfl⟩
+
+/-- **Section 9.1.** When $`\Delta x` is a positive infinitesimal and $`a < b`, the number
+$`n` of subintervals of the partition of width $`\Delta x` is unlimited: by transfer
+$`n \ge (b - a)/\Delta x`, and the quotient of a positive real by a positive infinitesimal
+exceeds every real. -/
+theorem hyperMeshCard_mem_unlimitedHyperNat (hab : a < b) (hΔ : PosInfinitesimal Δ) :
+    hyperMeshCard a b Δ ∈ unlimitedHyperNat := by
+  refine mem_unlimitedHyperNat.2 ⟨hyperMeshCard_mem_hyperNat a b Δ, Or.inl fun r => ?_⟩
+  have hle : ((b - a : ℝ) : ℝ*) / Δ ≤ hyperMeshCard a b Δ := by
+    obtain ⟨s, rfl⟩ := hyperreal_exists_rep Δ
+    change Hyperreal.ofSeq (fun n => (b - a) / s n) ≤
+      Hyperreal.ofSeq (fun n => (meshCard a b (s n) : ℝ))
+    exact ofSeq_le_ofSeq_iff.2 (Eventually.of_forall fun n => Nat.le_ceil _)
+  refine lt_of_lt_of_le ?_ hle
+  rw [lt_div_iff₀ hΔ.1]
+  exact coe_mul_posInfinitesimal_lt r hΔ (sub_pos.2 hab)
 
 /-- **Chapter 9, tool.** If $`L \le U` and $`U - L` is at most an infinitesimal, then
 $`L \simeq U`. -/
