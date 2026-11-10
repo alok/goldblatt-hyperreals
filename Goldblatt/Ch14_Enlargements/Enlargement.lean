@@ -171,56 +171,171 @@ theorem exists_nonstandard_nat (hE : F.IsEnlargement) : ∃ n, n ∈ F.star F.N 
   rw [F.im_N_im_R.1] at hbim
   exact ⟨b, hb, hbim⟩
 
+/-- A family of sets indexed by the positive reals has the finite intersection property as
+soon as some point $`w(m)` lies in every member whose index is at least $`m`, for each
+positive $`m`: finitely many indices have a positive lower bound. -/
+theorem fip_range_of_pos {S : {r : ℝ // 0 < r} → ZFSet.{u}} (w : ℝ → ZFSet.{u})
+    (hw : ∀ m : ℝ, 0 < m → ∀ r : {r : ℝ // 0 < r}, m ≤ r.1 → w m ∈ S r) :
+    FIP (ZFSet.range S) := fun s hs => by
+  choose r hr using fun B : {B // B ∈ ZFSet.range S} => mem_range.1 B.2
+  let g : {B // B ∈ s} → ℝ := fun B => (r ⟨B.1, hs B.1 B.2⟩).1
+  have hne : (insert 1 (s.attach.image g)).Nonempty := Finset.insert_nonempty _ _
+  set m := (insert 1 (s.attach.image g)).min' hne with hm
+  have hmpos : 0 < m := by
+    rw [hm, Finset.lt_min'_iff]
+    intro y hy
+    rcases Finset.mem_insert.1 hy with rfl | hy
+    · exact one_pos
+    · obtain ⟨B, -, rfl⟩ := Finset.mem_image.1 hy
+      exact (r _).2
+  refine ⟨w m, fun B hB => ?_⟩
+  have hle : m ≤ g ⟨B, hB⟩ := Finset.min'_le _ _
+    (Finset.mem_insert_of_mem (Finset.mem_image.2 ⟨⟨B, hB⟩, Finset.mem_attach _ _, rfl⟩))
+  have e := hr ⟨B, hs B hB⟩
+  simp only at e
+  rw [← e]
+  exact hw m hmpos _ hle
+
+variable (F) in
+/-- **Section 14.1, first example: the collection.** The set of all real intervals $`(0, r)`
+with $`r` a positive real number. -/
+def posIntervals : ZFSet.{u} :=
+  ZFSet.range fun r : {r : ℝ // 0 < r} => ooIn F.R F.Le (F.real 0) (F.real r.1)
+
+variable (F) in
+/-- **Section 14.1, first example.** The collection of the intervals $`(0, r)` is a set of sets
+of the universe. -/
+theorem isSetOf_posIntervals :
+    IsSetOf F.U F.posIntervals ∧ ∀ B ∈ F.posIntervals, IsSetOf F.U B :=
+  ⟨F.hU.isSetOf_of_subset (F.hU.isSetOf_powerset F.isSetOf_R) fun B hB => by
+      obtain ⟨r, rfl⟩ := mem_range.1 hB
+      exact mem_powerset.2 sep_subset,
+    fun B hB => by
+      obtain ⟨r, rfl⟩ := mem_range.1 hB
+      exact F.hU.isSetOf_sep F.isSetOf_R _⟩
+
+variable (F) in
+/-- **Section 14.1, first example.** The intervals $`(0, r)` have the finite intersection
+property: finitely many of them all contain $`m/2`, where $`m` is the least of their right
+end points. -/
+theorem fip_posIntervals : FIP F.posIntervals :=
+  fip_range_of_pos (fun m => F.real (m / 2)) fun m hm r hr => by
+    rw [ooIn, mem_sep]
+    refine ⟨F.mem_R.2 ⟨_, rfl⟩, ⟨F.pair_mem_Le.2 (by linarith), fun h => ?_⟩,
+      ⟨F.pair_mem_Le.2 (by linarith), fun h => ?_⟩⟩
+    · have := F.real_injective h
+      linarith
+    · have := F.real_injective h
+      linarith
+
+variable (F) in
+/-- **Section 14.1, first example: the intersection.** The common members of the transforms
+$`{}^*(0, r)`, $`r` a positive real, are exactly the positive infinitesimals: the hyperreals
+$`b` with $`0 < b < r` for every positive real $`r`. This holds in every framework; what an
+enlargement adds is that the intersection is nonempty. Strict order is written with $`\le` and
+$`\ne`, as in Chapter 13. -/
+theorem forall_mem_star_posIntervals_iff {b : ZFSet.{u}} :
+    (∀ B ∈ F.posIntervals, b ∈ F.star B) ↔
+      b ∈ F.star F.R ∧ ∀ r : ℝ, 0 < r →
+        (pair (F.real 0) b ∈ F.star F.Le ∧ b ≠ F.real 0) ∧
+          (pair b (F.real r) ∈ F.star F.Le ∧ b ≠ F.real r) := by
+  constructor
+  · intro h
+    have key : ∀ r : ℝ, 0 < r → b ∈ ooIn (F.star F.R) (F.star F.Le) (F.real 0) (F.real r) :=
+      fun r hr => by
+        rw [← F.star_ooIn]
+        exact h _ (mem_range.2 ⟨⟨r, hr⟩, rfl⟩)
+    exact ⟨(mem_sep.1 (key 1 one_pos)).1, fun r hr => (mem_sep.1 (key r hr)).2⟩
+  · rintro ⟨hb, h⟩ B hB
+    obtain ⟨r, rfl⟩ := mem_range.1 hB
+    rw [F.star_ooIn, ooIn, mem_sep]
+    exact ⟨hb, h r.1 r.2⟩
+
 /-- **Section 14.1, first example.** In an enlargement over the real
 numbers there is a positive infinitesimal: a hyperreal $`b` with $`0 < b < r` for every positive
-real $`r`. It is a member of all the sets $`{}^*(0, r)`, and the intervals $`(0, r)` have the
-finite intersection property. Strict order is written with $`\le` and $`\ne`, as in
-Chapter 13. A positive infinitesimal also lies in every punctured interval
-$`{}^*((-r, r) - \{0\})`, the variant mentioned in the book. -/
+real $`r`. It is a common member of all the sets $`{}^*(0, r)`, which exists because the
+intervals $`(0, r)` have the finite intersection property. -/
 theorem exists_pos_infinitesimal (hE : F.IsEnlargement) :
     ∃ b ∈ F.star F.R, ∀ r : ℝ, 0 < r →
       (pair (F.real 0) b ∈ F.star F.Le ∧ b ≠ F.real 0) ∧
         (pair b (F.real r) ∈ F.star F.Le ∧ b ≠ F.real r) := by
-  set 𝒜 : ZFSet.{u} :=
-    ZFSet.range fun r : {r : ℝ // 0 < r} => ooIn F.R F.Le (F.real 0) (F.real r.1) with h𝒜def
-  have hsets : ∀ B ∈ 𝒜, IsSetOf F.U B := fun B hB => by
-    obtain ⟨r, rfl⟩ := mem_range.1 hB
-    exact F.hU.isSetOf_sep F.isSetOf_R _
-  have h𝒜 : IsSetOf F.U 𝒜 :=
-    F.hU.isSetOf_of_subset (F.hU.isSetOf_powerset F.isSetOf_R) fun B hB => by
+  obtain ⟨b, -, hb⟩ := hE _ F.isSetOf_posIntervals.1 F.isSetOf_posIntervals.2 F.fip_posIntervals
+  obtain ⟨h1, h2⟩ := F.forall_mem_star_posIntervals_iff.1 hb
+  exact ⟨b, h1, h2⟩
+
+variable (F) in
+/-- **Section 14.1, first example, the variant: the collection.** The set of all punctured
+intervals $`(-r, r) - \{0\}` with $`r` a positive real number. -/
+def puncturedIntervals : ZFSet.{u} :=
+  ZFSet.range fun r : {r : ℝ // 0 < r} =>
+    ooIn F.R F.Le (F.real (-r.1)) (F.real r.1) \ {F.real 0}
+
+variable (F) in
+/-- **Section 14.1, first example, the variant.** The collection of the punctured intervals is
+a set of sets of the universe. -/
+theorem isSetOf_puncturedIntervals :
+    IsSetOf F.U F.puncturedIntervals ∧ ∀ B ∈ F.puncturedIntervals, IsSetOf F.U B :=
+  ⟨F.hU.isSetOf_of_subset (F.hU.isSetOf_powerset F.isSetOf_R) fun B hB => by
       obtain ⟨r, rfl⟩ := mem_range.1 hB
-      exact mem_powerset.2 sep_subset
-  have hfip : FIP 𝒜 := fun s hs => by
-    choose r hr using fun B : {B // B ∈ 𝒜} => mem_range.1 B.2
-    let g : {B // B ∈ s} → ℝ := fun B => (r ⟨B.1, hs B.1 B.2⟩).1
-    have hne : (insert 1 (s.attach.image g)).Nonempty := Finset.insert_nonempty _ _
-    set m := (insert 1 (s.attach.image g)).min' hne with hm
-    have hmpos : 0 < m := by
-      rw [hm, Finset.lt_min'_iff]
-      intro y hy
-      rcases Finset.mem_insert.1 hy with rfl | hy
-      · exact one_pos
-      · obtain ⟨B, -, rfl⟩ := Finset.mem_image.1 hy
-        exact (r _).2
-    refine ⟨F.real (m / 2), fun B hB => ?_⟩
-    have hle : m ≤ g ⟨B, hB⟩ := Finset.min'_le _ _
-      (Finset.mem_insert_of_mem (Finset.mem_image.2 ⟨⟨B, hB⟩, Finset.mem_attach _ _, rfl⟩))
-    have e := hr ⟨B, hs B hB⟩
-    simp only at e
-    rw [← e, ooIn, mem_sep]
-    refine ⟨F.mem_R.2 ⟨_, rfl⟩, ⟨F.pair_mem_Le.2 (by linarith), fun h => ?_⟩,
-      ⟨F.pair_mem_Le.2 (by simp only [g] at hle; linarith), fun h => ?_⟩⟩
+      exact mem_powerset.2 fun x hx => (mem_sep.1 (mem_sdiff.1 hx).1).1,
+    fun B hB => by
+      obtain ⟨r, rfl⟩ := mem_range.1 hB
+      exact F.hU.isSetOf_sdiff (F.hU.isSetOf_sep F.isSetOf_R _)⟩
+
+variable (F) in
+/-- **Section 14.1, first example, the variant.** The punctured intervals
+$`(-r, r) - \{0\}` have the finite intersection property. -/
+theorem fip_puncturedIntervals : FIP F.puncturedIntervals :=
+  fip_range_of_pos (fun m => F.real (m / 2)) fun m hm r hr => by
+    rw [mem_sdiff, mem_singleton, ooIn, mem_sep]
+    refine ⟨⟨F.mem_R.2 ⟨_, rfl⟩, ⟨F.pair_mem_Le.2 (by linarith), fun h => ?_⟩,
+      ⟨F.pair_mem_Le.2 (by linarith), fun h => ?_⟩⟩, fun h => ?_⟩
     · have := F.real_injective h
       linarith
     · have := F.real_injective h
-      simp only [g] at hle
       linarith
-  obtain ⟨b, -, hb⟩ := hE 𝒜 h𝒜 hsets hfip
-  have key : ∀ r : ℝ, 0 < r → b ∈ ooIn (F.star F.R) (F.star F.Le) (F.real 0) (F.real r) :=
-    fun r hr => by
-      rw [← F.star_ooIn]
-      exact hb _ (mem_range.2 ⟨⟨r, hr⟩, rfl⟩)
-  exact ⟨b, (mem_sep.1 (key 1 one_pos)).1, fun r hr => (mem_sep.1 (key r hr)).2⟩
+    · have := F.real_injective h
+      linarith
+
+variable (F) in
+/-- **Section 14.1, first example, the variant: the intersection.** The common members of the
+transforms $`{}^*((-r, r) - \{0\})`, $`r` a positive real, are exactly the nonzero
+infinitesimals: the hyperreals $`b \ne 0` with $`-r < b < r` for every positive real $`r`. -/
+theorem forall_mem_star_puncturedIntervals_iff {b : ZFSet.{u}} :
+    (∀ B ∈ F.puncturedIntervals, b ∈ F.star B) ↔
+      b ∈ F.star F.R ∧ b ≠ F.real 0 ∧ ∀ r : ℝ, 0 < r →
+        (pair (F.real (-r)) b ∈ F.star F.Le ∧ b ≠ F.real (-r)) ∧
+          (pair b (F.real r) ∈ F.star F.Le ∧ b ≠ F.real r) := by
+  have hstar : ∀ r : ℝ, F.star (ooIn F.R F.Le (F.real (-r)) (F.real r) \ {F.real 0}) =
+      ooIn (F.star F.R) (F.star F.Le) (F.real (-r)) (F.real r) \ {F.real 0} := fun r => by
+    rw [F.star_sdiff (show IsSetOf F.U (ooIn F.R F.Le (F.real (-r)) (F.real r)) from
+        F.hU.isSetOf_sep F.isSetOf_R _) (F.hU.isSetOf_singleton (F.real_mem_U 0)),
+      F.star_singleton (F.real_mem_U 0), F.star_real, F.star_ooIn]
+  constructor
+  · intro h
+    have key : ∀ r : ℝ, 0 < r →
+        b ∈ ooIn (F.star F.R) (F.star F.Le) (F.real (-r)) (F.real r) ∧ b ≠ F.real 0 :=
+      fun r hr => by
+        have := h _ (mem_range.2 ⟨⟨r, hr⟩, rfl⟩)
+        rwa [hstar, mem_sdiff, mem_singleton] at this
+    exact ⟨(mem_sep.1 (key 1 one_pos).1).1, (key 1 one_pos).2,
+      fun r hr => (mem_sep.1 (key r hr).1).2⟩
+  · rintro ⟨hb, h0, h⟩ B hB
+    obtain ⟨r, rfl⟩ := mem_range.1 hB
+    rw [hstar, mem_sdiff, mem_singleton, ooIn, mem_sep]
+    exact ⟨⟨hb, h r.1 r.2⟩, h0⟩
+
+/-- **Section 14.1, first example, the variant.** In an enlargement over the real numbers
+there is a nonzero infinitesimal, obtained as a common member of the transforms of the
+punctured intervals $`(-r, r) - \{0\}`. -/
+theorem exists_nonzero_infinitesimal (hE : F.IsEnlargement) :
+    ∃ b ∈ F.star F.R, b ≠ F.real 0 ∧ ∀ r : ℝ, 0 < r →
+      (pair (F.real (-r)) b ∈ F.star F.Le ∧ b ≠ F.real (-r)) ∧
+        (pair b (F.real r) ∈ F.star F.Le ∧ b ≠ F.real r) := by
+  obtain ⟨b, -, hb⟩ := hE _ F.isSetOf_puncturedIntervals.1 F.isSetOf_puncturedIntervals.2
+    F.fip_puncturedIntervals
+  obtain ⟨h1, h2⟩ := F.forall_mem_star_puncturedIntervals_iff.1 hb
+  exact ⟨b, h1, h2⟩
 
 /-- **Section 14.1, second example.** In an enlargement over the real
 numbers there is a positive unlimited hyperreal: a $`b \in {}^*\mathbb R` with $`r < b` for
@@ -267,9 +382,9 @@ any finitely many members of its domain are related to a common element; in an e
 the transform of a concurrent relation then has an element related to the transforms of all
 members of the domain at once. The examples of Section 14.1 are instances: the order on the
 positive reals in either direction, the nonidentity relation on an infinite set, and the
-membership relation between a set and its finite subsets. The last two are formalized below;
-the first two describe the infinitesimal and the unlimited number of Section 14.1 again and
-are not repeated.
+membership relation between a set and its finite subsets. Each is formalized below: the
+relation is shown to be concurrent, its transform is computed, and a bound of the transformed
+relation is shown to be a nonstandard entity of the expected kind.
 
 Theorem 14.2.1 says that three properties of a framework are equivalent: being an
 enlargement, having bounds for concurrent relations, and hyperfinite approximation, the
@@ -277,9 +392,10 @@ existence for every standard set $`A` of a hyperfinite set containing all standa
 $`{}^*A`. The three implications are proved separately and then assembled.
 -/
 
-/-- **Section 14.2, concurrent relations.** A binary relation $`R` is concurrent, or
-finitely satisfiable, when for any finitely many members $`x_1, \dots, x_n` of its domain there
-is one $`y` with $`x_i \mathrel R y` for all $`i`. -/
+/-- **Section 14.2, concurrent relations.** Concurrence, also called finite
+satisfiability, of a binary relation $`R`: every finite set $`s` of members of the domain of
+$`R` has a common partner, an entity $`y` with $`(x, y) \in R` for each $`x \in s`. As for
+the finite intersection property, finite sets are terms of {lit}`Finset`. -/
 def Concurrent (R : ZFSet.{u}) : Prop :=
   ∀ s : Finset ZFSet.{u}, (∀ x ∈ s, x ∈ dom R) → ∃ y, ∀ x ∈ s, pair x y ∈ R
 
@@ -362,6 +478,276 @@ theorem concurrent_neRel_iff {A : ZFSet.{u}} (h2 : ∃ a ∈ A, ∃ b ∈ A, a �
   · intro hinf s hs
     obtain ⟨y, hyA, hy⟩ := hinf.exists_notMem_finset s
     exact ⟨y, fun x hx => pair_mem_neRel.2 ⟨hdom.1 (hs x hx), hyA, fun h => hy (h ▸ hx)⟩⟩
+
+/-- If $`A` has two distinct members, the domain of its nonidentity relation is $`A`. -/
+theorem dom_neRel {A : ZFSet.{u}} (h2 : ∃ a ∈ A, ∃ b ∈ A, a ≠ b) : dom (neRel A) = A := by
+  obtain ⟨a0, ha0, b0, hb0, hab⟩ := h2
+  ext a
+  constructor
+  · intro h
+    obtain ⟨y, hy⟩ := mem_dom.1 h
+    exact (pair_mem_neRel.1 hy).1
+  · intro h
+    by_cases ha : a = a0
+    · exact mem_dom.2 ⟨b0, pair_mem_neRel.2 ⟨h, hb0, ha ▸ hab⟩⟩
+    · exact mem_dom.2 ⟨a0, pair_mem_neRel.2 ⟨h, ha0, ha⟩⟩
+
+namespace NonstandardFramework
+
+open Formula Term
+
+variable (F : NonstandardFramework.{u}) {A : ZFSet.{u}}
+
+/-- **Section 14.2, third example.** The transform of the nonidentity relation on a set
+$`A \in \mathbb U` is the nonidentity relation on $`{}^*A`, by transfer of
+$`(\forall x, y \in A)\,((x, y) \in R \leftrightarrow x \ne y)`. -/
+theorem pair_mem_star_neRel (hA : IsSetOf F.U A) {x y : ZFSet.{u}} :
+    pair x y ∈ F.star (neRel A) ↔ x ∈ F.star A ∧ y ∈ F.star A ∧ x ≠ y := by
+  have hsub : neRel A ⊆ prod A A := sep_subset
+  have hR := F.hU.isSetOf_of_subset_prod hA hA hsub
+  have ht := F.transfer
+    (.all 0 (.const A) (.all 1 (.const A)
+      (.biimp (.elem (.opair (.var 0) (.var 1)) (.const (neRel A)))
+        (.neg (.equal (.var 0) (.var 1))))))
+    (by simp [IsSentence, hA.1, hR.1])
+  sat_simp at ht
+  have key := ht.1 fun a _ ha y _ hy =>
+    ⟨fun h => (pair_mem_neRel.1 h).2.2, fun h => pair_mem_neRel.2 ⟨ha, hy, h⟩⟩
+  constructor
+  · intro h
+    obtain ⟨hx, hy⟩ := pair_mem_prod.1 (F.star_subset_prod hA hA hsub h)
+    exact ⟨hx, hy, (key x (F.star_subset_U' hA hx) hx y (F.star_subset_U' hA hy) hy).1 h⟩
+  · rintro ⟨hx, hy, h⟩
+    exact (key x (F.star_subset_U' hA hx) hx y (F.star_subset_U' hA hy) hy).2 h
+
+variable {F} in
+/-- **Section 14.2, third example.** A bound of the transformed nonidentity relation on a set
+$`A \in \mathbb U`, that is, an entity $`b` with $`{}^*a \mathrel{{}^*R} b` for all $`a` in the
+domain, lies in $`{}^*A`, differs from $`{}^*a` for every $`a \in A`, and so is a nonstandard
+member of $`{}^*A`. As in {lit}`concurrent_neRel_iff`, $`A` is assumed to have two distinct
+members, so that the domain of the relation is all of $`A`. -/
+theorem mem_star_notMem_im_of_bound_neRel (hA : IsSetOf F.U A) (h2 : ∃ a ∈ A, ∃ b ∈ A, a ≠ b)
+    {b : ZFSet.{u}} (hb : ∀ x ∈ dom (neRel A), pair (F.star x) b ∈ F.star (neRel A)) :
+    b ∈ F.star A ∧ b ∉ F.im A ∧ F.Nonstandard b := by
+  rw [dom_neRel h2] at hb
+  obtain ⟨a0, ha0, -⟩ := h2
+  have hbA : b ∈ F.star A := ((F.pair_mem_star_neRel hA).1 (hb a0 ha0)).2.1
+  have hbim : b ∉ F.im A := fun h => by
+    obtain ⟨a, ha, rfl⟩ := F.mem_im.1 h
+    exact ((F.pair_mem_star_neRel hA).1 (hb a ha)).2.2 rfl
+  exact ⟨hbA, hbim, F.star_subset_U' hA hbA, fun hs => hbim ((F.mem_im_iff hA).2 ⟨hbA, hs⟩)⟩
+
+end NonstandardFramework
+
+namespace RealFramework
+
+open Formula Term
+
+variable (F : RealFramework.{u})
+
+/-- A real number belongs to the ray above $`r` exactly when it is greater than $`r`. -/
+theorem real_mem_upperRay {r x : ℝ} : F.real x ∈ F.upperRay r ↔ r < x := by
+  rw [upperRay, mem_sep, F.pair_mem_Le]
+  exact ⟨fun ⟨_, hle, hne⟩ => lt_of_le_of_ne hle fun h => hne (h ▸ rfl),
+    fun h => ⟨F.mem_R.2 ⟨x, rfl⟩, h.le, fun e => h.ne' (F.real_injective e)⟩⟩
+
+/-- A member of the ray above $`r` is a real number greater than $`r`. -/
+theorem exists_of_mem_upperRay {r : ℝ} {a : ZFSet.{u}} (ha : a ∈ F.upperRay r) :
+    ∃ x : ℝ, r < x ∧ a = F.real x := by
+  obtain ⟨x, rfl⟩ := F.mem_R.1 (mem_sep.1 ha).1
+  exact ⟨x, F.real_mem_upperRay.1 ha, rfl⟩
+
+/-- The set $`\mathbb R^+` of positive reals, the ray above $`0`, is a set of the universe. -/
+theorem isSetOf_upperRay (r : ℝ) : IsSetOf F.U (F.upperRay r) := F.hU.isSetOf_sep F.isSetOf_R _
+
+/-- **Section 14.2, first example: the relation.** The "greater than" relation on the positive
+reals, $`\{(r, y) \in \mathbb R^+ \times \mathbb R^+ : r > y\}`. The set $`\mathbb R^+` is the
+ray {lit}`upperRay 0` of Chapter 13, and $`r > y` is written as $`y \le r` and $`y \ne r`. -/
+def gtRel : ZFSet.{u} :=
+  (prod (F.upperRay 0) (F.upperRay 0)).sep fun p => ∃ r y, p = pair r y ∧ pair y r ∈ F.Le ∧ y ≠ r
+
+/-- **Section 14.2, second example: the relation.** The "less than" relation on the positive
+reals, $`\{(r, y) \in \mathbb R^+ \times \mathbb R^+ : r < y\}`. -/
+def ltRel : ZFSet.{u} :=
+  (prod (F.upperRay 0) (F.upperRay 0)).sep fun p => ∃ r y, p = pair r y ∧ pair r y ∈ F.Le ∧ y ≠ r
+
+variable {F}
+
+/-- Membership of a pair in the "greater than" relation. -/
+theorem pair_mem_gtRel {a y : ZFSet.{u}} :
+    pair a y ∈ F.gtRel ↔ a ∈ F.upperRay 0 ∧ y ∈ F.upperRay 0 ∧ pair y a ∈ F.Le ∧ y ≠ a := by
+  rw [gtRel, mem_sep, pair_mem_prod]
+  constructor
+  · rintro ⟨⟨h1, h2⟩, a', y', e, h3⟩
+    obtain ⟨rfl, rfl⟩ := pair_inj.1 e
+    exact ⟨h1, h2, h3⟩
+  · rintro ⟨h1, h2, h3⟩
+    exact ⟨⟨h1, h2⟩, a, y, rfl, h3⟩
+
+/-- Membership of a pair in the "less than" relation. -/
+theorem pair_mem_ltRel {a y : ZFSet.{u}} :
+    pair a y ∈ F.ltRel ↔ a ∈ F.upperRay 0 ∧ y ∈ F.upperRay 0 ∧ pair a y ∈ F.Le ∧ y ≠ a := by
+  rw [ltRel, mem_sep, pair_mem_prod]
+  constructor
+  · rintro ⟨⟨h1, h2⟩, a', y', e, h3⟩
+    obtain ⟨rfl, rfl⟩ := pair_inj.1 e
+    exact ⟨h1, h2, h3⟩
+  · rintro ⟨h1, h2, h3⟩
+    exact ⟨⟨h1, h2⟩, a, y, rfl, h3⟩
+
+/-- For real numbers, $`(r, y)` is in the "greater than" relation exactly when
+$`0 < y < r`. -/
+theorem real_pair_mem_gtRel {r y : ℝ} :
+    pair (F.real r) (F.real y) ∈ F.gtRel ↔ 0 < r ∧ 0 < y ∧ y < r := by
+  rw [pair_mem_gtRel, F.real_mem_upperRay, F.real_mem_upperRay, F.pair_mem_Le]
+  exact ⟨fun ⟨h1, h2, h3, h4⟩ => ⟨h1, h2, lt_of_le_of_ne h3 fun e => h4 (e ▸ rfl)⟩,
+    fun ⟨h1, h2, h3⟩ => ⟨h1, h2, h3.le, fun e => h3.ne (F.real_injective e)⟩⟩
+
+/-- For real numbers, $`(r, y)` is in the "less than" relation exactly when
+$`0 < r < y`. -/
+theorem real_pair_mem_ltRel {r y : ℝ} :
+    pair (F.real r) (F.real y) ∈ F.ltRel ↔ 0 < r ∧ 0 < y ∧ r < y := by
+  rw [pair_mem_ltRel, F.real_mem_upperRay, F.real_mem_upperRay, F.pair_mem_Le]
+  exact ⟨fun ⟨h1, h2, h3, h4⟩ => ⟨h1, h2, lt_of_le_of_ne h3 fun e => h4 (e ▸ rfl)⟩,
+    fun ⟨h1, h2, h3⟩ => ⟨h1, h2, h3.le, fun e => h3.ne' (F.real_injective e)⟩⟩
+
+/-- Finitely many members of the ray above $`0` are positive reals with a positive lower
+bound $`m` and an upper bound $`M`. -/
+theorem exists_bounds_of_finset (s : Finset ZFSet.{u}) (hs : ∀ x ∈ s, x ∈ F.upperRay 0) :
+    ∃ m M : ℝ, 0 < m ∧ ∀ x ∈ s, ∃ r : ℝ, x = F.real r ∧ m ≤ r ∧ r ≤ M := by
+  choose r hr using fun x : {x // x ∈ s} => F.exists_of_mem_upperRay (hs x.1 x.2)
+  have hne : (insert 1 (s.attach.image r)).Nonempty := Finset.insert_nonempty _ _
+  refine ⟨(insert 1 (s.attach.image r)).min' hne, (insert 1 (s.attach.image r)).max' hne, ?_,
+    fun x hx => ⟨r ⟨x, hx⟩, (hr ⟨x, hx⟩).2, ?_, ?_⟩⟩
+  · rw [Finset.lt_min'_iff]
+    intro y hy
+    rcases Finset.mem_insert.1 hy with rfl | hy
+    · exact one_pos
+    · obtain ⟨B, -, rfl⟩ := Finset.mem_image.1 hy
+      exact (hr B).1
+  · exact Finset.min'_le (insert 1 (s.attach.image r)) _
+      (Finset.mem_insert_of_mem (Finset.mem_image.2 ⟨⟨x, hx⟩, Finset.mem_attach _ _, rfl⟩))
+  · exact Finset.le_max' (insert 1 (s.attach.image r)) _
+      (Finset.mem_insert_of_mem (Finset.mem_image.2 ⟨⟨x, hx⟩, Finset.mem_attach _ _, rfl⟩))
+
+variable (F) in
+/-- **Section 14.2, first example.** The "greater than" relation on the positive reals is
+concurrent: finitely many positive reals are all greater than half of the least of them. -/
+theorem concurrent_gtRel : Concurrent F.gtRel := fun s hs => by
+  obtain ⟨m, M, hm, h⟩ := exists_bounds_of_finset s fun x hx => by
+    obtain ⟨y, hy⟩ := mem_dom.1 (hs x hx)
+    exact (pair_mem_gtRel.1 hy).1
+  refine ⟨F.real (m / 2), fun x hx => ?_⟩
+  obtain ⟨r, rfl, h1, -⟩ := h x hx
+  exact real_pair_mem_gtRel.2 ⟨by linarith, by linarith, by linarith⟩
+
+variable (F) in
+/-- **Section 14.2, second example.** The "less than" relation on the positive reals is
+concurrent: finitely many positive reals are all less than their maximum plus one. -/
+theorem concurrent_ltRel : Concurrent F.ltRel := fun s hs => by
+  obtain ⟨m, M, hm, h⟩ := exists_bounds_of_finset s fun x hx => by
+    obtain ⟨y, hy⟩ := mem_dom.1 (hs x hx)
+    exact (pair_mem_ltRel.1 hy).1
+  refine ⟨F.real (M + 1), fun x hx => ?_⟩
+  obtain ⟨r, rfl, h1, h2⟩ := h x hx
+  exact real_pair_mem_ltRel.2 ⟨by linarith, by linarith, by linarith⟩
+
+variable (F) in
+/-- **Section 14.2, first example.** By transfer, the transform of the "greater than"
+relation on $`\mathbb R^+` is the "greater than" relation on $`{}^*\mathbb R^+`. -/
+theorem pair_mem_star_gtRel {x y : ZFSet.{u}} :
+    pair x y ∈ F.star F.gtRel ↔ x ∈ F.star (F.upperRay 0) ∧ y ∈ F.star (F.upperRay 0) ∧
+      pair y x ∈ F.star F.Le ∧ y ≠ x := by
+  have hP := F.isSetOf_upperRay 0
+  have hsub : F.gtRel ⊆ prod (F.upperRay 0) (F.upperRay 0) := sep_subset
+  have hR := F.hU.isSetOf_of_subset_prod hP hP hsub
+  have ht := F.transfer
+    (.all 0 (.const (F.upperRay 0)) (.all 1 (.const (F.upperRay 0))
+      (.biimp (.elem (.opair (.var 0) (.var 1)) (.const F.gtRel))
+        (.conj (.elem (.opair (.var 1) (.var 0)) (.const F.Le))
+          (.neg (.equal (.var 1) (.var 0)))))))
+    (by simp [IsSentence, hP.1, hR.1, F.isSetOf_Le.1])
+  sat_simp at ht
+  have key := ht.1 fun a _ ha y _ hy =>
+    ⟨fun h => (pair_mem_gtRel.1 h).2.2, fun h => pair_mem_gtRel.2 ⟨ha, hy, h⟩⟩
+  constructor
+  · intro h
+    obtain ⟨hx, hy⟩ := pair_mem_prod.1 (F.star_subset_prod hP hP hsub h)
+    exact ⟨hx, hy, (key x (F.star_subset_U' hP hx) hx y (F.star_subset_U' hP hy) hy).1 h⟩
+  · rintro ⟨hx, hy, h⟩
+    exact (key x (F.star_subset_U' hP hx) hx y (F.star_subset_U' hP hy) hy).2 h
+
+variable (F) in
+/-- **Section 14.2, second example.** By transfer, the transform of the "less than"
+relation on $`\mathbb R^+` is the "less than" relation on $`{}^*\mathbb R^+`. -/
+theorem pair_mem_star_ltRel {x y : ZFSet.{u}} :
+    pair x y ∈ F.star F.ltRel ↔ x ∈ F.star (F.upperRay 0) ∧ y ∈ F.star (F.upperRay 0) ∧
+      pair x y ∈ F.star F.Le ∧ y ≠ x := by
+  have hP := F.isSetOf_upperRay 0
+  have hsub : F.ltRel ⊆ prod (F.upperRay 0) (F.upperRay 0) := sep_subset
+  have hR := F.hU.isSetOf_of_subset_prod hP hP hsub
+  have ht := F.transfer
+    (.all 0 (.const (F.upperRay 0)) (.all 1 (.const (F.upperRay 0))
+      (.biimp (.elem (.opair (.var 0) (.var 1)) (.const F.ltRel))
+        (.conj (.elem (.opair (.var 0) (.var 1)) (.const F.Le))
+          (.neg (.equal (.var 1) (.var 0)))))))
+    (by simp [IsSentence, hP.1, hR.1, F.isSetOf_Le.1])
+  sat_simp at ht
+  have key := ht.1 fun a _ ha y _ hy =>
+    ⟨fun h => (pair_mem_ltRel.1 h).2.2, fun h => pair_mem_ltRel.2 ⟨ha, hy, h⟩⟩
+  constructor
+  · intro h
+    obtain ⟨hx, hy⟩ := pair_mem_prod.1 (F.star_subset_prod hP hP hsub h)
+    exact ⟨hx, hy, (key x (F.star_subset_U' hP hx) hx y (F.star_subset_U' hP hy) hy).1 h⟩
+  · rintro ⟨hx, hy, h⟩
+    exact (key x (F.star_subset_U' hP hx) hx y (F.star_subset_U' hP hy) hy).2 h
+
+/-- **Section 14.2, first example.** A bound of the transformed "greater than" relation on the
+positive reals, that is, an entity $`b` with $`r \mathrel{{}^*R} b` for every positive real
+$`r`, is a positive infinitesimal: $`b \in {}^*\mathbb R` and $`0 < b < r` for every positive
+real $`r`. The conclusion is that of {lit}`exists_pos_infinitesimal`. -/
+theorem pos_infinitesimal_of_bound_gtRel {b : ZFSet.{u}}
+    (hb : ∀ x ∈ dom F.gtRel, pair (F.star x) b ∈ F.star F.gtRel) :
+    b ∈ F.star F.R ∧ ∀ r : ℝ, 0 < r →
+      (pair (F.real 0) b ∈ F.star F.Le ∧ b ≠ F.real 0) ∧
+        (pair b (F.real r) ∈ F.star F.Le ∧ b ≠ F.real r) := by
+  have key : ∀ r : ℝ, 0 < r →
+      b ∈ F.star (F.upperRay 0) ∧ pair b (F.real r) ∈ F.star F.Le ∧ b ≠ F.real r := fun r hr => by
+    have h := hb (F.real r) (mem_dom.2 ⟨F.real (r / 2),
+      real_pair_mem_gtRel.2 ⟨hr, by linarith, by linarith⟩⟩)
+    rw [F.star_real] at h
+    exact (F.pair_mem_star_gtRel.1 h).2
+  have h1 := (key 1 one_pos).1
+  rw [F.star_upperRay, mem_sep] at h1
+  exact ⟨h1.1, fun r hr => ⟨h1.2, (key r hr).2⟩⟩
+
+/-- **Section 14.2, second example.** A bound of the transformed "less than" relation on the
+positive reals, an entity $`b` with $`r \mathrel{{}^*R} b` for every positive real $`r`, is a
+positive unlimited hyperreal: $`b \in {}^*\mathbb R` and $`r < b` for every real $`r`. The
+conclusion is that of {lit}`exists_pos_unlimited`. -/
+theorem pos_unlimited_of_bound_ltRel {b : ZFSet.{u}}
+    (hb : ∀ x ∈ dom F.ltRel, pair (F.star x) b ∈ F.star F.ltRel) :
+    b ∈ F.star F.R ∧ ∀ r : ℝ, pair (F.real r) b ∈ F.star F.Le ∧ b ≠ F.real r := by
+  have key : ∀ r : ℝ, 0 < r →
+      b ∈ F.star (F.upperRay 0) ∧ pair (F.real r) b ∈ F.star F.Le ∧ b ≠ F.real r := fun r hr => by
+    have h := hb (F.real r) (mem_dom.2 ⟨F.real (r + 1),
+      real_pair_mem_ltRel.2 ⟨hr, by linarith, by linarith⟩⟩)
+    rw [F.star_real] at h
+    exact (F.pair_mem_star_ltRel.1 h).2
+  have h1 := (key 1 one_pos).1
+  have h0 := h1
+  rw [F.star_upperRay, mem_sep] at h0
+  refine ⟨h0.1, fun r => ?_⟩
+  rcases lt_or_ge 0 r with hr | hr
+  · exact (key r hr).2
+  · have hsub : F.upperRay 0 ⊆ F.upperRay r := fun a ha => by
+      obtain ⟨x, hx, rfl⟩ := F.exists_of_mem_upperRay ha
+      exact F.real_mem_upperRay.2 (by linarith)
+    have h2 := (F.star_subset_star_iff (F.isSetOf_upperRay 0) (F.isSetOf_upperRay r)).2 hsub h1
+    rw [F.star_upperRay, mem_sep] at h2
+    exact h2.2
+
+end RealFramework
 
 namespace NonstandardFramework
 
@@ -515,5 +901,32 @@ theorem IsEnlargement.exists_hyperfinite (hE : F.IsEnlargement) (hA : IsSetOf F.
   exact ⟨B, ⟨A, hA, hB⟩, him, (F.internal_subset_of_mem_star_finPow hA hB).1⟩
 
 end NonstandardFramework
+
+namespace RealFramework
+
+variable {F : RealFramework.{u}}
+
+/-- **Section 14.2, first example.** In an enlargement the "greater than" relation on the
+positive reals has a bound, and every bound is a positive infinitesimal. -/
+theorem exists_bound_gtRel (hE : F.IsEnlargement) :
+    ∃ b, (∀ x ∈ dom F.gtRel, pair (F.star x) b ∈ F.star F.gtRel) ∧ b ∈ F.star F.R ∧
+      ∀ r : ℝ, 0 < r → (pair (F.real 0) b ∈ F.star F.Le ∧ b ≠ F.real 0) ∧
+        (pair b (F.real r) ∈ F.star F.Le ∧ b ≠ F.real r) := by
+  have hP := F.isSetOf_upperRay 0
+  obtain ⟨b, -, hb⟩ := hE.concurrentBound F.gtRel (F.hU.isSetOf_of_subset_prod hP hP sep_subset)
+    (F.hU.relIn_of_subset_prod hP hP sep_subset) F.concurrent_gtRel
+  exact ⟨b, hb, pos_infinitesimal_of_bound_gtRel hb⟩
+
+/-- **Section 14.2, second example.** In an enlargement the "less than" relation on the
+positive reals has a bound, and every bound is a positive unlimited hyperreal. -/
+theorem exists_bound_ltRel (hE : F.IsEnlargement) :
+    ∃ b, (∀ x ∈ dom F.ltRel, pair (F.star x) b ∈ F.star F.ltRel) ∧ b ∈ F.star F.R ∧
+      ∀ r : ℝ, pair (F.real r) b ∈ F.star F.Le ∧ b ≠ F.real r := by
+  have hP := F.isSetOf_upperRay 0
+  obtain ⟨b, -, hb⟩ := hE.concurrentBound F.ltRel (F.hU.isSetOf_of_subset_prod hP hP sep_subset)
+    (F.hU.relIn_of_subset_prod hP hP sep_subset) F.concurrent_ltRel
+  exact ⟨b, hb, pos_unlimited_of_bound_ltRel hb⟩
+
+end RealFramework
 
 end Goldblatt

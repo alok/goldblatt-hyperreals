@@ -551,11 +551,13 @@ theorem termLos_of_admissible (hX : IsBaseSet X) :
         rw [a2, b2]
         exact ((col_appDef hX hgf hgx).2 hc).1.app_eq ((col_appVal hX hgf hgx hgb).2 hmem)
 
-/-- **Section 14.3, Łoś's theorem.** For any formula $`\varphi(x_1, \dots, x_p)` of the
-language of $`\mathbb U(X)` and any $`f_1, \dots, f_p \in Z`, the sentence
-$`{}^*\varphi([f_1], \dots, [f_p])` is true if and only if
-$$`\{i \in I : \varphi(f_1(i), \dots, f_p(i)) \text{ is true}\} \in \mathcal F.`
-The theorem is proved for all formulas of the deep embedding of Chapter 13, in which an atomic
+/-- **Section 14.3, Łoś's theorem.** Truth in the collapsed ultrapower is truth at almost
+all indices. Let $`\varphi` be a formula of the language of $`\mathbb U(X)` and assign to its
+free variables functions $`f_1, \dots, f_p` of bounded rank. Then
+$$`\mathbb U(Y) \models {}^*\varphi([f_1], \dots, [f_p]) \iff
+\{i \in I : \mathbb U(X) \models \varphi(f_1(i), \dots, f_p(i))\} \in \mathcal F.`
+In the Lean statement an assignment gives a function to every variable, and admissibility of
+$`\varphi` says that its constants name members of $`\mathbb U(X)`. The theorem is proved for all formulas of the deep embedding of Chapter 13, in which an atomic
 formula with an undefined term is false. So it includes the statement that definedness of terms
 is preserved, which the book's version for defined sentences does not need. -/
 theorem los (hX : IsBaseSet X) (φ : Formula.{u}) {b : Set ℕ}
@@ -626,6 +628,58 @@ theorem existsUnique_rank {f : I → ZFSet.{u}} (hf : Bdd 𝓕 X f) :
   obtain ⟨i, h2, h3⟩ := (hk'.and hk).exists
   exact h2.symm.trans h3
 
+omit [Small.{u} I] in
+/-- **Section 14.3, rank of a function.** For $`f \in Z`, the rank {lit}`rk` of $`f` is at
+most $`n` exactly when $`f \in Z_n`. -/
+theorem rk_le_iff {f : I → ZFSet.{u}} (hf : Bdd 𝓕 X f) {n : ℕ} :
+    rk 𝓕 X f ≤ n ↔ ∀ᶠ i in 𝓕, f i ∈ cumPow X n :=
+  ⟨fun h => (eventually_mem_cumPow_rk hf).mono fun _ hi => cumPow_mono h hi,
+    fun h => Nat.sInf_le h⟩
+
+omit [Small.{u} I] in
+/-- **Section 14.3, rank of a function.** The two descriptions of the rank of $`f \in Z` agree:
+the least $`n` with $`f \in Z_n` ({lit}`rk`) is the number $`k` for which
+$`\{i : f(i) \text{ has rank } k\}` belongs to the ultrafilter. -/
+theorem eventually_rank_eq_rk {f : I → ZFSet.{u}} (hf : Bdd 𝓕 X f) :
+    ∀ᶠ i in 𝓕, rank X (f i) = rk 𝓕 X f := by
+  obtain ⟨k, hk, -⟩ := existsUnique_rank hf
+  have h1 : rk 𝓕 X f ≤ k := (rk_le_iff hf).2 (by
+    filter_upwards [hk, hf.eventually_mem] with i h2 h3
+    exact (mem_cumPow_iff_rank_le h3).2 h2.le)
+  have h2 : k ≤ rk 𝓕 X f := by
+    obtain ⟨i, h3, h4⟩ := (hk.and (eventually_mem_cumPow_rk hf)).exists
+    exact h3 ▸ rank_le_of_mem_cumPow h4
+  exact hk.mono fun i hi => hi.trans (le_antisymm h2 h1)
+
+omit [Small.{u} I] in
+/-- **Section 14.3, rank of a function.** The functions of rank $`n + 1` are those in
+$`Z_{n+1} - Z_n`. -/
+theorem rk_eq_succ_iff {f : I → ZFSet.{u}} {n : ℕ} :
+    (Bdd 𝓕 X f ∧ rk 𝓕 X f = n + 1) ↔
+      (∀ᶠ i in 𝓕, f i ∈ cumPow X (n + 1)) ∧ ¬ ∀ᶠ i in 𝓕, f i ∈ cumPow X n := by
+  constructor
+  · rintro ⟨hf, h⟩
+    exact ⟨(rk_le_iff hf).1 h.le, fun h' => by have := (rk_le_iff hf).2 h'; omega⟩
+  · rintro ⟨h1, h2⟩
+    have hf : Bdd 𝓕 X f := ⟨n + 1, h1⟩
+    have h3 := (rk_le_iff hf).2 h1
+    have h4 : ¬ rk 𝓕 X f ≤ n := fun h => h2 ((rk_le_iff hf).1 h)
+    exact ⟨hf, by omega⟩
+
+omit [Small.{u} I] in
+/-- **Section 14.3, rank of a function.** The functions of rank $`0` are those in $`Z_0`. -/
+theorem rk_eq_zero_iff {f : I → ZFSet.{u}} (hf : Bdd 𝓕 X f) : rk 𝓕 X f = 0 ↔ Atomic 𝓕 X f := by
+  rw [← Nat.le_zero, rk_le_iff hf]
+  rfl
+
+omit [Small.{u} I] in
+/-- **Section 14.3, rank of a function.** The rank of the constant function $`a^I` is the rank
+of the entity $`a` in $`\mathbb U(X)`. -/
+theorem rk_const {a : ZFSet.{u}} (ha : a ∈ superstructure X) :
+    rk 𝓕 X (fun _ : I => a) = rank X a := by
+  obtain ⟨_, h⟩ := (eventually_rank_eq_rk (𝓕 := 𝓕) (bdd_const ha)).exists
+  exact h.symm
+
 /-!
 ## 14.4 Exercises on the Ultrapower Construction: Exercise (2)
 
@@ -665,28 +719,55 @@ theorem isFunction_col (hX : IsBaseSet X) {G : I → ZFSet.{u}} (hG : Bdd 𝓕 X
       exact ⟨c1.1, c1.2, c2.2⟩)
     exact ⟨this.1, this.2.1⟩
 
-/-- **Exercise 14.4(2).** If $`F \in Z` is a function almost everywhere and
-$`h(i)` is in the domain of $`F(i)` for almost all $`i`, then
-$$`[F]([h]) = [k] \iff \{i : F(i)(h(i)) = k(i)\} \in \mathcal F.` -/
+/-- Outside the domain, the value {lit}`app` is the empty set: it is the union of an empty
+set of candidates. -/
+theorem app_of_notMem_dom {f a : ZFSet.{u}} (h : a ∉ dom f) : app f a = ∅ := by
+  have : ((ran f).sep fun b => pair a b ∈ f) = ∅ := by
+    ext b
+    rw [mem_sep]
+    exact ⟨fun hb => absurd (mem_dom.2 ⟨b, hb.2⟩) h, fun hb => absurd hb (notMem_empty b)⟩
+  rw [app, this, sUnion_empty]
+
+/-- **Exercise 14.4(2).** If $`F \in Z` is a function almost everywhere, then for all
+$`h, k \in Z`
+$$`[F]([h]) = [k] \iff \{i : F(i)(h(i)) = k(i)\} \in \mathcal F.`
+As in the book there is no hypothesis on the domains. Where $`h(i)` is in the domain of
+$`F(i)` for almost all $`i` this is the expected statement about values. In the other case
+$`[h]` is not in the domain of $`[F]`, both sides refer to the value {lit}`app` outside the
+domain, which is the empty set by convention, and the equivalence says that $`[k]` is empty
+exactly when $`k(i)` is empty almost everywhere. "Function" means function of the universe: a
+single-valued set of pairs of members of $`\mathbb U(X)`. -/
 theorem app_col_eq_iff (hX : IsBaseSet X) {G h k : I → ZFSet.{u}} (hG : Bdd 𝓕 X G)
     (hh : Bdd 𝓕 X h) (hk : Bdd 𝓕 X k)
-    (hfun : ∀ᶠ i in 𝓕, IsFunction (G i) ∧ RelIn (superstructure X) (G i))
-    (hdom : ∀ᶠ i in 𝓕, h i ∈ dom (G i)) :
+    (hfun : ∀ᶠ i in 𝓕, IsFunction (G i) ∧ RelIn (superstructure X) (G i)) :
     app (col 𝓕 hX G) (col 𝓕 hX h) = col 𝓕 hX k ↔ ∀ᶠ i in 𝓕, app (G i) (h i) = k i := by
-  have hdef := (col_appDef hX hG hh).2 (by
-    filter_upwards [hfun, hdom] with i c1 c2
-    exact ⟨c1.1, c1.2, c2⟩)
-  constructor
-  · intro e
-    have hmem := hdef.1.pair_app_mem hdef.2.2
-    rw [e] at hmem
-    filter_upwards [(col_appVal hX hG hh hk).1 hmem, hfun] with i c1 c2
-    exact c2.1.app_eq c1
-  · intro hev
-    refine hdef.1.app_eq ((col_appVal hX hG hh hk).2 ?_)
-    filter_upwards [hev, hfun, hdom] with i c1 c2 c3
-    rw [← c1]
-    exact c2.1.pair_app_mem c3
+  by_cases hdom : ∀ᶠ i in 𝓕, h i ∈ dom (G i)
+  · have hdef := (col_appDef hX hG hh).2 (by
+      filter_upwards [hfun, hdom] with i c1 c2
+      exact ⟨c1.1, c1.2, c2⟩)
+    constructor
+    · intro e
+      have hmem := hdef.1.pair_app_mem hdef.2.2
+      rw [e] at hmem
+      filter_upwards [(col_appVal hX hG hh hk).1 hmem, hfun] with i c1 c2
+      exact c2.1.app_eq c1
+    · intro hev
+      refine hdef.1.app_eq ((col_appVal hX hG hh hk).2 ?_)
+      filter_upwards [hev, hfun, hdom] with i c1 c2 c3
+      rw [← c1]
+      exact c2.1.pair_app_mem c3
+  · have hW := (isUniverseOver_superstructure hX).toIsUniverse
+    have hnd : ∀ᶠ i in 𝓕, h i ∉ dom (G i) := Ultrafilter.eventually_not.2 hdom
+    have h1 : col 𝓕 hX h ∉ dom (col 𝓕 hX G) := fun hc => by
+      have hfc := isFunction_col hX hG hfun
+      obtain ⟨i, c1, c2⟩ := (((col_appDef hX hG hh).1 ⟨hfc.1, hfc.2, hc⟩).and hnd).exists
+      exact c2 c1.2.2
+    have h2 : (∀ᶠ i in 𝓕, app (G i) (h i) = k i) ↔ ∀ᶠ i in 𝓕, k i = ∅ :=
+      eventually_congr (hnd.mono fun i hi => by rw [app_of_notMem_dom hi, eq_comm])
+    rw [app_of_notMem_dom h1, h2]
+    exact ⟨fun e => (col_eq_iff hX hk (bdd_const hW.empty_mem)).1
+        (e.symm.trans (col_const_empty (𝓕 := 𝓕) hX).symm),
+      fun e => ((col_congr hX (show k =ᶠ[𝓕] fun _ => ∅ from e)).trans (col_const_empty hX)).symm⟩
 
 end BoundedUltrapower
 

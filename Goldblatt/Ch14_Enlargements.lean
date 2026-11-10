@@ -47,13 +47,51 @@ is split over five pages; this page is the overview and the index.
   answers Exercise 14.4(3), and states the enlargement theorem and its consequences for
   frameworks over the real numbers.
 
-## The sections of the chapter
+## 14.1 Enlargements
 
-* 14.1 Enlargements (part 1; the enlargement theorem is in part 5).
-* 14.2 Concurrence and Hyperfinite Approximation (part 1).
-* 14.3 Enlargements as Ultrapowers (parts 2 to 5).
-* 14.4 Exercises on the Ultrapower Construction (parts 2 to 4 for Exercise (1), part 4 for
-  Exercise (2), part 5 for Exercise (3)).
+Part 1. The finite intersection property ({name}`Goldblatt.FIP`) and the enlargement property
+({name}`Goldblatt.NonstandardFramework.IsEnlargement`). The four examples: positive
+infinitesimals as the common members of the transformed intervals
+({name}`Goldblatt.RealFramework.forall_mem_star_posIntervals_iff`,
+{name}`Goldblatt.RealFramework.exists_pos_infinitesimal`) and nonzero infinitesimals from
+punctured intervals ({name}`Goldblatt.RealFramework.exists_nonzero_infinitesimal`); unlimited
+hyperreals ({name}`Goldblatt.RealFramework.exists_pos_unlimited`); nonstandard members of
+infinite sets
+({name}`Goldblatt.NonstandardFramework.IsEnlargement.exists_mem_star_notMem_im`); hyperfinite
+approximations ({name}`Goldblatt.NonstandardFramework.IsEnlargement.exists_hyperfinite`). The
+enlargement theorem announced at the end of the section is proved under 14.3.
+
+## 14.2 Concurrence and Hyperfinite Approximation
+
+Part 1. Concurrent relations ({name}`Goldblatt.Concurrent`) and the four examples, each with
+the concurrency of the relation and the description of a bound of its transform: the two order
+relations on the positive reals
+({name}`Goldblatt.RealFramework.pos_infinitesimal_of_bound_gtRel`,
+{name}`Goldblatt.RealFramework.pos_unlimited_of_bound_ltRel`), the nonidentity relation
+({name}`Goldblatt.concurrent_neRel_iff`,
+{name}`Goldblatt.NonstandardFramework.mem_star_notMem_im_of_bound_neRel`) and the membership
+relation ({name}`Goldblatt.concurrent_memRel`). Theorem 14.2.1 is
+{name}`Goldblatt.NonstandardFramework.enlargement_tfae`.
+
+## 14.3 Enlargements as Ultrapowers
+
+Parts 2 to 5. Functions of bounded rank and their rank
+({name}`Goldblatt.BoundedUltrapower.Bdd`, {name}`Goldblatt.BoundedUltrapower.eventually_rank_eq_rk`),
+the collapse $`f \mapsto [f]` ({name}`Goldblatt.BoundedUltrapower.col`,
+{name}`Goldblatt.BoundedUltrapower.col_eq_iff`,
+{name}`Goldblatt.BoundedUltrapower.col_mem_col_iff`), the theorem of Łoś
+({name}`Goldblatt.BoundedUltrapower.los`), the framework
+({name}`Goldblatt.BoundedUltrapower.framework`), the ultrafilter on the finite subsets of the
+superstructure ({name}`Goldblatt.BoundedUltrapower.ultra`), the enlargement property
+({name}`Goldblatt.BoundedUltrapower.isEnlargement_enlargement`), and the enlargement theorem
+({name}`Goldblatt.exists_enlargement`).
+
+## 14.4 Exercises on the Ultrapower Construction
+
+Exercise (1), the details of the construction, is the content of parts 2 to 4. Exercise (2) is
+{name}`Goldblatt.BoundedUltrapower.isFunction_col` and
+{name}`Goldblatt.BoundedUltrapower.app_col_eq_iff` in part 4. Exercise (3) is
+{name}`Goldblatt.BoundedUltrapower.ultra_ne_pure` in part 5.
 
 ## Design of the formalization
 
@@ -90,14 +128,16 @@ using it for the general case.
 on a set is concurrent exactly when the set is infinite; this needs the set to have at least
 two members, and the hypothesis is added
 ({name}`Goldblatt.concurrent_neRel_iff`). Section 14.3 remarks that a nonprincipal ultrafilter
-gives nonstandard members of the transform of the real numbers, with a reference to Chapter 3;
-that argument is for the index set $`\mathbb N`, and it is formalized for that index set
-({name}`Goldblatt.BoundedUltrapower.exists_mem_star_notMem_im_hyperfilter`).
-
-*What is left as prose.* The first two examples of Section 14.2 describe the infinitesimal and
-the unlimited number of Section 14.1 once more, as bounds of the order relations on the
-positive reals; they are not formalized a second time. The variant of the first example of
-Section 14.1 with punctured intervals around zero is covered by the positive infinitesimal.
+gives nonstandard members of the transform of the real numbers, with a reference to Chapter 3.
+That argument is for the index set $`\mathbb N`. It is formalized for every nonprincipal
+ultrafilter on $`\mathbb N`
+({name}`Goldblatt.BoundedUltrapower.exists_mem_star_notMem_im_of_nonprincipal`) and, on an
+arbitrary index set, for every countably incomplete ultrafilter
+({name}`Goldblatt.BoundedUltrapower.exists_mem_star_notMem_im_of_countablyIncomplete`); for a
+countably complete nonprincipal ultrafilter the remark would be false. Exercise 14.4(2) is
+stated without a hypothesis on domains, as in the book; where the argument is outside the
+domain it is a statement about the value convention of Chapter 13, under which such a value is
+the empty set.
 
 ## Consequences for Chapter 13
 

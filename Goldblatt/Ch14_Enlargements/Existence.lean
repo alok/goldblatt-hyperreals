@@ -172,78 +172,78 @@ theorem hyperfiniteApprox_enlargement (hX : IsBaseSet X) {A : ZFSet.{u}}
   filter_upwards [eventually_mem_index haW] with b hb
   exact mem_inter.2 ⟨hb, ha⟩
 
-/-- **Section 14.3, nonprincipal ultrafilters on
-$`\mathbb N`.** In the bounded ultrapower modulo a nonprincipal ultrafilter on $`\mathbb N`, as
-in Sections 3.8 and 3.9, every infinite set $`A \in \mathbb U(X)` has a member of $`{}^*A`
-that is not of the form $`{}^*a`: the class of an injective sequence in $`A`. For a general
-index set nonprincipality alone does not give this; the special ultrafilter of this section
-is what works in general. -/
-theorem exists_mem_star_notMem_im_hyperfilter (hX : IsBaseSet X) {A : ZFSet.{u}}
-    (hA : IsSetOf (superstructure X) A) (hinf : (A : Set ZFSet.{u}).Infinite) :
-    ∃ b ∈ (framework (hyperfilter ℕ) hX).star A, b ∉ (framework (hyperfilter ℕ) hX).im A := by
+/-- **Section 14.3, nonprincipal ultrafilters.** The book
+remarks that a nonprincipal ultrafilter gives nonstandard members of $`{}^*\mathbb R`, with a
+reference to Sections 3.8 and 3.9. That argument uses the index set $`\mathbb N`; what it needs
+in general is that the ultrafilter is _countably incomplete_: there is a map $`e : I \to \mathbb N`
+that takes each value only on a set outside the ultrafilter. Under this hypothesis every
+infinite set $`A \in \mathbb U(X)` has a member of $`{}^*A` that is not of the form $`{}^*a`,
+namely the class of $`i \mapsto g(e(i))` for an injective sequence $`g` in $`A`. For an arbitrary
+index set nonprincipality alone does not suffice (a countably complete nonprincipal ultrafilter,
+if one exists, gives $`{}^*\mathbb R = \mathbb R`), so the book's remark is formalized with this
+restriction. -/
+theorem exists_mem_star_notMem_im_of_countablyIncomplete {I : Type*} [Small.{u} I]
+    (𝓕 : Ultrafilter I) (hX : IsBaseSet X) (e : I → ℕ) (he : ∀ n, ∀ᶠ i in 𝓕, e i ≠ n)
+    {A : ZFSet.{u}} (hA : IsSetOf (superstructure X) A) (hinf : (A : Set ZFSet.{u}).Infinite) :
+    ∃ b ∈ (framework 𝓕 hX).star A, b ∉ (framework 𝓕 hX).im A := by
   have hW := (isUniverseOver_superstructure hX).toIsUniverse
   let g := hinf.natEmbedding
-  have hgA : ∀ n, (g n).1 ∈ A := fun n => (g n).2
-  have hgb : Bdd (hyperfilter ℕ) X fun n => (g n).1 :=
+  have hgA : ∀ i, (g (e i)).1 ∈ A := fun i => (g (e i)).2
+  have hgb : Bdd 𝓕 X fun i => (g (e i)).1 :=
     bdd_of_eventually_mem hX (bdd_const hA.1)
-      (Eventually.of_forall fun n => ⟨hW.subset hA (hgA n), hgA n⟩)
-  refine ⟨col (hyperfilter ℕ) hX fun n => (g n).1,
+      (Eventually.of_forall fun i => ⟨hW.subset hA (hgA i), hgA i⟩)
+  refine ⟨col 𝓕 hX fun i => (g (e i)).1,
     (col_mem_col_iff hX hgb (bdd_const hA.1)).2 (Eventually.of_forall hgA), fun hb => ?_⟩
-  obtain ⟨a, ha, e⟩ := (framework (hyperfilter ℕ) hX).mem_im.1 hb
-  have h1 : ∀ᶠ n in (hyperfilter ℕ : Filter ℕ), (g n).1 = a :=
-    (col_eq_iff hX hgb (bdd_const (hW.subset hA ha))).1 e
-  have hsub : {n : ℕ | (g n).1 = a}.Subsingleton := fun m hm n hn =>
-    g.injective (Subtype.ext (hm.trans hn.symm))
-  have h2 : ∀ᶠ n in (hyperfilter ℕ : Filter ℕ), (g n).1 ≠ a :=
-    mem_hyperfilter_of_finite_compl (by
-      have : {n : ℕ | (g n).1 ≠ a}ᶜ = {n : ℕ | (g n).1 = a} := by
-        ext n
-        simp
-      rw [this]
-      exact hsub.finite)
-  obtain ⟨n, c1, c2⟩ := (h1.and h2).exists
-  exact c2 c1
+  obtain ⟨a, ha, h⟩ := (framework 𝓕 hX).mem_im.1 hb
+  have h1 : ∀ᶠ i in 𝓕, (g (e i)).1 = a :=
+    (col_eq_iff hX hgb (bdd_const (hW.subset hA ha))).1 h
+  obtain ⟨i0, hi0⟩ := h1.exists
+  obtain ⟨i, c1, c2⟩ := (h1.and (he (e i0))).exists
+  exact c2 (g.injective (Subtype.ext (c1.trans hi0.symm)))
 
-/-!
-## 14.4 Exercises on the Ultrapower Construction: Exercises (1) and (3)
+/-- **Section 14.3, nonprincipal ultrafilters on $`\mathbb N`.** In the bounded ultrapower
+modulo any nonprincipal ultrafilter on $`\mathbb N`, the setting of Sections 3.8 and 3.9,
+every infinite set $`A \in \mathbb U(X)` has a member of $`{}^*A` that is not of the form
+$`{}^*a`. -/
+theorem exists_mem_star_notMem_im_of_nonprincipal (𝓕 : Ultrafilter ℕ) (h𝓕 : ∀ n, 𝓕 ≠ pure n)
+    (hX : IsBaseSet X) {A : ZFSet.{u}} (hA : IsSetOf (superstructure X) A)
+    (hinf : (A : Set ZFSet.{u}).Infinite) :
+    ∃ b ∈ (framework 𝓕 hX).star A, b ∉ (framework 𝓕 hX).im A := by
+  have hle : (𝓕 : Filter ℕ) ≤ cofinite :=
+    𝓕.le_cofinite_or_eq_pure.resolve_right fun ⟨n, hn⟩ => h𝓕 n hn
+  exact exists_mem_star_notMem_im_of_countablyIncomplete 𝓕 hX id
+    (fun n => mem_of_superset (hle (Set.finite_singleton n).compl_mem_cofinite) fun _ hi => hi)
+    hA hinf
 
-Exercise (1) asks for the details of the construction. They are the content of parts 2 to 4:
-well-definedness of the collapse and its two basic properties
-({lit}`BoundedUltrapower.col_eq_iff`, {lit}`BoundedUltrapower.col_mem_col_iff`), the
-computation of the transfer map ({lit}`BoundedUltrapower.mem_star_iff`,
-{lit}`BoundedUltrapower.col_const_base`, {lit}`BoundedUltrapower.col_const_empty`), the theorem
-of Łoś ({lit}`BoundedUltrapower.los`) and the resulting framework
-({lit}`BoundedUltrapower.framework`). Exercise (2) is in part 4. Exercise (3) asks whether the
-ultrafilter of the construction is nonprincipal; it is.
--/
-
-/-- **Exercise 14.4(3).** The ultrafilter used in the construction is
-nonprincipal. If it were generated by a point $`b`, then $`b` would lie in every $`I_{\{a\}}`,
-so the finite set $`b` would contain every member of the infinite set $`\mathbb U(X)`. -/
-theorem ultra_ne_pure (hX : IsBaseSet X) (b : Index X) : ultra X ≠ pure b := by
-  have hW := (isUniverseOver_superstructure hX).toIsUniverse
-  have hinf : (superstructure X : Set ZFSet.{u}).Infinite :=
-    Set.infinite_of_injective_forall_mem num_injective fun k => (hW.isSetOf_num k).1
-  obtain ⟨a, ha, hab⟩ := hinf.exists_notMem_finite (mem_finPow.1 b.2).2
-  intro h
-  have h1 : ∀ᶠ c in ((pure b : Ultrafilter (Index X)) : Filter (Index X)), a ∈ c.1 :=
-    h ▸ eventually_mem_index ha
-  rw [Ultrafilter.coe_pure, eventually_pure] at h1
-  exact hab h1
+/-- **Section 14.3, the ultrafilter of Chapter 3.** The previous statement for Mathlib's
+{name}`Filter.hyperfilter` on $`\mathbb N`, the ultrafilter used for the hyperreals in Parts I
+to III. -/
+theorem exists_mem_star_notMem_im_hyperfilter (hX : IsBaseSet X) {A : ZFSet.{u}}
+    (hA : IsSetOf (superstructure X) A) (hinf : (A : Set ZFSet.{u}).Infinite) :
+    ∃ b ∈ (framework (hyperfilter ℕ) hX).star A, b ∉ (framework (hyperfilter ℕ) hX).im A :=
+  exists_mem_star_notMem_im_of_nonprincipal (hyperfilter ℕ)
+    (fun n h => by
+      have h1 : ({n}ᶜ : Set ℕ) ∈ hyperfilter ℕ :=
+        hyperfilter_le_cofinite (Set.finite_singleton n).compl_mem_cofinite
+      rw [h] at h1
+      exact h1 rfl)
+    hX hA hinf
 
 end BoundedUltrapower
 
 /-!
-## The enlargement theorem
+## 14.3 Enlargements as Ultrapowers: the enlargement theorem
 
-The statement announced at the end of Section 14.1.
+The statement announced at the end of Section 14.1, now a consequence of the construction.
 -/
 
 open BoundedUltrapower in
-/-- **Enlargement Theorem (Sections 14.1 and 14.3).** For any set $`X` of
-individuals there exists an enlargement of $`\mathbb U(X)` that is of the form
-$`\mathbb U({}^*X)`: a nonstandard framework for $`X` with standard universe $`\mathbb U(X)`,
-target universe $`\mathbb U({}^*X)`, and the enlargement property. -/
+/-- **Enlargement Theorem (Sections 14.1 and 14.3).** Every superstructure over a set of
+individuals admits an enlargement whose target universe is again a superstructure, the one
+over the transform of the base set. In Lean: for a base set $`X` there is a nonstandard
+framework $`F` with $`F.X = X`, standard universe $`\mathbb U(X)`, target universe
+$`\mathbb U({}^*X)`, and the enlargement property. The framework is the bounded ultrapower
+modulo the ultrafilter {lit}`BoundedUltrapower.ultra`. -/
 theorem exists_enlargement {X : ZFSet.{u}} (hX : IsBaseSet X) :
     ∃ F : NonstandardFramework.{u}, F.X = X ∧ F.U = superstructure X ∧
       F.U' = superstructure (F.star X) ∧ F.IsEnlargement :=
@@ -280,5 +280,38 @@ theorem exists_realFramework_nonstandard :
     ∃ F : RealFramework.{u}, ∃ n, n ∈ F.star F.N ∧ n ∉ F.N := by
   obtain ⟨F, hE, -, -⟩ := exists_realFramework_isEnlargement.{u}
   exact ⟨F, F.exists_nonstandard_nat hE⟩
+
+namespace BoundedUltrapower
+
+variable {X : ZFSet.{u}}
+
+/-!
+## 14.4 Exercises on the Ultrapower Construction: Exercises (1) and (3)
+
+Exercise (1) asks for the details of the construction. They are the content of parts 2 to 4:
+well-definedness of the collapse and its two basic properties
+({lit}`BoundedUltrapower.col_eq_iff`, {lit}`BoundedUltrapower.col_mem_col_iff`), the
+computation of the transfer map ({lit}`BoundedUltrapower.mem_star_iff`,
+{lit}`BoundedUltrapower.col_const_base`, {lit}`BoundedUltrapower.col_const_empty`), the theorem
+of Łoś ({lit}`BoundedUltrapower.los`) and the resulting framework
+({lit}`BoundedUltrapower.framework`). Exercise (2) is in part 4. Exercise (3) asks whether the
+ultrafilter of the construction is nonprincipal; it is.
+-/
+
+/-- **Exercise 14.4(3).** The ultrafilter used in the construction is
+nonprincipal. If it were generated by a point $`b`, then $`b` would lie in every $`I_{\{a\}}`,
+so the finite set $`b` would contain every member of the infinite set $`\mathbb U(X)`. -/
+theorem ultra_ne_pure (hX : IsBaseSet X) (b : Index X) : ultra X ≠ pure b := by
+  have hW := (isUniverseOver_superstructure hX).toIsUniverse
+  have hinf : (superstructure X : Set ZFSet.{u}).Infinite :=
+    Set.infinite_of_injective_forall_mem num_injective fun k => (hW.isSetOf_num k).1
+  obtain ⟨a, ha, hab⟩ := hinf.exists_notMem_finite (mem_finPow.1 b.2).2
+  intro h
+  have h1 : ∀ᶠ c in ((pure b : Ultrafilter (Index X)) : Filter (Index X)), a ∈ c.1 :=
+    h ▸ eventually_mem_index ha
+  rw [Ultrafilter.coe_pure, eventually_pure] at h1
+  exact hab h1
+
+end BoundedUltrapower
 
 end Goldblatt
