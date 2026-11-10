@@ -1083,25 +1083,21 @@ theorem infClose_between {L S U : ℝ*} (h1 : L ≤ S) (h2 : S ≤ U) (h : L ≊
   have hLS : L ≊ S := infClose_of_le_of_sub_le h1 (by linarith) hUL
   exact ⟨hLS, hLS.symm.trans h⟩
 
-/-- **Theorem 9.1.1.** If $`f` is continuous on the real interval $`[a, b]`, then for every
-positive infinitesimal $`\Delta x`,
-$$`L_a^b(f, \Delta x) \simeq U_a^b(f, \Delta x).`
-The proof is the book's. For real $`\Delta x > 0` there are points $`c, d \in [a, b]`, no
-further apart than $`\Delta x`, with
-$`U - L \le (f(c) - f(d))(b - a)` ({name}`exists_points_upperSum_sub_lowerSum_le`). By
-transfer the same holds for the infinitesimal $`\Delta x`, with points
-$`c \simeq d` of the enlargement of $`[a, b]`. By the uniform continuity of $`f` on
-$`[a, b]` (Theorem 7.7.2) the values of the extension at $`c` and $`d` are infinitely close,
-so $`U - L` is at most an infinitesimal multiple of the real number $`b - a`. -/
-theorem hyperLowerSum_infClose_hyperUpperSum_of_continuousOn (hab : a ≤ b)
-    (hf : ContinuousOn f (Icc a b)) (hΔ : PosInfinitesimal Δ) :
-    hyperLowerSum f a b Δ ≊ hyperUpperSum f a b Δ := by
-  have hfb := boundedOn_Icc_of_continuousOn hf
-  have hLU : hyperLowerSum f a b Δ ≤ hyperUpperSum f a b Δ :=
-    hyperLowerSum_le_hyperUpperSum hfb hab hΔ.1 hΔ.1
-  have hΔi : Infinitesimal Δ := Or.inl hΔ
+/-- **Theorem 9.1.1, transferred statements (i) and (ii).** Let $`f` be continuous on
+$`[a, b]`. For every positive hyperreal $`\Delta x` there are points $`c, d` of the
+enlargement of $`[a, b]` with $`|c - d| \le \Delta x` and
+$$`U_a^b(f, \Delta x) - L_a^b(f, \Delta x) \le \bigl({}^*f(c) - {}^*f(d)\bigr)(b - a).`
+In the book these are the points at which the largest oscillation $`\mu(\Delta x)` is
+attained, so that $`\mu(\Delta x) = {}^*f(c) - {}^*f(d)`; the quantity $`\mu` is not given a
+name here. When $`\Delta x` is infinitesimal the first inequality gives $`c \simeq d`. This
+is the transfer of {name}`exists_points_upperSum_sub_lowerSum_le`, carried out on
+representing sequences. -/
+theorem exists_hyper_points_hyperUpperSum_sub_hyperLowerSum_le (hab : a ≤ b)
+    (hf : ContinuousOn f (Icc a b)) (hΔ : 0 < Δ) :
+    ∃ c ∈ ⋆(Icc a b), ∃ d ∈ ⋆(Icc a b), |c - d| ≤ Δ ∧
+      hyperUpperSum f a b Δ - hyperLowerSum f a b Δ ≤ (⋆f c - ⋆f d) * ((b - a : ℝ) : ℝ*) := by
   obtain ⟨r, rfl⟩ := hyperreal_exists_rep Δ
-  have hr := zero_lt_ofSeq_iff.1 hΔ.1
+  have hr := zero_lt_ofSeq_iff.1 hΔ
   -- the points c(Δx), d(Δx) of the book, chosen for each index
   have hex : ∀ n, ∃ c d : ℝ, 0 < r n → c ∈ Icc a b ∧ d ∈ Icc a b ∧ |c - d| ≤ r n ∧
       upperSum f a b (r n) - lowerSum f a b (r n) ≤ (f c - f d) * (b - a) := by
@@ -1111,23 +1107,40 @@ theorem hyperLowerSum_infClose_hyperUpperSum_of_continuousOn (hab : a ≤ b)
       exact ⟨c, d, fun _ => ⟨hc, hd, h1, h2⟩⟩
     · exact ⟨a, a, fun h' => absurd h' h⟩
   choose c d hcd using hex
-  have hC : Hyperreal.ofSeq c ∈ ⋆(Icc a b) :=
-    hyperreal_ofSeq_mem_starSet.2 (hr.mono fun n hn => (hcd n hn).1)
-  have hD : Hyperreal.ofSeq d ∈ ⋆(Icc a b) :=
-    hyperreal_ofSeq_mem_starSet.2 (hr.mono fun n hn => (hcd n hn).2.1)
-  -- (i): c ≃ d
-  have hCD : Hyperreal.ofSeq c ≊ Hyperreal.ofSeq d := by
-    refine hΔi.of_abs_le ?_
-    rw [abs_of_pos hΔ.1, ofSeq_sub, abs_ofSeq, ofSeq_le_ofSeq_iff]
+  refine ⟨Hyperreal.ofSeq c, ?_, Hyperreal.ofSeq d, ?_, ?_, ?_⟩
+  · exact hyperreal_ofSeq_mem_starSet.2 (hr.mono fun n hn => (hcd n hn).1)
+  · exact hyperreal_ofSeq_mem_starSet.2 (hr.mono fun n hn => (hcd n hn).2.1)
+  · rw [ofSeq_sub, abs_ofSeq, ofSeq_le_ofSeq_iff]
     exact hr.mono fun n hn => (hcd n hn).2.2.1
-  have hfcd : ⋆f (Hyperreal.ofSeq c) ≊ ⋆f (Hyperreal.ofSeq d) :=
-    uniformContinuousOn_iff_infClose.1 (uniformContinuousOn_Icc_of_continuousOn hf) _ hC _ hD hCD
-  -- (ii): U - L ≤ (f(c) - f(d))(b - a)
-  have hle : hyperUpperSum f a b (Hyperreal.ofSeq r) - hyperLowerSum f a b (Hyperreal.ofSeq r) ≤
-      (⋆f (Hyperreal.ofSeq c) - ⋆f (Hyperreal.ofSeq d)) * ((b - a : ℝ) : ℝ*) := by
-    change Hyperreal.ofSeq (fun n => upperSum f a b (r n) - lowerSum f a b (r n)) ≤
+  · change Hyperreal.ofSeq (fun n => upperSum f a b (r n) - lowerSum f a b (r n)) ≤
       Hyperreal.ofSeq (fun n => (f (c n) - f (d n)) * (b - a))
     exact ofSeq_le_ofSeq_iff.2 (hr.mono fun n hn => (hcd n hn).2.2.2)
+
+/-- **Theorem 9.1.1.** If $`f` is continuous on the real interval $`[a, b]`, then for every
+positive infinitesimal $`\Delta x`,
+$$`L_a^b(f, \Delta x) \simeq U_a^b(f, \Delta x).`
+The proof is the book's. For real $`\Delta x > 0` there are points $`c, d \in [a, b]`, no
+further apart than $`\Delta x`, with
+$`U - L \le (f(c) - f(d))(b - a)` ({name}`exists_points_upperSum_sub_lowerSum_le`). By
+transfer the same holds for the infinitesimal $`\Delta x`, with points
+$`c \simeq d` of the enlargement of $`[a, b]`
+({name}`exists_hyper_points_hyperUpperSum_sub_hyperLowerSum_le`). By the uniform continuity
+of $`f` on $`[a, b]` (Theorem 7.7.2) the values of the extension at $`c` and $`d` are
+infinitely close, so $`U - L` is at most an infinitesimal multiple of the real number
+$`b - a`. -/
+theorem hyperLowerSum_infClose_hyperUpperSum_of_continuousOn (hab : a ≤ b)
+    (hf : ContinuousOn f (Icc a b)) (hΔ : PosInfinitesimal Δ) :
+    hyperLowerSum f a b Δ ≊ hyperUpperSum f a b Δ := by
+  have hfb := boundedOn_Icc_of_continuousOn hf
+  have hLU : hyperLowerSum f a b Δ ≤ hyperUpperSum f a b Δ :=
+    hyperLowerSum_le_hyperUpperSum hfb hab hΔ.1 hΔ.1
+  have hΔi : Infinitesimal Δ := Or.inl hΔ
+  -- the transferred statements: (ii) is `hle`, and (i) follows from `hcd`
+  obtain ⟨c, hC, d, hD, hcd, hle⟩ :=
+    exists_hyper_points_hyperUpperSum_sub_hyperLowerSum_le hab hf hΔ.1
+  have hCD : c ≊ d := hΔi.of_abs_le (by rwa [abs_of_pos hΔ.1])
+  have hfcd : ⋆f c ≊ ⋆f d :=
+    uniformContinuousOn_iff_infClose.1 (uniformContinuousOn_Icc_of_continuousOn hf) _ hC _ hD hCD
   exact infClose_of_le_of_sub_le hLU hle (Infinitesimal.mul_limited hfcd (limited_coe _))
 
 /-- **Exercise 9.1.2, by transfer.** If $`f` is nondecreasing on $`[a, b]`, then

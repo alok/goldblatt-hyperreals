@@ -481,13 +481,16 @@ variable {f G : ℝ → ℝ} {a b x y : ℝ}
 
 /-- **Theorem 9.4.1, real form (inequality (v)).** Let $`f` be continuous on $`[a, b]` and
 $`F(x) = \int_a^x f(t)\,dt`. For distinct points $`x, y \in [a, b]` there are points
-$`x_1, x_2` of $`[a, b]`, no further from $`x` than $`y` is, with
+$`x_1, x_2` between $`x` and $`y` with
 $$`f(x_2) \le \frac{F(y) - F(x)}{y - x} \le f(x_1).`
 They are the points between $`x` and $`y` at which $`f` is greatest and least. The proof
-uses juxtaposition of integrals and the bounds $`m(y - x) \le \int_x^y f \le M(y - x)`. -/
+uses juxtaposition of integrals and the bounds $`m(y - x) \le \int_x^y f \le M(y - x)`.
+The book writes $`y = x + \Delta x`; here "between" is membership in the closed interval
+with end points $`x` and $`y` in either order, so that both signs of $`\Delta x` are
+covered by one statement. -/
 theorem exists_points_areaQuotient (hf : ContinuousOn f (Icc a b)) (hx : x ∈ Icc a b)
     (hy : y ∈ Icc a b) (hxy : y ≠ x) :
-    ∃ x₁ ∈ Icc a b, ∃ x₂ ∈ Icc a b, |x₁ - x| ≤ |y - x| ∧ |x₂ - x| ≤ |y - x| ∧
+    ∃ x₁ ∈ uIcc x y, ∃ x₂ ∈ uIcc x y,
       f x₂ ≤ (riemannIntegral f a y - riemannIntegral f a x) / (y - x) ∧
       (riemannIntegral f a y - riemannIntegral f a x) / (y - x) ≤ f x₁ := by
   rcases lt_or_gt_of_ne hxy with hlt | hlt
@@ -504,11 +507,8 @@ theorem exists_points_areaQuotient (hf : ContinuousOn f (Icc a b)) (hx : x ∈ I
         riemannIntegral f y x / (x - y) := by
       rw [div_eq_div_iff (sub_ne_zero.2 hxy) hpos.ne', hsplit]
       ring
-    refine ⟨x₁, hsub h1, x₂, hsub h2, ?_, ?_, ?_, ?_⟩
-    · rw [abs_of_nonpos (by linarith [h1.2]), abs_of_neg (by linarith)]
-      linarith [h1.1]
-    · rw [abs_of_nonpos (by linarith [h2.2]), abs_of_neg (by linarith)]
-      linarith [h2.1]
+    rw [uIcc_of_ge hlt.le]
+    refine ⟨x₁, h1, x₂, h2, ?_, ?_⟩
     · rw [hq, le_div_iff₀ hpos]
       exact hlow
     · rw [hq, div_le_iff₀ hpos]
@@ -524,29 +524,38 @@ theorem exists_points_areaQuotient (hf : ContinuousOn f (Icc a b)) (hx : x ∈ I
     have hpos : 0 < y - x := sub_pos.2 hlt
     have hq : riemannIntegral f a y - riemannIntegral f a x = riemannIntegral f x y := by
       rw [hsplit]; ring
-    refine ⟨x₁, hsub h1, x₂, hsub h2, ?_, ?_, ?_, ?_⟩
-    · rw [abs_of_nonneg (by linarith [h1.1]), abs_of_pos (by linarith)]
-      linarith [h1.2]
-    · rw [abs_of_nonneg (by linarith [h2.1]), abs_of_pos (by linarith)]
-      linarith [h2.2]
+    rw [uIcc_of_le hlt.le]
+    refine ⟨x₁, h1, x₂, h2, ?_, ?_⟩
     · rw [hq, le_div_iff₀ hpos]
       exact hlow
     · rw [hq, div_le_iff₀ hpos]
       exact hupp
 
-/-- **Theorem 9.4.1.** If $`f` is continuous on $`[a, b]`, the area function
-$`F(x) = \int_a^x f(t)\,dt` is differentiable on $`[a, b]` with derivative $`f`, where at
-the end points the derivative is the one-sided one. In Lean: at each $`x \in [a, b]` the
-function $`F` has derivative $`f(x)` relative to $`[a, b]`.
+/-- If, for almost all indices $`n`, the real number $`s_n` lies between $`x` and $`r_n`,
+then the hyperreal $`[s]` lies between $`x` and $`[r]`. This is the transfer of betweenness
+used for inequality (v) of Theorem 9.4.1. -/
+theorem ofSeq_mem_uIcc_coe_ofSeq {s r : ℕ → ℝ}
+    (h : ∀ᶠ n in hyperfilter ℕ, s n ∈ uIcc x (r n)) :
+    Hyperreal.ofSeq s ∈ uIcc (x : ℝ*) (Hyperreal.ofSeq r) := by
+  rw [mem_uIcc, coe_eq_ofSeq_const, ofSeq_le_ofSeq_iff, ofSeq_le_ofSeq_iff, ofSeq_le_ofSeq_iff,
+    ofSeq_le_ofSeq_iff, ← Filter.eventually_and, ← Filter.eventually_and,
+    ← Ultrafilter.eventually_or]
+  exact h.mono fun n hn => mem_uIcc.1 hn
 
-The proof is the book's: by transfer of {name}`exists_points_areaQuotient`, for
-$`y \simeq x` in the enlargement of $`[a, b]` the difference quotient of $`F` lies between
-the values of the extension of $`f` at two points infinitely close to $`x`, and these values
-are infinitely close to $`f(x)` by continuity. Then Theorem 8.1.1 applies. -/
-theorem hasDerivWithinAt_riemannIntegral (hf : ContinuousOn f (Icc a b)) (hx : x ∈ Icc a b) :
-    HasDerivWithinAt (fun t => riemannIntegral f a t) (f x) (Icc a b) x := by
-  rw [hasDerivWithinAt_iff_infClose]
-  intro y hy hyx hne
+/-- **Theorem 9.4.1, transferred inequality (v).** Let $`f` be continuous on $`[a, b]`,
+$`F(x) = \int_a^x f(t)\,dt`, and $`x \in [a, b]` real. For every hyperreal $`y \ne x` in the
+enlargement of $`[a, b]` there are points $`x_1, x_2` of the enlargement of $`[a, b]`
+between $`x` and $`y` with
+$$`{}^*f(x_2) \le \frac{{}^*F(y) - F(x)}{y - x} \le {}^*f(x_1).`
+This is the transfer of {name}`exists_points_areaQuotient`, carried out on representing
+sequences. -/
+theorem exists_hyper_points_areaQuotient (hf : ContinuousOn f (Icc a b)) (hx : x ∈ Icc a b)
+    {y : ℝ*} (hy : y ∈ ⋆(Icc a b)) (hne : y ≠ (x : ℝ*)) :
+    ∃ x₁ ∈ ⋆(Icc a b), ∃ x₂ ∈ ⋆(Icc a b), x₁ ∈ uIcc (x : ℝ*) y ∧ x₂ ∈ uIcc (x : ℝ*) y ∧
+      ⋆f x₂ ≤ (⋆(fun t => riemannIntegral f a t) y - ((riemannIntegral f a x : ℝ) : ℝ*)) /
+        (y - (x : ℝ*)) ∧
+      (⋆(fun t => riemannIntegral f a t) y - ((riemannIntegral f a x : ℝ) : ℝ*)) /
+        (y - (x : ℝ*)) ≤ ⋆f x₁ := by
   obtain ⟨r, rfl⟩ := hyperreal_exists_rep y
   have hr := hyperreal_ofSeq_mem_starSet.1 hy
   have hne' : ∀ᶠ n in hyperfilter ℕ, r n ≠ x := by
@@ -555,7 +564,7 @@ theorem hasDerivWithinAt_riemannIntegral (hf : ContinuousOn f (Icc a b)) (hx : x
     exact hne (by rw [coe_eq_ofSeq_const, ofSeq_eq_ofSeq_iff]; exact h)
   -- the points x₁, x₂ of the book, chosen at each index
   have hex : ∀ n, ∃ x₁ x₂ : ℝ, r n ∈ Icc a b → r n ≠ x →
-      x₁ ∈ Icc a b ∧ x₂ ∈ Icc a b ∧ |x₁ - x| ≤ |r n - x| ∧ |x₂ - x| ≤ |r n - x| ∧
+      x₁ ∈ uIcc x (r n) ∧ x₂ ∈ uIcc x (r n) ∧
       f x₂ ≤ (riemannIntegral f a (r n) - riemannIntegral f a x) / (r n - x) ∧
       (riemannIntegral f a (r n) - riemannIntegral f a x) / (r n - x) ≤ f x₁ := by
     intro n
@@ -565,38 +574,42 @@ theorem hasDerivWithinAt_riemannIntegral (hf : ContinuousOn f (Icc a b)) (hx : x
     · exact ⟨a, a, fun h1 h2 => absurd ⟨h1, h2⟩ h⟩
   choose x₁ x₂ hpts using hex
   have hev := hr.and hne'
-  have hi : Infinitesimal (Hyperreal.ofSeq r - (x : ℝ*)) := hyx
-  -- both points are in the enlargement of [a, b] and infinitely close to x
-  have hX1 : Hyperreal.ofSeq x₁ ∈ ⋆(Icc a b) :=
-    hyperreal_ofSeq_mem_starSet.2 (hev.mono fun n hn => (hpts n hn.1 hn.2).1)
-  have hX2 : Hyperreal.ofSeq x₂ ∈ ⋆(Icc a b) :=
-    hyperreal_ofSeq_mem_starSet.2 (hev.mono fun n hn => (hpts n hn.1 hn.2).2.1)
-  have hX1x : Hyperreal.ofSeq x₁ ≊ (x : ℝ*) := by
-    refine hi.of_abs_le ?_
-    change |Hyperreal.ofSeq (fun n => x₁ n - x)| ≤ |Hyperreal.ofSeq (fun n => r n - x)|
-    rw [abs_ofSeq, abs_ofSeq, ofSeq_le_ofSeq_iff]
-    exact hev.mono fun n hn => (hpts n hn.1 hn.2).2.2.1
-  have hX2x : Hyperreal.ofSeq x₂ ≊ (x : ℝ*) := by
-    refine hi.of_abs_le ?_
-    change |Hyperreal.ofSeq (fun n => x₂ n - x)| ≤ |Hyperreal.ofSeq (fun n => r n - x)|
-    rw [abs_ofSeq, abs_ofSeq, ofSeq_le_ofSeq_iff]
-    exact hev.mono fun n hn => (hpts n hn.1 hn.2).2.2.2.1
-  have hf1 := continuousOn_iff_infClose.1 hf x hx _ hX1 hX1x
-  have hf2 := continuousOn_iff_infClose.1 hf x hx _ hX2 hX2x
-  -- the transfer of (v)
-  have hlow : ⋆f (Hyperreal.ofSeq x₂) ≤
-      (⋆(fun t => riemannIntegral f a t) (Hyperreal.ofSeq r) - ((riemannIntegral f a x : ℝ) : ℝ*)) /
-        (Hyperreal.ofSeq r - (x : ℝ*)) := by
-    change Hyperreal.ofSeq (fun n => f (x₂ n)) ≤ Hyperreal.ofSeq (fun n =>
+  refine ⟨Hyperreal.ofSeq x₁, ?_, Hyperreal.ofSeq x₂, ?_, ?_, ?_, ?_, ?_⟩
+  · exact hyperreal_ofSeq_mem_starSet.2 (hev.mono fun n hn =>
+      uIcc_subset_Icc hx hn.1 (hpts n hn.1 hn.2).1)
+  · exact hyperreal_ofSeq_mem_starSet.2 (hev.mono fun n hn =>
+      uIcc_subset_Icc hx hn.1 (hpts n hn.1 hn.2).2.1)
+  · exact ofSeq_mem_uIcc_coe_ofSeq (hev.mono fun n hn => (hpts n hn.1 hn.2).1)
+  · exact ofSeq_mem_uIcc_coe_ofSeq (hev.mono fun n hn => (hpts n hn.1 hn.2).2.1)
+  · change Hyperreal.ofSeq (fun n => f (x₂ n)) ≤ Hyperreal.ofSeq (fun n =>
       (riemannIntegral f a (r n) - riemannIntegral f a x) / (r n - x))
-    exact ofSeq_le_ofSeq_iff.2 (hev.mono fun n hn => (hpts n hn.1 hn.2).2.2.2.2.1)
-  have hupp : (⋆(fun t => riemannIntegral f a t) (Hyperreal.ofSeq r) -
-      ((riemannIntegral f a x : ℝ) : ℝ*)) / (Hyperreal.ofSeq r - (x : ℝ*)) ≤
-      ⋆f (Hyperreal.ofSeq x₁) := by
-    change Hyperreal.ofSeq (fun n =>
+    exact ofSeq_le_ofSeq_iff.2 (hev.mono fun n hn => (hpts n hn.1 hn.2).2.2.1)
+  · change Hyperreal.ofSeq (fun n =>
       (riemannIntegral f a (r n) - riemannIntegral f a x) / (r n - x)) ≤
       Hyperreal.ofSeq (fun n => f (x₁ n))
-    exact ofSeq_le_ofSeq_iff.2 (hev.mono fun n hn => (hpts n hn.1 hn.2).2.2.2.2.2)
+    exact ofSeq_le_ofSeq_iff.2 (hev.mono fun n hn => (hpts n hn.1 hn.2).2.2.2)
+
+/-- **Theorem 9.4.1.** If $`f` is continuous on $`[a, b]`, the area function
+$`F(x) = \int_a^x f(t)\,dt` is differentiable on $`[a, b]` with derivative $`f`, where at
+the end points the derivative is the one-sided one. In Lean: at each $`x \in [a, b]` the
+function $`F` has derivative $`f(x)` relative to $`[a, b]`.
+
+The proof is the book's: by the transferred inequality (v)
+({name}`exists_hyper_points_areaQuotient`), for $`y \simeq x` in the enlargement of
+$`[a, b]` the difference quotient of $`F` lies between the values of the extension of $`f`
+at two points between $`x` and $`y`. These points are infinitely close to $`x`, so the two
+values are infinitely close to $`f(x)` by continuity. Then Theorem 8.1.1 applies. -/
+theorem hasDerivWithinAt_riemannIntegral (hf : ContinuousOn f (Icc a b)) (hx : x ∈ Icc a b) :
+    HasDerivWithinAt (fun t => riemannIntegral f a t) (f x) (Icc a b) x := by
+  rw [hasDerivWithinAt_iff_infClose]
+  intro y hy hyx hne
+  obtain ⟨x₁, hX1, x₂, hX2, h1, h2, hlow, hupp⟩ := exists_hyper_points_areaQuotient hf hx hy hne
+  have hi : Infinitesimal (y - (x : ℝ*)) := hyx
+  -- both points are between x and y, hence infinitely close to x
+  have hX1x : x₁ ≊ (x : ℝ*) := hi.of_abs_le (abs_sub_left_of_mem_uIcc h1)
+  have hX2x : x₂ ≊ (x : ℝ*) := hi.of_abs_le (abs_sub_left_of_mem_uIcc h2)
+  have hf1 := continuousOn_iff_infClose.1 hf x hx _ hX1 hX1x
+  have hf2 := continuousOn_iff_infClose.1 hf x hx _ hX2 hX2x
   exact infClose_of_le_of_le hlow hupp hf2 hf1
 
 /-- **Theorem 9.4.1, at interior points.** If $`f` is continuous on $`[a, b]` and

@@ -71,7 +71,9 @@ $`a + n\,\Delta x \ge b` ({name}`Goldblatt.hyperMeshCard_spec`,
 {name}`Goldblatt.hyperMeshCard_le_of_le_add_mul`).
 
 Theorem 9.1.1 is {name}`Goldblatt.hyperLowerSum_infClose_hyperUpperSum_of_continuousOn`, with
-its real form {name}`Goldblatt.exists_points_upperSum_sub_lowerSum_le`. Exercise 9.1.2 is
+its real form {name}`Goldblatt.exists_points_upperSum_sub_lowerSum_le` and the transferred
+statements (i) and (ii) of its proof in
+{name}`Goldblatt.exists_hyper_points_hyperUpperSum_sub_hyperLowerSum_le`. Exercise 9.1.2 is
 {name}`Goldblatt.upperSum_sub_lowerSum_le_of_monotoneOn`,
 {name}`Goldblatt.upperSum_sub_lowerSum_le_of_antitoneOn` and
 {name}`Goldblatt.hyperLowerSum_infClose_hyperUpperSum_of_monotonic`.
@@ -113,7 +115,8 @@ book's equation (iv), on which its proof of the third property rests, is
 ## 9.4 Differentiating the Area Function
 
 Theorem 9.4.1 is {name}`Goldblatt.hasDerivWithinAt_riemannIntegral`, proved by transfer of
-the real inequality {name}`Goldblatt.exists_points_areaQuotient`. Theorem 9.4.2, the
+the real inequality (v), {name}`Goldblatt.exists_points_areaQuotient`, to
+{name}`Goldblatt.exists_hyper_points_areaQuotient`. Theorem 9.4.2, the
 fundamental theorem of calculus, is
 {name}`Goldblatt.riemannIntegral_eq_sub_of_hasDerivWithinAt`.
 
@@ -160,8 +163,10 @@ The sample average is {name}`Goldblatt.sampleAverage` and the exercise is
 
 The partition of $`[a, b]` by a width and its Riemann sum are
 {name}`Goldblatt.meshCard`, {name}`Goldblatt.meshPoint` and {name}`Goldblatt.ordSum`. They
-are given by the same formulas as the provisional definitions of the part of Chapter 12 on
-hyperfinite sums, so the two are equal by unfolding. For an integrable function the Riemann
+the definitions that later chapters should use. The part of Chapter 12 on hyperfinite sums
+currently carries its own copies, given by the same formulas, so the two are equal by
+unfolding; that file is not imported here and replacing its copies by these names is left to
+it. For an integrable function the Riemann
 sums converge to the integral ({name}`Goldblatt.RiemannIntegrableOn.tendsto_ordSum`), and an
 integrable function is bounded ({name}`Goldblatt.RiemannIntegrableOn.boundedOn`); these are
 the two facts about integrability that Section 12.7 needs.
